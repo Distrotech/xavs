@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 9.00
+# Visual Studio 2005
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xavs", "xavs.vcproj", "{9C9551A7-7BAE-4278-91C9-BE89E74E15FC}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libxavs", "libxavs.vcproj", "{36D80E1F-7658-47B3-A5D6-A48C0B28EBD3}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9C9551A7-7BAE-4278-91C9-BE89E74E15FC}.Debug|Win32.ActiveCfg = Debug|Win32
+		{9C9551A7-7BAE-4278-91C9-BE89E74E15FC}.Debug|Win32.Build.0 = Debug|Win32
+		{9C9551A7-7BAE-4278-91C9-BE89E74E15FC}.Release|Win32.ActiveCfg = Release|Win32
+		{9C9551A7-7BAE-4278-91C9-BE89E74E15FC}.Release|Win32.Build.0 = Release|Win32
+		{36D80E1F-7658-47B3-A5D6-A48C0B28EBD3}.Debug|Win32.ActiveCfg = Debug|Win32
+		{36D80E1F-7658-47B3-A5D6-A48C0B28EBD3}.Debug|Win32.Build.0 = Debug|Win32
+		{36D80E1F-7658-47B3-A5D6-A48C0B28EBD3}.Release|Win32.ActiveCfg = Release|Win32
+		{36D80E1F-7658-47B3-A5D6-A48C0B28EBD3}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
