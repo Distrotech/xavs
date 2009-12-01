@@ -9,7 +9,7 @@
 
 #include "common/common.h"
 #include "macroblock.h"
-#include "common/vlc.h"
+#include "vlctest.h"
 
 #ifndef RDO_SKIP_BS
 #define RDO_SKIP_BS 0
@@ -82,12 +82,12 @@ static int xavs_b8mode_value(xavs_t *h, int idx)
 	  return b8start[b8mode] + b8inc[b8mode] * b8pdir;
 }
 
-static void xavs_write_MBHeader_uvlc(xavs_t *h, bs_t *s)
+static void xavs_write_MBHeader_cavlc(xavs_t *h, bs_t *s)
 {
 	const int i_mb_type = h->mb.i_type;
 	const int i_slice_type = h->sh.i_type;
 	const int mb_cbp = ( h->mb.i_cbp_chroma << 4 )|h->mb.i_cbp_luma;
-	int i,tmp;
+	int i,tmp,i_pred_mode;
 	
 	/*
 	 *	write Skip counter
@@ -96,23 +96,28 @@ static void xavs_write_MBHeader_uvlc(xavs_t *h, bs_t *s)
 	{
 		if (h->param.i_skip_mode_flag)
 		{
-			if (i_mb_type!=0||(i_slice_type==SLICE_TYPE_B)&&mb_cbp)
+			if (!(IS_SKIP(i_mb_type))||(i_slice_type==SLICE_TYPE_B)&&mb_cbp)
 			{
 				/* write skip mb numbers*/
-				bs_write_ue_big(s, h->mb.code_counter); //to check weather the skip numbers can be greater than 255
-				h->mb.code_counter=0;	//reset here??? 
+//				bs_write_ue_big(s, h->mb.code_counter); //to check weather the skip numbers can be greater than 255
+//				h->mb.code_counter=0;	//reset here??? 
 				
 				/*set mb type*/
 				tmp = xavs_mbtype_value(h);
 				if (i_slice_type!=SLICE_TYPE_B)
 					tmp-=1;
 				bs_write_ue (s, tmp);
+#if TRACE_TB 
+				snprintf(h->tracestring, TRACESTRING_SIZE, "@MB_TYPE:\t %4d\n",tmp);
+				xavs_trace2out(h,h->tracestring);
+#endif
 			}
 			else {
 				h->mb.code_counter++;
 				if(h->mb.i_current_mb_num==h->sh.i_last_mb)
 				{
-					bs_write_ue_big(s, h->mb.code_counter);
+//					bs_write_ue_big(s, h->mb.code_counter);
+					bs_write_ue(s, h->mb.code_counter);
 					h->mb.code_counter = 0;
 				}
 			}
@@ -140,6 +145,11 @@ static void xavs_write_MBHeader_uvlc(xavs_t *h, bs_t *s)
 			{
 				tmp = xavs_b8mode_value(h, i);
 				bs_write(s,2,tmp);
+#if TRACE_TB 
+				snprintf(h->tracestring, TRACESTRING_SIZE, "@P8x8_MODE[%i]:\t %4d\n",i,tmp);
+				xavs_trace2out(h,h->tracestring);
+#endif
+
 			}
 		}
 	}
@@ -152,22 +162,41 @@ static void xavs_write_MBHeader_uvlc(xavs_t *h, bs_t *s)
 	{
 		for(i=0; i<4; i++)
 		{
-			tmp = h->mb.intra_pred_modes[i];
-			if (tmp == -1)
-				bs_write(s, 1, 1);
+			i_pred_mode = xavs_mb_predict_intra8x8_mode(h, i*4);
+			tmp = xavs_mb_pred_mode4x4_fix(h->mb.cache.intra4x4_pred_mode[xavs_scan8[i*4]]);
+			if (i_pred_mode == tmp)
+				bs_write1(s, 1);
 			else
-				bs_write(s, 3, tmp);
+			{
+				bs_write1(s, 0);
 
+				//aloha'
+				if (tmp > i_pred_mode)
+				{
+					bs_write(s, 2, tmp - 1);
+				} 
+				else
+				{
+					bs_write(s, 2, tmp);
+				}
+			}
+
+	
+//			if (tmp == -1)
+//				bs_write(s, 1, 1);
+//			else
+//				bs_write(s, 3, tmp);
+#if TRACE_TB 
+			snprintf(h->tracestring, TRACESTRING_SIZE, "@INTRA_PRED_MODE[%i]:\t %4d\n",i,tmp);
+			xavs_trace2out(h,h->tracestring);
+#endif
 		}
-		tmp = h->mb.c_ipred_mode;
-		bs_write_ue(s,tmp);
+		bs_write_ue(s,xavs_mb_pred_mode8x8c_fix[ h->mb.i_chroma_pred_mode ] );
+#if TRACE_TB 
+		snprintf(h->tracestring, TRACESTRING_SIZE, "@CHROMA_INTRA_PRED_MODE:\t %4d\n",tmp);
+		xavs_trace2out(h,h->tracestring);
+#endif
 	}
-}
-
-
-void xavs_macroblock_write_cavlc ( xavs_t *h, bs_t *s )
-{
-    return; 
 }
 
 
@@ -476,6 +505,11 @@ static void xavs_write_cbp(xavs_t *h, bs_t *s)
 		bs_write_ue(s,NCBP[mb_cbp][0]);
 	else
 		bs_write_ue(s,NCBP[mb_cbp][1]);
+#if TRACE_TB 
+	snprintf(h->tracestring, TRACESTRING_SIZE, "@CBP(%i):\t %4d\n",mb_cbp,NCBP[mb_cbp][0]);
+	xavs_trace2out(h,h->tracestring);
+#endif
+
 
 }
 
@@ -486,7 +520,15 @@ static void xavs_write_dqp(xavs_t *h, bs_t *s)
 	const int mb_cbp = ( h->mb.i_cbp_chroma << 4 )|h->mb.i_cbp_luma;
 	int i_dqp = h->mb.i_qp - h->mb.i_last_qp; // asking for how to get the delta qp
 	if (mb_cbp&&!h->param.i_fixed_qp)
+	{
 		bs_write_se(s,i_dqp);
+#if TRACE_TB 
+		snprintf(h->tracestring, TRACESTRING_SIZE, "@DQP:\t %4d\n",i_dqp);
+		xavs_trace2out(h,h->tracestring);
+#endif
+	}
+
+
 }
 
 static void code_golomb_word(int sym, int grad, int maxlevels, int *val, int *len)
@@ -534,7 +576,7 @@ static void encode_multilayer_golomb_word(int sym, int *grad, int *maxlevels, in
 	  *len = acclen;
 }
 
-static void xavs_write_golomb_code(bs_t *s, int grad, int symbol2D, int maxlevels)
+static void xavs_write_golomb_code(bs_t *s,  int symbol2D, int grad,int maxlevels)
 {
 	int len, val, i;
 	unsigned int grad_array[4],max_lev[4];
@@ -548,7 +590,7 @@ static void xavs_write_golomb_code(bs_t *s, int grad, int symbol2D, int maxlevel
 		}
 		encode_multilayer_golomb_word(symbol2D, grad_array, max_lev, &val, &len);
 	}
-	bs_write(s, val, len);
+	bs_write(s, len, val);
 }
 
 static void xavs_write_luma_coeff(xavs_t *h, bs_t *s, int b8)
@@ -560,21 +602,42 @@ static void xavs_write_luma_coeff(xavs_t *h, bs_t *s, int b8)
 	int16_t *l = h->dct.luma8x8[b8];
 	xavs_run_level_t runlevel;
 	int i_total, i_total_zeros, run, level, table_idx, symbol2D, golomb_grad, golomb_maxlevels;
+	int level_arr[65], run_arr[65];
+	int curr_val;
+	int ipos,idx,icoef;
 	int escape_level_diff;
 	int i_max_coeff = 65; //all scanned position and EOB
-    runlevel.level[1] = 2;
-    runlevel.level[2] = 2;
-//	different with x264, the last of (run, level) should be (0,0) as a EOB
+	//runlevel.level[1] = 2;
+	//runlevel.level[2] = 2;
+	//	different with x264, the last of (run, level) should be (0,0) as a EOB
 
-    i_total = h->quantf.coeff_level_run[DCT_LUMA_8x8]( l, &runlevel );
+	i_total = h->quantf.coeff_level_run[DCT_LUMA_8x8]( l, &runlevel );
 	i_total_zeros = runlevel.last + 1 - i_total;
-	
-//set the EOB, be aware of the run level direction
-//	runlevel.run[i_total] = 0;
-//	runlevel.level[i_total] = 0;
-//	i_total ++;
 
-// 
+
+	//set the EOB, be aware of the run level direction
+	//	runlevel.run[i_total] = 0;
+	//	runlevel.level[i_total] = 0;
+	//	i_total ++;
+	/*
+	run  = -1;
+	ipos = 0;
+	for (icoef=0; icoef<64; icoef++)
+	{
+	run++;
+	curr_val = l[icoef];
+	if (curr_val != 0)
+	{
+	level_arr[ipos] = curr_val;
+	run_arr[ipos]   = run;
+	run = -1;
+	ipos++;
+	}
+
+	}
+	idx = ipos;
+	*/
+	// 
 	AVS_2DVLC_table_intra = AVS_2DVLC_INTRA;
 	AVS_2DVLC_table_inter = AVS_2DVLC_INTER;
 
@@ -583,13 +646,13 @@ static void xavs_write_luma_coeff(xavs_t *h, bs_t *s, int b8)
 		table_idx = 0;
 		for (i_total; i_total>=0; i_total--)
 		{
-			if(i_total == 0){
+			if(i_total == 0){	//set EOB
 				run = 0;
 				level = 0;
 			}
 			else{
-				run = runlevel.run[i_total];
-				level = runlevel.level[i_total];
+				run = runlevel.run[i_total-1];
+				level = runlevel.level[i_total-1];
 			}
 			symbol2D = CODE2D_ESCAPE_SYMBOL;
 			if(level>-27 && level<27 && run<26)
@@ -610,6 +673,11 @@ static void xavs_write_luma_coeff(xavs_t *h, bs_t *s, int b8)
 	        golomb_grad			= VLC_Golomb_Order[0][table_idx][0];    
 		    golomb_maxlevels	= VLC_Golomb_Order[0][table_idx][1];    
  			xavs_write_golomb_code(s, symbol2D, golomb_grad, golomb_maxlevels);
+#if TRACE_TB 
+			snprintf(h->tracestring, TRACESTRING_SIZE, "@COEFF:\t %4d\n",symbol2D);
+			xavs_trace2out(h,h->tracestring);
+#endif
+
 			if (i_total==0)
 				break;
 			if (symbol2D>=CODE2D_ESCAPE_SYMBOL)
@@ -618,6 +686,11 @@ static void xavs_write_luma_coeff(xavs_t *h, bs_t *s, int b8)
 				golomb_maxlevels = 11;
 				escape_level_diff = abs(level)-((run>MaxRun[0][table_idx])?1:RefAbsLevel[table_idx][run]);
 				xavs_write_golomb_code(s, escape_level_diff,golomb_grad, golomb_maxlevels );
+#if TRACE_TB 
+				snprintf(h->tracestring, TRACESTRING_SIZE, "@ESCAPE:\t %4d\n",escape_level_diff);
+				xavs_trace2out(h,h->tracestring);
+#endif
+
 			}
 			if(abs(level) > incVlc_intra[table_idx])   //qwang 11.29
 			{
@@ -644,8 +717,8 @@ static void xavs_write_luma_coeff(xavs_t *h, bs_t *s, int b8)
 				level = 0;
 			}
 			else{
-				run = runlevel.run[i_total];
-				level = runlevel.level[i_total];
+				run = runlevel.run[i_total-1];
+				level = runlevel.level[i_total-1];
 			}
 			symbol2D = CODE2D_ESCAPE_SYMBOL;
 			if(level>-27 && level<27 && run<26)
@@ -666,6 +739,11 @@ static void xavs_write_luma_coeff(xavs_t *h, bs_t *s, int b8)
 	        golomb_grad			= VLC_Golomb_Order[1][table_idx][0];    
 		    golomb_maxlevels	= VLC_Golomb_Order[1][table_idx][1];    
  			xavs_write_golomb_code(s, symbol2D, golomb_grad, golomb_maxlevels);
+#if TRACE_TB 
+			snprintf(h->tracestring, TRACESTRING_SIZE, "@COEFF:\t %4d\n",symbol2D);
+			xavs_trace2out(h,h->tracestring);
+#endif
+
 			if (i_total==0)
 				break;
 			if (symbol2D>=CODE2D_ESCAPE_SYMBOL)
@@ -674,8 +752,13 @@ static void xavs_write_luma_coeff(xavs_t *h, bs_t *s, int b8)
 				golomb_maxlevels = 12;
 				escape_level_diff = abs(level)-((run>MaxRun[1][table_idx])?1:RefAbsLevel[table_idx+7][run]);
 				xavs_write_golomb_code(s, escape_level_diff,golomb_grad, golomb_maxlevels );
+#if TRACE_TB 
+				snprintf(h->tracestring, TRACESTRING_SIZE, "@ESCAPE:\t %4d\n",escape_level_diff);
+				xavs_trace2out(h,h->tracestring);
+#endif
+
 			}
-			if(abs(level) > incVlc_inter[table_idx])   //qwang 11.29
+			if(abs(level) > incVlc_inter[table_idx])
 			{
 				if(abs(level) <= 3)
 					table_idx = abs(level);
@@ -694,13 +777,13 @@ static void xavs_write_chroma_coeff(xavs_t *h, bs_t *s, int uv)
 {
 	static const int incVlc_chroma[5] = { 0,1,2,4,3000};  
 	const char (*AVS_2DVLC_table_chroma)[26][27];
-	int16_t *l = h->dct.luma8x8[uv]; // ????? should be reset
+	int16_t *l = h->dct.chroma8x8[uv-4]; // ????? should be reset
 	xavs_run_level_t runlevel;
 	int i_total, i_total_zeros, run, level, table_idx, symbol2D, golomb_grad, golomb_maxlevels;
 	int escape_level_diff;
 	int i_max_coeff = 65; //all scanned position and EOB
-    runlevel.level[1] = 2;
-    runlevel.level[2] = 2;
+    //runlevel.level[1] = 2;
+    //runlevel.level[2] = 2;
 //	different with x264, the last of (run, level) should be (0,0) as a EOB
 
     i_total = h->quantf.coeff_level_run[DCT_LUMA_8x8]( l, &runlevel );
@@ -722,8 +805,8 @@ static void xavs_write_chroma_coeff(xavs_t *h, bs_t *s, int uv)
 			level = 0;
 		}
 		else{
-			run = runlevel.run[i_total];
-			level = runlevel.level[i_total];
+			run = runlevel.run[i_total-1];
+			level = runlevel.level[i_total-1];
 		}
 		symbol2D = CODE2D_ESCAPE_SYMBOL;
 		if(level>-27 && level<27 && run<26)
@@ -772,10 +855,34 @@ static void xavs_write_coeff(xavs_t *h, bs_t *s)
 	int i;
 	const int mb_cbp = ( h->mb.i_cbp_chroma << 4 )|h->mb.i_cbp_luma;
 	for (i=0; i<4; i++)
-		if (mb_cbp&&(1<<i))
+		if (mb_cbp&(1<<i))
 			xavs_write_luma_coeff(h, s, i);
 	for (i=4; i<6; i++)
-		if (mb_cbp&&(1<<i))
+		if (mb_cbp&(1<<i))
 			xavs_write_chroma_coeff(h, s, i);
 }
 
+void xavs_macroblock_write_cavlc(xavs_t *h, bs_t *s)
+{
+	const int i_mb_type = h->mb.i_type;
+	const int i_slice_type = h->sh.i_type;
+	const int mb_cbp = ( h->mb.i_cbp_chroma << 4 )|h->mb.i_cbp_luma;
+	int nskip = IS_INTERMV(i_mb_type)||IS_INTRA(i_mb_type)||(i_slice_type==SLICE_TYPE_B&&(mb_cbp!=0));
+#if TRACE_TB  
+	xavs_intra_pred_mode_tb(h);
+	xavs_cbp_tb(h);
+	xavs_dqp_tb(h);
+	xavs_coeff_tb(h);
+#endif
+	xavs_write_MBHeader_cavlc(h, s);
+	if(nskip)
+	{
+		if (i_slice_type!=SLICE_TYPE_I){
+			xavs_write_ref_idx(h,s);
+			xavs_write_mvd(h,s);
+		}
+		xavs_write_cbp(h,s);
+		xavs_write_dqp(h,s);
+		xavs_write_coeff(h,s);
+	}
+}

@@ -81,7 +81,7 @@ foreach my $version (@versions)
         chmod(0755, "test/xavs-$version/xavs");
         next;
     }
-    system("svn checkout -$version svn://svn.videolan.org/xavs/trunk/ test/xavs-$version >/dev/null");
+    system("svn checkout -$version svn co https://xavs.svn.sourceforge.net/svnroot/xavs/trunk/ test/xavs-$version >/dev/null");
     chdir("test/xavs-$version");
     system("(./configure && make) &> build.log");
     chdir("../..");

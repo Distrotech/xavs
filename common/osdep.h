@@ -149,6 +149,8 @@ static inline int xavs_pthread_create( xavs_pthread_t *t, void *a, void *(*f)(vo
 #endif
 #endif
 
+//#define WORDS_BIGENDIAN //yangping 
+
 #ifdef WORDS_BIGENDIAN
 #define endian_fix(x) (x)
 #define endian_fix32(x) (x)

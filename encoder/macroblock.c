@@ -23,6 +23,49 @@
 #include "common/common.h"
 #include "macroblock.h"
 
+
+/* 
+ * xavs_mb_decimate_score: given dct coeffs it returns a score to see if we could empty this dct coeffs
+ * to 0 (low score means set it to null)
+ * Used in inter macroblock (luma and chroma)
+ *  luma: for a 8x8 block: if score < 4 -> null
+ *        for the complete mb: if score < 6 -> null
+ *  chroma: for the complete mb: if score < 7 -> null
+ */
+static int xavs_mb_decimate_score( int *dct, int i_max )
+{
+    static const int i_ds_table8[64] = {
+        3,3,3,3,2,2,2,2,2,2,2,2,1,1,1,1,
+        1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
+
+    const int *ds_table = i_ds_table8;
+    int i_score = 0;
+    int idx = i_max - 1;
+
+    while( idx >= 0 && dct[idx] == 0 )
+        idx--;
+
+    while( idx >= 0 )
+    {
+        int i_run;
+
+        if( abs( dct[idx--] ) > 1 )
+            return 9;
+
+        i_run = 0;
+        while( idx >= 0 && dct[idx] == 0 )
+        {
+            idx--;
+            i_run++;
+        }
+        i_score += ds_table[i_run];
+    }
+
+    return i_score;
+}
+
 /* These chroma DC functions don't have assembly versions and are only used here. */
 
 #define ZIG(i,y,x) level[i] = dct[x][y];
@@ -107,7 +150,7 @@ static ALWAYS_INLINE int xavs_quant_8x8( xavs_t *h, int16_t dct[8][8], int i_qp,
 {
     int i_quant_cat = b_intra ? CQM_8IY : CQM_8PY;
     if( h->mb.b_trellis )
-        return xavs_quant_8x8_trellis( h, dct, i_quant_cat, i_qp, b_intra, idx );
+        return xavs_quant_8x8_trellis( h, dct, i_quant_cat, i_qp, b_intra, 0, idx );
     else
         return h->quantf.quant_8x8( dct, h->quant8_mf[i_quant_cat][i_qp], h->quant8_bias[i_quant_cat][i_qp] );
 }
@@ -248,138 +291,59 @@ static void xavs_mb_encode_i16x16( xavs_t *h, int i_qp )
 
 void xavs_mb_encode_8x8_chroma( xavs_t *h, int b_inter, int i_qp )
 {
-    int i, ch, nz, nz_dc;
+    int i, ch;
     int b_decimate = b_inter && (h->sh.i_type == SLICE_TYPE_B || h->param.analyse.b_dct_decimate);
-    DECLARE_ALIGNED_16( int16_t dct2x2[2][2]  );
+	int nnz8x8;
+	const int QP_SCALE_CR[64] =
+	{
+		 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+		10,11,12,13,14,15,16,17,18,19,
+		20,21,22,23,24,25,26,27,28,29,
+		30,31,32,33,34,35,36,37,38,39,
+		40,41,42,42,43,43,44,44,45,45,
+		46,46,47,47,48,48,48,49,49,49,
+		50,50,50,51
+	};
+	int qp_chroma  = QP_SCALE_CR[i_qp]; 
+
+    DECLARE_ALIGNED_16( int16_t dct8x8[8][8]);
+
+    /* coded block pattern */
     h->mb.i_cbp_chroma = 0;
-
-    /* Early termination: check variance of chroma residual before encoding.
-     * Don't bother trying early termination at low QPs.
-     * Values are experimentally derived. */
-    if( b_decimate && i_qp >= (h->mb.b_trellis ? 12 : 18) )
-    {
-        int thresh = (xavs_lambda2_tab[i_qp] + 32) >> 6;
-        int ssd[2];
-        int score  = h->pixf.var2_8x8( h->mb.pic.p_fenc[1], FENC_STRIDE, h->mb.pic.p_fdec[1], FDEC_STRIDE, &ssd[0] );
-            score += h->pixf.var2_8x8( h->mb.pic.p_fenc[2], FENC_STRIDE, h->mb.pic.p_fdec[2], FDEC_STRIDE, &ssd[1] );
-        if( score < thresh*4 )
-        {
-            h->mb.cache.non_zero_count[xavs_scan8[16]] = 0;
-            h->mb.cache.non_zero_count[xavs_scan8[17]] = 0;
-            h->mb.cache.non_zero_count[xavs_scan8[18]] = 0;
-            h->mb.cache.non_zero_count[xavs_scan8[19]] = 0;
-            h->mb.cache.non_zero_count[xavs_scan8[20]] = 0;
-            h->mb.cache.non_zero_count[xavs_scan8[21]] = 0;
-            h->mb.cache.non_zero_count[xavs_scan8[22]] = 0;
-            h->mb.cache.non_zero_count[xavs_scan8[23]] = 0;
-            h->mb.cache.non_zero_count[xavs_scan8[25]] = 0;
-            h->mb.cache.non_zero_count[xavs_scan8[26]] = 0;
-            for( ch = 0; ch < 2; ch++ )
-            {
-                if( ssd[ch] > thresh )
-                {
-                    //h->dctf.sub8x8_dct_dc( dct2x2, h->mb.pic.p_fenc[1+ch], h->mb.pic.p_fdec[1+ch] );
-                    dct2x2dc_dconly( dct2x2 );
-                    if( h->mb.b_trellis )
-                        nz_dc = xavs_quant_dc_trellis( h, (int16_t*)dct2x2, CQM_4IC+b_inter, i_qp, DCT_CHROMA_DC, !b_inter, 1 );
-                    else
-                        nz_dc = h->quantf.quant_2x2_dc( dct2x2, h->quant4_mf[CQM_4IC+b_inter][i_qp][0]>>1, h->quant4_bias[CQM_4IC+b_inter][i_qp][0]<<
-    1 );
-                    if( nz_dc )
-                    {
-                        h->mb.cache.non_zero_count[xavs_scan8[25]+ch] = 1;
-                        zigzag_scan_2x2_dc( h->dct.chroma_dc[ch], dct2x2 );
-                        idct_dequant_2x2_dconly( dct2x2, h->dequant4_mf[CQM_4IC + b_inter], i_qp );
-                        //h->dctf.add8x8_idct_dc( h->mb.pic.p_fdec[1+ch], dct2x2 );
-                        h->mb.i_cbp_chroma = 1;
-                    }
-                }
-            }
-            return;
-        }
-    }
-
     for( ch = 0; ch < 2; ch++ )
     {
         uint8_t  *p_src = h->mb.pic.p_fenc[1+ch];
         uint8_t  *p_dst = h->mb.pic.p_fdec[1+ch];
-        int i_decimate_score = 0;
-        int nz_ac = 0;
 
-        DECLARE_ALIGNED_16( int16_t dct4x4[4][4][4] );
+		h->dctf.sub8x8_dct8( dct8x8, p_src, p_dst );
 
-        if( h->mb.b_lossless )
-        {
-            for( i = 0; i < 4; i++ )
-            {
-                int oe = block_idx_x[i]*4 + block_idx_y[i]*4*FENC_STRIDE;
-                int od = block_idx_x[i]*4 + block_idx_y[i]*4*FDEC_STRIDE;
-                //nz = h->zigzagf.sub_4x4ac( h->dct.luma4x4[16+i+ch*4], p_src+oe, p_dst+od, &h->dct.chroma_dc[ch][i] );
-                h->mb.cache.non_zero_count[xavs_scan8[16+i+ch*4]] = nz;
-                h->mb.i_cbp_chroma |= nz;
-            }
-            h->mb.cache.non_zero_count[xavs_scan8[25]+ch] = array_non_zero( h->dct.chroma_dc[ch] );
-            continue;
-        }
+		if( h->mb.b_trellis )
+                nnz8x8 = xavs_quant_8x8_trellis( h, dct8x8, CQM_8IC+b_inter, qp_chroma, !b_inter, 1, 0);
+                else
+                nnz8x8 = h->quantf.quant_8x8( dct8x8, h->quant8_mf[CQM_8IC+b_inter][qp_chroma], h->quant8_bias[CQM_8IC+b_inter][qp_chroma] );
 
-//        h->dctf.sub8x8_dct( dct4x4, p_src, p_dst );
-        dct2x2dc( dct2x2, dct4x4 );
-        /* calculate dct coeffs */
-        for( i = 0; i < 4; i++ )
-        {
-            if( h->mb.b_trellis )
-                nz = xavs_quant_4x4_trellis( h, dct4x4[i], CQM_4IC+b_inter, i_qp, DCT_CHROMA_AC, !b_inter, 1, 0 );
-            else
-                nz = h->quantf.quant_4x4( dct4x4[i], h->quant4_mf[CQM_4IC+b_inter][i_qp], h->quant4_bias[CQM_4IC+b_inter][i_qp] );
-            h->mb.cache.non_zero_count[xavs_scan8[16+i+ch*4]] = nz;
-            if( nz )
-            {
-                nz_ac = 1;
-                //h->zigzagf.scan_4x4( h->dct.luma4x4[16+i+ch*4], dct4x4[i] );
-                h->quantf.dequant_4x4( dct4x4[i], h->dequant4_mf[CQM_4IC + b_inter], i_qp );
-                if( b_decimate )
-                    i_decimate_score += h->quantf.decimate_score15( h->dct.luma4x4[16+i+ch*4] );
-            }
-        }
+		h->zigzagf.scan_8x8( h->dct.chroma8x8[ch], dct8x8 );
+		
+		if( b_decimate )
+                nnz8x8 = 7 <= xavs_mb_decimate_score( h->dct.chroma8x8[ch], 64 );
+                else
+                nnz8x8 = array_non_zero( dct8x8 );
 
-        if( h->mb.b_trellis )
-            nz_dc = xavs_quant_dc_trellis( h, (int16_t*)dct2x2, CQM_4IC+b_inter, i_qp, DCT_CHROMA_DC, !b_inter, 1 );
-        else
-            nz_dc = h->quantf.quant_2x2_dc( dct2x2, h->quant4_mf[CQM_4IC+b_inter][i_qp][0]>>1, h->quant4_bias[CQM_4IC+b_inter][i_qp][0]<<1 );
+                if( nnz8x8 )
+                {
+                  h->quantf.dequant_8x8( dct8x8,  h->dequant8_mf[CQM_8IC + b_inter], qp_chroma );
+                  h->dctf.add8x8_idct8( p_dst, dct8x8 );
+                }
+        
+		if( nnz8x8 )
+			h->mb.i_cbp_chroma |= (1 << ch);
+		else
+			h->mb.i_cbp_chroma &= ~(1 << ch);
 
-        h->mb.cache.non_zero_count[xavs_scan8[25]+ch] = nz_dc;
-
-        if( (b_decimate && i_decimate_score < 7) || !nz_ac )
-        {
-            /* Decimate the block */
-            h->mb.cache.non_zero_count[xavs_scan8[16+0]+24*ch] = 0;
-            h->mb.cache.non_zero_count[xavs_scan8[16+1]+24*ch] = 0;
-            h->mb.cache.non_zero_count[xavs_scan8[16+2]+24*ch] = 0;
-            h->mb.cache.non_zero_count[xavs_scan8[16+3]+24*ch] = 0;
-            if( !nz_dc ) /* Whole block is empty */
-                continue;
-            /* DC-only */
-            zigzag_scan_2x2_dc( h->dct.chroma_dc[ch], dct2x2 );
-            idct_dequant_2x2_dconly( dct2x2, h->dequant4_mf[CQM_4IC + b_inter], i_qp );
-//            h->dctf.add8x8_idct_dc( p_dst, dct2x2 );
-        }
-        else
-        {
-            h->mb.i_cbp_chroma = 1;
-            if( nz_dc )
-            {
-                zigzag_scan_2x2_dc( h->dct.chroma_dc[ch], dct2x2 );
-                idct_dequant_2x2_dc( dct2x2, dct4x4, h->dequant4_mf[CQM_4IC + b_inter], i_qp );
-            }
-//            h->dctf.add8x8_idct( p_dst, dct4x4 );
-        }
+		for( i = 0; i < 4; i++)
+			h->mb.cache.non_zero_count[xavs_scan8[16+ch*4 + i]] = nnz8x8;
     }
 
-    if( h->mb.i_cbp_chroma )
-        h->mb.i_cbp_chroma = 2;    /* dc+ac (we can't do only ac) */
-    else if( h->mb.cache.non_zero_count[xavs_scan8[25]] |
-             h->mb.cache.non_zero_count[xavs_scan8[26]] )
-        h->mb.i_cbp_chroma = 1;    /* dc only */
 }
 
 static void xavs_macroblock_encode_skip( xavs_t *h )
@@ -447,8 +411,8 @@ void xavs_predict_lossless_8x8_chroma( xavs_t *h, int i_mode )
     }
     else
     {
-        h->predict_8x8c[i_mode]( h->mb.pic.p_fdec[1] );
-        h->predict_8x8c[i_mode]( h->mb.pic.p_fdec[2] );
+        h->predict_8x8c[i_mode]( h->mb.pic.p_fdec[1],h->edgeCb );
+        h->predict_8x8c[i_mode]( h->mb.pic.p_fdec[2],h->edgeCr );
     }
 }
 
@@ -554,16 +518,23 @@ void xavs_macroblock_encode( xavs_t *h )
         /* If we already encoded 3 of the 4 i8x8 blocks, we don't have to do them again. */
         if( h->mb.i_skip_intra )
         {
-            h->mc.copy[PIXEL_16x16]( h->mb.pic.p_fdec[0], FDEC_STRIDE, h->mb.pic.i8x8_fdec_buf, 16, 16 );
+			//aloha'
+            //h->mc.copy[PIXEL_16x16]( h->mb.pic.p_fdec[0], FDEC_STRIDE, h->mb.pic.i8x8_fdec_buf, 16, 16 );
+			h->mc.copy[PIXEL_16x16]( h->mb.pic.i8x8_fdec_buf, 16, h->mb.pic.p_fdec[0], FDEC_STRIDE, 16 );
             *(uint32_t*)&h->mb.cache.non_zero_count[xavs_scan8[ 0]] = h->mb.pic.i8x8_nnz_buf[0];
             *(uint32_t*)&h->mb.cache.non_zero_count[xavs_scan8[ 2]] = h->mb.pic.i8x8_nnz_buf[1];
             *(uint32_t*)&h->mb.cache.non_zero_count[xavs_scan8[ 8]] = h->mb.pic.i8x8_nnz_buf[2];
             *(uint32_t*)&h->mb.cache.non_zero_count[xavs_scan8[10]] = h->mb.pic.i8x8_nnz_buf[3];
-            h->mb.i_cbp_luma = h->mb.pic.i8x8_cbp;
+
+			//aloha'
+			h->mb.i_cbp_luma = h->mb.i_skip_intra ? (h->mb.pic.i8x8_cbp & 7) : 0;
+			//h->mb.i_cbp_luma = h->mb.i_skip_intra;
+
             /* In RD mode, restore the now-overwritten DCT data. */
             if( h->mb.i_skip_intra == 2 )
                 h->mc.memcpy_aligned( h->dct.luma8x8, h->mb.pic.i8x8_dct_buf, sizeof(h->mb.pic.i8x8_dct_buf) );
         }
+
         for( i = h->mb.i_skip_intra ? 3 : 0 ; i < 4; i++ )
         {
             uint8_t  *p_dst = &h->mb.pic.p_fdec[0][8 * (i&1) + 8 * (i>>1) * FDEC_STRIDE];
@@ -661,72 +632,7 @@ void xavs_macroblock_encode( xavs_t *h )
                 }
             }
         }
-        else
-        {
-            DECLARE_ALIGNED_16( int16_t dct4x4[16][4][4] );
-//            h->dctf.sub16x16_dct( dct4x4, h->mb.pic.p_fenc[0], h->mb.pic.p_fdec[0] );
-            h->nr_count[0] += h->mb.b_noise_reduction * 16;
-
-            for( i8x8 = 0; i8x8 < 4; i8x8++ )
-            {
-                int i_decimate_8x8 = 0;
-                int cbp = 0;
-
-                /* encode one 4x4 block */
-                for( i4x4 = 0; i4x4 < 4; i4x4++ )
-                {
-                    idx = i8x8 * 4 + i4x4;
-
-                    if( h->mb.b_noise_reduction )
-                        h->quantf.denoise_dct( *dct4x4[idx], h->nr_residual_sum[0], h->nr_offset[0], 16 );
-                    nz = xavs_quant_4x4( h, dct4x4[idx], i_qp, DCT_LUMA_4x4, 0, idx );
-                    h->mb.cache.non_zero_count[xavs_scan8[idx]] = nz;
-
-                    if( nz )
-                    {
-                        //h->zigzagf.scan_4x4( h->dct.luma4x4[idx], dct4x4[idx] );
-                        h->quantf.dequant_4x4( dct4x4[idx], h->dequant4_mf[CQM_4PY], i_qp );
-                        if( b_decimate && i_decimate_8x8 < 6 )
-                            i_decimate_8x8 += h->quantf.decimate_score16( h->dct.luma4x4[idx] );
-                        cbp = 1;
-                    }
-                }
-
-                /* decimate this 8x8 block */
-                i_decimate_mb += i_decimate_8x8;
-                if( b_decimate )
-                {
-                    if( i_decimate_8x8 < 4 )
-                        STORE_8x8_NNZ(i8x8,0)
-                    else
-                        h->mb.i_cbp_luma |= 1<<i8x8;
-                }
-                else if( cbp )
-                {
-//                    h->dctf.add8x8_idct( &h->mb.pic.p_fdec[0][(i8x8&1)*8 + (i8x8>>1)*8*FDEC_STRIDE], &dct4x4[i8x8*4] );
-                    h->mb.i_cbp_luma |= 1<<i8x8;
-                }
-            }
-
-            if( b_decimate )
-            {
-                if( i_decimate_mb < 6 )
-                {
-                    h->mb.i_cbp_luma = 0;
-                    *(uint32_t*)&h->mb.cache.non_zero_count[xavs_scan8[ 0]] = 0;
-                    *(uint32_t*)&h->mb.cache.non_zero_count[xavs_scan8[ 2]] = 0;
-                    *(uint32_t*)&h->mb.cache.non_zero_count[xavs_scan8[ 8]] = 0;
-                    *(uint32_t*)&h->mb.cache.non_zero_count[xavs_scan8[10]] = 0;
-                }
-                else
-                {
-//                    for( i8x8 = 0; i8x8 < 4; i8x8++ )
-//                        if( h->mb.i_cbp_luma&(1<<i8x8) )
-//                            h->dctf.add8x8_idct( &h->mb.pic.p_fdec[0][(i8x8&1)*8 + (i8x8>>1)*8*FDEC_STRIDE], &dct4x4[i8x8*4] );
-                }
-            }
-        }
-    }
+     }
 
     /* encode chroma */
     if( IS_INTRA( h->mb.i_type ) )
@@ -736,8 +642,8 @@ void xavs_macroblock_encode( xavs_t *h )
             xavs_predict_lossless_8x8_chroma( h, i_mode );
         else
         {
-            h->predict_8x8c[i_mode]( h->mb.pic.p_fdec[1] );
-            h->predict_8x8c[i_mode]( h->mb.pic.p_fdec[2] );
+            h->predict_8x8c[i_mode]( h->mb.pic.p_fdec[1],h->edgeCb);
+            h->predict_8x8c[i_mode]( h->mb.pic.p_fdec[2],h->edgeCr );
         }
     }
 

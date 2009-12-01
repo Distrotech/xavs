@@ -217,7 +217,7 @@ lowres_intra_mb:
             if( h->pixf.intra_mbcmp_x3_8x8c )
             {
                 h->pixf.intra_mbcmp_x3_8x8c( h->mb.pic.p_fenc[0], pix, satds );
-                h->predict_8x8c[I_PRED_CHROMA_P]( pix );
+                h->predict_8x8c[I_PRED_CHROMA_P]( pix,h->edgeCb);
                 satds[I_PRED_CHROMA_P] =
                     h->pixf.mbcmp[PIXEL_8x8]( pix, FDEC_STRIDE, h->mb.pic.p_fenc[0], FENC_STRIDE );
             }
@@ -225,7 +225,7 @@ lowres_intra_mb:
             {
                 for( i=0; i<4; i++ )
                 {
-                    h->predict_8x8c[i]( pix );
+                    h->predict_8x8c[i]( pix, h->edgeCr );
                     satds[i] = h->pixf.mbcmp[PIXEL_8x8]( pix, FDEC_STRIDE, h->mb.pic.p_fenc[0], FENC_STRIDE );
                 }
             }
@@ -646,7 +646,7 @@ static void xavs_slicetype_analyse( xavs_t *h, int keyframe )
 {
     xavs_mb_analysis_t a;
     xavs_frame_t *frames[XAVS_LOOKAHEAD_MAX+3] = { NULL, };
-    int num_frames;
+    int num_frames=999;
     int keyint_limit;
     int i,j;
     int i_mb_count = NUM_MBS;
@@ -656,7 +656,7 @@ static void xavs_slicetype_analyse( xavs_t *h, int keyframe )
     char best_paths[XAVS_LOOKAHEAD_MAX][XAVS_LOOKAHEAD_MAX] = {"","P"};
     int n;
     int num_bframes = 0;
-    int max_bframes = XAVS_MIN(num_frames-1, h->param.i_bframe);
+    int max_bframes = 999;//zzf:disabled now XAVS_MIN(num_frames-1, h->param.i_bframe);
     int num_analysed_frames = num_frames;
     int reset_start;
 
@@ -664,6 +664,10 @@ static void xavs_slicetype_analyse( xavs_t *h, int keyframe )
 
     if( !h->frames.last_nonb )
         return;
+
+	//FIXME: disabled slice_type analyse for now
+	return;
+	
     frames[0] = h->frames.last_nonb;
     for( j = 0; h->frames.next[j] && h->frames.next[j]->i_type == XAVS_TYPE_AUTO; j++ )
         frames[j+1] = h->frames.next[j];
@@ -692,7 +696,7 @@ static void xavs_slicetype_analyse( xavs_t *h, int keyframe )
         num_frames = j;
 
 
-    if( h->param.i_scenecut_threshold && scenecut( h, &a, frames, 0, 1 ) )
+//FIXME: removed by zzf    if( h->param.i_scenecut_threshold && scenecut( h, &a, frames, 0, 1 ) )
     {
         frames[1]->i_type = idr_frame_type;
         return;

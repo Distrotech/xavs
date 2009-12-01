@@ -58,6 +58,7 @@ do {\
 // 16 for the macroblock in progress + 3 for deblocking + 3 for motion compensation filter + 2 for extra safety
 #define XAVS_THREAD_HEIGHT 24
 
+#define TRACE_TB 0
 /****************************************************************************
  * Includes
  ****************************************************************************/
@@ -77,6 +78,7 @@ do {\
 #include "dct.h"
 #include "quant.h"
 #include "cabac.h"
+#include "vlc.h"
 
 /****************************************************************************
  * Generals functions
@@ -171,7 +173,7 @@ static ALWAYS_INLINE int xavs_exp2fix8( float x )
     return (exp2_lut[f]+256) << i >> 8;
 }
 
-static const float log2_lut[128] = {
+static const double log2_lut[128] = {
     0.00000, 0.01123, 0.02237, 0.03342, 0.04439, 0.05528, 0.06609, 0.07682,
     0.08746, 0.09803, 0.10852, 0.11894, 0.12928, 0.13955, 0.14975, 0.15987,
     0.16993, 0.17991, 0.18982, 0.19967, 0.20945, 0.21917, 0.22882, 0.23840,
@@ -212,8 +214,6 @@ static const char slice_type_to_char[] = { 'P', 'B', 'I', 'S', 'S' };
 
 typedef struct
 {
-    xavs_sps_t *sps;
-    xavs_pps_t *pps;
 
     int i_type;
     int i_first_mb;
@@ -259,6 +259,21 @@ typedef struct
     int i_disable_deblocking_filter_idc;
     int i_alpha_c0_offset;
     int i_beta_offset;
+
+	int i_slice_start_code;
+	int i_slice_vertical_position;
+	int i_slice_vertical_position_extension;
+	int b_fixed_slice_qp;
+	int i_slice_qp;
+	int b_slice_weighting_flag;
+	int i_luma_scale[4];
+	int i_luma_shift[4];
+	int i_chroma_scale[4];
+	int i_chroma_shift[4];
+	int b_mb_weighting_flag;
+
+	// 
+ 	int b_picture_fixed_qp;	
 
 } xavs_slice_header_t;
 
@@ -333,11 +348,167 @@ typedef struct xavs_loopfilter_t
 	int i_edge;
 }xavs_loopfilter_t;
 
+typedef struct
+{
+    int i_video_sequence_start_code;
+
+    int i_profile_idc;
+    int i_level_idc;
+
+    int b_progressive_sequence;
+
+    int i_horizontal_size;
+    int i_vertical_size;
+    int i_chroma_format;
+    int i_sample_precision;
+    int i_aspect_ratio;
+    int i_frame_rate_code;
+    int i_bit_rate_lower;
+    int i_bit_rate_upper;
+    int b_low_delay;
+    int i_bbv_buffer_size;
+
+	int i_mb_width;
+	int i_mb_height;
+}xavs_seq_header_t;
+
+typedef struct
+{
+	int i_i_picture_start_code;
+	int i_bbv_delay;
+	int b_time_code_flag;
+	int i_time_code;
+	int i_picture_distance;
+	int i_bbv_check_times;
+	int b_progressive_frame;
+	int b_picture_structure;
+	int b_top_field_first;
+	int b_repeat_first_field;
+	int b_fixed_picture_qp;
+	int i_picture_qp;
+	int b_skip_mode_flag;
+	int i_reserved_bits;
+	int b_loop_filter_disable;
+	int b_loop_filter_parameter_flag;
+	int i_alpha_c_offset;
+	int i_beta_offset;
+} xavs_i_pic_header_t;
+
+typedef struct
+{
+	int i_pb_picture_start_code;
+	int i_bbv_delay;
+	int i_picture_coding_type;
+	int i_picture_distance;
+	int i_bbv_check_times;
+	int b_progressive_frame;
+	int b_picture_structure;
+	int b_advanced_pred_mode_disable;
+	int b_top_field_first;
+	int b_repeat_first_field;
+	int b_fixed_picture_qp;
+	int i_picture_qp;
+	int b_picture_reference_flag;
+	int b_no_forward_reference_flag;
+	int b_skip_mode_flag;
+	int b_loop_filter_disable;
+	int b_loop_filter_parameter_flag;
+	int i_alpha_c_offset;
+	int i_beta_offset;
+}xavs_pb_pic_header_t;
+
+typedef struct
+{
+	int i_slice_start_code;
+	int i_slice_vertical_position;
+	int i_slice_vertical_position_extension;
+	int b_fixed_slice_qp;
+	int i_slice_qp;
+	int b_slice_weighting_flag;
+	int i_luma_scale[4];
+	int i_luma_shift[4];
+	int i_chroma_scale[4];
+	int i_chroma_shift[4];
+	int b_mb_weighting_flag;
+
+	//
+	int i_type;//slice type
+	int i_first_mb;
+    int i_last_mb;
+    int i_frame_num;
+    int i_qp;
+    int i_disable_deblocking_filter_idc;
+    int i_alpha_c0_offset;
+    int i_beta_offset;
+	int i_num_ref_idx_l0_active;
+	int i_num_ref_idx_l1_active;
+	int b_picture_fixed_qp;
+}changhong_xavs_slice_header_t;
+
+typedef struct
+{
+    /* */
+    int     i_poc;
+    int     i_type;
+    int     i_qpplus1;
+    int64_t i_pts;
+    int     i_frame;    /* Presentation frame number */
+    int     i_frame_num; /* Coded frame number */
+    int     b_kept_as_ref;
+    float   f_qp_avg;
+
+    /* YUV buffer */
+    int     i_plane;
+    int     i_stride[4];
+    int     i_lines[4];
+    int     i_stride_lowres;
+    int     i_lines_lowres;
+    uint8_t *plane[4];
+    uint8_t *filtered[4]; /* plane[0], H, V, HV */
+    uint8_t *lowres[4]; /* half-size copy of input frame: Orig, H, V, HV */
+    uint16_t *integral;
+
+    /* for unrestricted mv we allocate more data than needed
+     * allocated data are stored in buffer */
+    void    *buffer[8];
+    void    *buffer_lowres[4];
+
+    /* motion data */
+    int8_t  *mb_type;
+    int16_t (*mv[2])[2];
+    int8_t  *ref[2];
+    int     i_ref[2];
+    int     ref_poc[2][16];
+
+    /* for adaptive B-frame decision.
+     * contains the SATD cost of the lowres frame encoded in various modes
+     * FIXME: how big an array do we need? */
+    int     i_cost_est[XAVS_BFRAME_MAX+2][XAVS_BFRAME_MAX+2];
+    int     i_satd; // the i_cost_est of the selected frametype
+    int     i_intra_mbs[XAVS_BFRAME_MAX+2];
+    int     *i_row_satds[XAVS_BFRAME_MAX+2][XAVS_BFRAME_MAX+2];
+    int     *i_row_satd;
+    int     *i_row_bits;
+    int     *i_row_qp;
+
+    /* threading */
+    int     i_lines_completed; /* in pixels */
+    int     i_reference_count; /* number of threads using this frame (not necessarily the number of pointers) */
+    xavs_pthread_mutex_t mutex;      
+    xavs_pthread_cond_t  cv;
+
+} changhong_xavs_frame_t;
+
 
 struct xavs_t
 {
     /* encoder parameters */
     xavs_param_t    param;
+#if TRACE_TB
+	FILE *ptrace; //yangping 
+	#define             TRACESTRING_SIZE 100            //!< size of trace string
+	char                tracestring[TRACESTRING_SIZE];  //!< trace string
+#endif
 
     xavs_t          *thread[XAVS_THREAD_MAX];
     xavs_pthread_t  thread_handle;
@@ -375,16 +546,16 @@ struct xavs_t
     int             i_idr_pic_id;
 
     /* quantization matrix for decoding, [cqm][qp][coef_y][coef_x] */
-    int             dequant8_mf[2][64][8][8]; /* [2][64][8][8] */
+    int             dequant8_mf[4][64][8][8]; /* [2][64][8][8] */
 	
     /* quantization matrix for trellis, [cqm][qp][coef_y][coef_x] */
-    int             unquant8_mf[2][64][8][8];   /* [2][64][64] */
+    int             unquant8_mf[4][64][8][8];   /* [2][64][64] */
 
     /* quantization matrix for encoding */
-    uint16_t        quant8_mf[2][64][64];     /* [2][64][64] */
+    uint16_t        quant8_mf[4][64][64];     /* [2][64][64] */
 
     /* quantization matrix for encoding deadzone */
-    uint16_t        quant8_bias[2][64][64];   /* [2][64][64] */
+    uint16_t        quant8_bias[4][64][64];   /* [2][64][64] */
 
 	/* quantization matrix for decoding, [cqm][qp%6][coef_y][coef_x] */
     int             (*dequant4_mf[4])[4][4]; /* [4][6][4][4] */
@@ -456,6 +627,8 @@ struct xavs_t
         // FIXME share memory?
         DECLARE_ALIGNED_16( int16_t luma8x8[4][64] );
         DECLARE_ALIGNED_16( int16_t luma4x4[16+8][16] );
+
+		DECLARE_ALIGNED_16( int16_t chroma8x8[2][64] );
     } dct;
 
     /* MB table and cache for current frame/mb */
@@ -722,7 +895,7 @@ struct xavs_t
 
     /* CPU functions dependents */
     xavs_predict_t      predict_16x16[4+3];
-    xavs_predict_t      predict_8x8c[4+3];
+    xavs_predict8x8_t      predict_8x8c[4+3];
     xavs_predict8x8_t   predict_8x8[9+3];
     xavs_predict_t      predict_4x4[9+3];
     xavs_predict_8x8_filter_t predict_8x8c_filter;
@@ -738,6 +911,16 @@ struct xavs_t
 #if VISUALIZE
     struct visualize_t *visualize;
 #endif
+
+    DECLARE_ALIGNED_16( uint8_t edgeCb[60] );	
+	DECLARE_ALIGNED_16( uint8_t edgeCr[60] );	
+
+	changhong_xavs_frame_t  b;
+	changhong_xavs_slice_header_t a; 
+	xavs_seq_header_t  sqh;
+	xavs_i_pic_header_t ih;
+	xavs_pb_pic_header_t pbh;
+
 };
 
 // included at the end because it needs xavs_t

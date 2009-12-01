@@ -86,7 +86,10 @@ static const int8_t xavs_mb_pred_mode4x4_fix[13] =
     I_PRED_4x4_HD,  I_PRED_4x4_VL,  I_PRED_4x4_HU,
     I_PRED_4x4_DC,  I_PRED_4x4_DC,  I_PRED_4x4_DC
 };
+#define xavs_mb_pred_mode4x4_fix(t) xavs_mb_pred_mode4x4_fix[(t)+1]
+
 /*Max = 5*/
+/*
 enum avs_intra8x8_pred_e
 {
 	AVS_I_PRED_8x8_V      =       0,
@@ -114,8 +117,9 @@ static const int8_t xavs_mb_pred_mode8x8_fix[7] =
 	AVS_I_PRED_8x8_DLF, AVS_I_PRED_8x8_URT,	AVS_I_PRED_8x8_DC
 };
 #define xavs_mb_pred_mode8x8_fix(t) xavs_mb_pred_mode8x8_fix[(t)+1]
-
+*/
 /* must use the same numbering as intra4x4_pred_e */
+/*Max = 5*/
 enum intra8x8_pred_e
 {
     I_PRED_8x8_V  = 0,
@@ -132,10 +136,20 @@ enum intra8x8_pred_e
     I_PRED_8x8_DC_TOP  = 10,
     I_PRED_8x8_DC_128  = 11,
 };
+static const int8_t xavs_mb_pred_mode8x8_fix[13] =
+{
+	-1,
+	I_PRED_8x8_V,   I_PRED_8x8_H,   I_PRED_8x8_DC,
+	I_PRED_8x8_DDL, I_PRED_8x8_DDR,	I_PRED_8x8_VR,
+	I_PRED_8x8_HD,	I_PRED_8x8_VL,	I_PRED_8x8_HU,
+	I_PRED_8x8_DC,	I_PRED_8x8_DC,	I_PRED_8x8_DC
+};
+#define xavs_mb_pred_mode8x8_fix(t) xavs_mb_pred_mode8x8_fix[(t)+1]
+
 
 void xavs_predict_16x16_init ( int cpu, xavs_predict_t pf[7] );
-void xavs_predict_8x8c_init  ( int cpu, xavs_predict_t pf[7] );
 void xavs_predict_4x4_init   ( int cpu, xavs_predict_t pf[12] );
+void xavs_predict_8x8c_init  ( int cpu, xavs_predict8x8_t pf[7] );
 void xavs_predict_8x8_init   ( int cpu, xavs_predict8x8_t pf[12], xavs_predict_8x8_filter_t *predict_filter );
 
 

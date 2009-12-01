@@ -892,6 +892,10 @@ void xavs_macroblock_cache_load( xavs_t *h, int i_mb_x, int i_mb_y )
 
     int i;
 
+	/*reset cbp*/ 
+	h->mb.i_cbp_luma = 0;
+    h->mb.i_cbp_chroma = 0;
+
     /* init index */
     h->mb.i_mb_x = i_mb_x;
     h->mb.i_mb_y = i_mb_y;

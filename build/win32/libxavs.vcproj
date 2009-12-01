@@ -43,7 +43,7 @@
 				AdditionalIncludeDirectories="../../common;../../extras;../.."
 				PreprocessorDefinitions="_DEBUG;_LIB;WIN32;__XAVS__;ARCH_X86;HAVE_STDINT_H"
 				MinimalRebuild="true"
-				BasicRuntimeChecks="3"
+				BasicRuntimeChecks="0"
 				RuntimeLibrary="3"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
@@ -389,6 +389,14 @@
 						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
 					/>
 				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\encoder\vlctest.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\encoder\vlctest.h"
+				>
 			</File>
 			<Filter
 				Name="enc_h"

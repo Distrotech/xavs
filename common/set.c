@@ -81,8 +81,8 @@ int xavs_cqm_init( xavs_t *h )
 		}
 	}
 
-	//i_list =0 intra ; i_list = 1 inter 
-    for( i_list = 0; i_list < 2; i_list++ )
+	//i_list =0 Intra Y ; i_list = 1 inter Y ; i_list =2 Intra C ; i_list =3 Inter C;
+    for( i_list = 0; i_list < 4; i_list++ )
 	{
 	   for( q = 0; q < 64; q++ )
        {
@@ -194,4 +194,217 @@ int xavs_cqm_parse_file( xavs_t *h, const char *filename )
     xavs_free( buf );
     return b_error;
 }
+
+void xavs_sequence_init( xavs_t *h )
+{
+	int i_frame_rate_code =h->param.i_fps_den? (h->param.i_fps_num/h->param.i_fps_den):0;
+
+	h->sqh.i_video_sequence_start_code = 0xB0;
+	h->sqh.i_profile_idc               = 0x20;//Jizhun profile
+	h->sqh.i_level_idc                 = h->param.i_level_idc;
+	h->sqh.b_progressive_sequence      = 1;//frame sequence
+
+	h->sqh.i_horizontal_size           = h->param.i_width;
+	h->sqh.i_vertical_size             = h->param.i_height;
+	h->sqh.i_mb_width                  = (h->param.i_width + 15 ) / 16;
+	h->sqh.i_mb_height                 = (h->param.i_height + 15 ) / 16;
+
+	h->sqh.i_chroma_format             = 1;//h->param.i_chroma_format;   // 4:2:0
+	h->sqh.i_sample_precision          = 1;//h->param.i_sample_precision; // 8 bits per sample
+	h->sqh.i_aspect_ratio              = 1;//h->param.i_aspect_ratio;  // 1:1
+    
+	switch(i_frame_rate_code) {
+	case 24:
+		i_frame_rate_code = 2;//0010
+		break;
+	case 25:
+		i_frame_rate_code = 3;//0011
+		break;
+	case 30:
+		i_frame_rate_code = 5;//0101
+		break;
+	case 50:
+		i_frame_rate_code = 6;//0110
+		break;
+	case 60:
+		i_frame_rate_code = 8;//1000
+		break;
+	default:
+		if(h->param.i_fps_num == 24000 && h->param.i_fps_den == 1001)
+			i_frame_rate_code = 1;//0001
+		else if(h->param.i_fps_num == 30000 && h->param.i_fps_den == 1001)
+			i_frame_rate_code = 4;//0100
+		else if(h->param.i_fps_num == 60000 && h->param.i_fps_den == 1001)
+			i_frame_rate_code = 7;//0111
+		else
+			i_frame_rate_code = 9;//1001
+		break;
+	}
+	h->sqh.i_frame_rate_code           = i_frame_rate_code;
+
+	h->sqh.i_bit_rate_lower            = h->param.rc.i_bitrate & (0x3FFFF); // lower 18 bits of bitrate
+	h->sqh.i_bit_rate_upper            = h->param.rc.i_bitrate >> 18; // bits upper to 18 bits
+	h->sqh.b_low_delay                 = (h->param.i_bframe == 0);
+	h->sqh.i_bbv_buffer_size           = h->param.rc.i_vbv_buffer_size;
+    
+}
+
+void xavs_sequence_write( bs_t *s, xavs_seq_header_t *sqh )
+{
+    bs_write( s, 24, 1 );
+    bs_write( s, 8, sqh->i_video_sequence_start_code );
+	bs_write( s, 8, sqh->i_profile_idc);
+	bs_write( s, 8, sqh->i_level_idc);
+	bs_write1( s, sqh->b_progressive_sequence);
+	bs_write( s, 14, sqh->i_horizontal_size);
+	bs_write( s, 14, sqh->i_vertical_size);
+	bs_write( s, 2, sqh->i_chroma_format);
+	bs_write( s, 3, sqh->i_sample_precision);
+	bs_write( s, 4, sqh->i_aspect_ratio);
+	bs_write( s, 4, sqh->i_frame_rate_code);
+	bs_write( s, 18, sqh->i_bit_rate_lower);
+	bs_write1( s, 1);//marker bit
+	bs_write( s, 12, sqh->i_bit_rate_upper);
+	bs_write1( s, sqh->b_low_delay);
+	bs_write1( s, 1);
+	bs_write( s, 18, sqh->i_bbv_buffer_size);
+	bs_write( s, 3, 0);//reserved bits
+	bs_rbsp_trailing( s );
+	//bs_align_0(s);
+}
+
+void xavs_i_picture_write( bs_t *s, xavs_i_pic_header_t *ih, xavs_seq_header_t *sqh )
+{
+    bs_write( s, 24, 1 );
+    bs_write( s, 8, ih->i_i_picture_start_code);
+	bs_write( s, 16, ih->i_bbv_delay);
+	bs_write1( s, ih->b_time_code_flag);
+	if(ih->b_time_code_flag)
+		bs_write( s, 24, ih->i_time_code);
+	bs_write1( s, 1);//marker bit
+	bs_write( s, 8, ih->i_picture_distance);
+	if(sqh->b_low_delay)
+		bs_write_ue( s, ih->i_bbv_check_times);
+	bs_write1( s, ih->b_progressive_frame);
+	if(!ih->b_progressive_frame)
+		bs_write1( s, ih->b_picture_structure);
+	bs_write1( s, ih->b_top_field_first);
+	bs_write1( s, ih->b_repeat_first_field);
+	bs_write1( s, ih->b_fixed_picture_qp);
+	bs_write( s, 6, ih->i_picture_qp);
+	if(!ih->b_progressive_frame && !ih->b_picture_structure)
+		bs_write1( s, ih->b_skip_mode_flag);
+	bs_write( s, 4, ih->i_reserved_bits);
+	bs_write1( s, ih->b_loop_filter_disable);
+	if(!ih->b_loop_filter_disable)
+		bs_write1( s, ih->b_loop_filter_parameter_flag);
+	if(ih->b_loop_filter_parameter_flag)
+	{
+		bs_write_se( s, ih->i_alpha_c_offset);
+		bs_write_se( s, ih->i_beta_offset);
+	}
+	bs_rbsp_trailing( s );
+	//bs_align_0(s);
+}
+
+void xavs_pb_picture_write( bs_t *s, xavs_pb_pic_header_t *pbh, xavs_seq_header_t *sqh )
+{
+    bs_write( s, 24, 1 );
+    bs_write( s, 8, pbh->i_pb_picture_start_code);
+	bs_write( s, 16, pbh->i_bbv_delay);
+	bs_write( s, 2, pbh->i_picture_coding_type);
+	bs_write( s, 8, pbh->i_picture_distance);
+	if(sqh->b_low_delay)
+		bs_write_ue( s, pbh->i_bbv_check_times);
+	bs_write1( s, pbh->b_progressive_frame);
+	if(!pbh->b_progressive_frame){
+		bs_write1( s, pbh->b_picture_structure);
+		if(!pbh->b_picture_structure)
+			bs_write1( s, pbh->b_advanced_pred_mode_disable);
+	}
+	bs_write1( s, pbh->b_top_field_first);
+	bs_write1( s, pbh->b_repeat_first_field);
+	bs_write1( s, pbh->b_fixed_picture_qp);
+	bs_write( s, 6, pbh->i_picture_qp);
+	if(!(pbh->i_picture_coding_type == SLICE_TYPE_B && pbh->b_picture_structure))
+		bs_write1( s, pbh->b_picture_reference_flag);
+	bs_write1( s, pbh->b_no_forward_reference_flag);
+	bs_write( s, 3, 0);//reserved bits
+	bs_write1( s, pbh->b_skip_mode_flag);
+	bs_write1( s, pbh->b_loop_filter_disable);
+	if(!pbh->b_loop_filter_disable)
+		bs_write1( s, pbh->b_loop_filter_parameter_flag);
+	if(pbh->b_loop_filter_parameter_flag)
+	{
+		bs_write_se( s, pbh->i_alpha_c_offset);
+		bs_write_se( s, pbh->i_beta_offset);
+	}
+	bs_rbsp_trailing( s );
+	//bs_align_0(s);
+}
+
+void xavs_slice_header_init( xavs_t *h, xavs_slice_header_t *sh,
+                                    int i_idr_pic_id, int i_frame, int i_qp )
+{
+    xavs_param_t *param = &h->param;
+    int i;
+	sh->i_slice_start_code = 0x1;
+	sh->i_slice_vertical_position = 0;//one slice per frame now.
+	sh->i_slice_vertical_position_extension = 0;
+	sh->b_fixed_slice_qp = 0;
+	sh->i_slice_qp = i_qp;
+	sh->b_slice_weighting_flag = 0;
+	for(i = 0; i < 4; i++)
+		sh->i_luma_scale[i] = 1;
+		sh->i_luma_shift[i] = 0;
+		sh->i_chroma_scale[i] = 1;
+		sh->i_chroma_shift[i] = 0;
+	sh->b_mb_weighting_flag = 0;
+
+	//added 
+	sh->i_first_mb  = 0;
+    sh->i_last_mb   = h->sqh.i_mb_width * h->sqh.i_mb_height;
+    sh->i_frame_num = h->i_frame_num;
+    sh->i_qp = i_qp;
+    /* If effective qp <= 15, deblocking would have no effect anyway */
+    sh->i_disable_deblocking_filter_idc = !h->param.b_deblocking_filter;
+    sh->i_alpha_c0_offset = h->param.i_deblocking_filter_alphac0;
+    sh->i_beta_offset = h->param.i_deblocking_filter_beta;
+
+}
+
+void xavs_slice_header_write( bs_t *s, xavs_slice_header_t *sh,  xavs_seq_header_t *sqh)
+{
+	int i;
+    bs_write( s, 24, 1 );	
+	//bs_write( s, 8, sh->i_slice_start_code);
+	bs_write( s, 8, sh->i_slice_vertical_position);
+	if(sqh->i_vertical_size > 2800)
+		bs_write( s, 3, sh->i_slice_vertical_position_extension);
+	if(!sh->b_picture_fixed_qp)
+	{
+		bs_write1( s, sh->b_fixed_slice_qp);
+		bs_write( s, 6, sh->i_slice_qp);
+	}
+	if(!( sh->i_type == SLICE_TYPE_I ))
+	{
+		bs_write1( s, sh->b_slice_weighting_flag);	
+		if( sh->b_slice_weighting_flag)
+		{
+			for( i = 0; i < sh->i_num_ref_idx_l0_active; i++ )
+			{
+				bs_write( s, 8, sh->i_luma_scale[i]);
+				bs_write( s, 8, sh->i_luma_shift[i]);
+				bs_write1( s, 1);//marker bit
+				bs_write( s, 8, sh->i_chroma_scale[i]);
+                bs_write( s, 8, sh->i_chroma_shift[i]);
+				bs_write1( s, 1);//marker bit
+			}
+		}
+		bs_write1( s, sh->b_mb_weighting_flag);
+	}
+
+}
+
+
 

@@ -485,8 +485,8 @@ int xavs_sei_version_write( xavs_t *h, bs_t *s )
         return -1;
     CHECKED_MALLOC( version, 200 + strlen( opts ) );
 
-    sprintf( version, "xavs - core %d%s - H.avs/MPEG-4 AVC codec - "
-             "Copyleft 2003-2009 - http://www.videolan.org/xavs.html - options: %s",
+    sprintf( version, "xavs - core %d%s - AVS codec - "
+             "Copyleft 2009 - http://sourceforge.net/projects/xavs/ - options: %s",
              XAVS_BUILD, XAVS_VERSION, opts );
     length = strlen(version)+1+16;
 

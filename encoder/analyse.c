@@ -459,12 +459,13 @@ static void predict_16x16_mode_available( unsigned int i_neighbour, int *mode, i
     }
 }
 /* Max = 5 */
+/*
 static void xavs_predict_8x8luma_mode_available( unsigned int i_neighbour, int *mode, int *pi_count )
 {
 	int count=0;
-    if( i_neighbour & MB_TOPLEFT )
+
+	if( i_neighbour & MB_TOPLEFT )
     {
-        /* top and left available */
         *mode++ = AVS_I_PRED_8x8_V;
         *mode++ = AVS_I_PRED_8x8_DC;
         *mode++ = AVS_I_PRED_8x8_H;
@@ -483,9 +484,8 @@ static void xavs_predict_8x8luma_mode_available( unsigned int i_neighbour, int *
 		}
 		*pi_count = count;		
     }	
-    else if( i_neighbour & MB_LEFT )
+    else	if( i_neighbour & MB_LEFT )
     {
-        /* left available*/
         *mode++ = AVS_I_PRED_8x8_DC_LEFT;
         *mode++ = AVS_I_PRED_8x8_H;
 		count   += 2;
@@ -499,7 +499,6 @@ static void xavs_predict_8x8luma_mode_available( unsigned int i_neighbour, int *
     }	
     else if( i_neighbour & MB_TOP )
     {
-        /* top available*/
         *mode++ = AVS_I_PRED_8x8_DC_TOP;
         *mode++ = AVS_I_PRED_8x8_V;
 		count   += 2;
@@ -513,13 +512,75 @@ static void xavs_predict_8x8luma_mode_available( unsigned int i_neighbour, int *
     }
     else
     {
-        /* none available */
         *mode = AVS_I_PRED_8x8_DC_128;
         *pi_count = 1;
     }
 }
-/* Max = 4 */
-static void predict_8x8chroma_mode_available( unsigned int i_neighbour, int *mode, int *pi_count )
+*/
+/* MAX = 5 yangping*/
+static void xavs_predict_8x8luma_mode_available_t( unsigned int i_neighbour,
+										   int *mode, int *pi_count )
+{
+	int b_l = i_neighbour & MB_LEFT;
+	int b_t = i_neighbour & MB_TOP;
+
+	if( b_l && b_t )
+	{
+		*pi_count = 5;
+		*mode++ = I_PRED_8x8_DC;
+		*mode++ = I_PRED_8x8_H;
+		*mode++ = I_PRED_8x8_V;
+		*mode++ = I_PRED_8x8_DDL;
+		*mode++ = I_PRED_8x8_DDR;
+	}
+	else if( b_l )
+	{
+		*mode++ = I_PRED_8x8_DC_LEFT;
+		*mode++ = I_PRED_8x8_H;
+		*pi_count = 2;
+	}
+	else if( b_t )
+	{
+		*mode++ = I_PRED_8x8_DC_TOP;
+		*mode++ = I_PRED_8x8_V;
+		*pi_count = 2;
+	}
+	else
+	{
+		*mode++ = I_PRED_8x8_DC_128;
+		*pi_count = 1;
+	}
+}
+
+static void xavs_predict_8x8luma_mode_available( unsigned int i_neighbour,
+												int *mode, int *pi_count )
+{
+	int b_l = i_neighbour & MB_LEFT;
+	int b_t = i_neighbour & MB_TOP;
+
+	if( b_l && b_t )
+	{
+		*pi_count = 1;
+		*mode++ = I_PRED_8x8_DC;
+	}
+	else if( b_l )
+	{
+		*mode++ = I_PRED_8x8_DC_LEFT;
+		*pi_count = 1;
+	}
+	else if( b_t )
+	{
+		*mode++ = I_PRED_8x8_DC_TOP;
+		*pi_count = 1;
+	}
+	else
+	{
+		*mode++ = I_PRED_8x8_DC_128;
+		*pi_count = 1;
+	}
+}
+/* Max = 4 yangping*/
+static void xavs_predict_8x8chroma_mode_available_t( unsigned int i_neighbour, int *mode, int *pi_count )
 {
     if( i_neighbour & MB_TOPLEFT )
     {
@@ -550,6 +611,34 @@ static void predict_8x8chroma_mode_available( unsigned int i_neighbour, int *mod
         *mode = I_PRED_CHROMA_DC_128;
         *pi_count = 1;
     }
+}
+
+static void xavs_predict_8x8chroma_mode_available( unsigned int i_neighbour, int *mode, int *pi_count )
+{
+	if( i_neighbour & MB_TOPLEFT )
+	{
+		/* top and left available */
+		*mode++ = I_PRED_CHROMA_DC;
+		*pi_count = 1;
+	}
+	else if( i_neighbour & MB_LEFT )
+	{
+		/* left available*/
+		*mode++ = I_PRED_CHROMA_DC_LEFT;
+		*pi_count = 1;
+	}
+	else if( i_neighbour & MB_TOP )
+	{
+		/* top available*/
+		*mode++ = I_PRED_CHROMA_DC_TOP;
+		*pi_count = 1;
+	}
+	else
+	{
+		/* none available */
+		*mode = I_PRED_CHROMA_DC_128;
+		*pi_count = 1;
+	}
 }
 
 /* MAX = 9 */
@@ -653,8 +742,6 @@ static void xavs_mb_analyse_intra_chroma( xavs_t *h, xavs_mb_analysis_t *a )
 	int b_merged_satd = !!h->pixf.intra_mbcmp_x3_8x8c && !h->mb.b_lossless;
 	int sadCb,sadCr;
 	uint8_t *p_dstc[2], *p_srcc[2];
-       DECLARE_ALIGNED_16( uint8_t edgeCb[60] );	
-	DECLARE_ALIGNED_16( uint8_t edgeCr[60] );	
 
 	if( a->i_satd_i8x8chroma < COST_MAX )
 		return;
@@ -665,9 +752,9 @@ static void xavs_mb_analyse_intra_chroma( xavs_t *h, xavs_mb_analysis_t *a )
 	p_srcc[0] = h->mb.pic.p_fenc[1];
 	p_srcc[1] = h->mb.pic.p_fenc[2];
 
-	predict_8x8chroma_mode_available( h->mb.i_neighbour, predict_mode, &i_max );
-	h->predict_8x8_filter( p_dstc[0], edgeCb, h->mb.i_neighbour, 1 );
-	h->predict_8x8_filter( p_dstc[1], edgeCr, h->mb.i_neighbour, 1 );
+	xavs_predict_8x8chroma_mode_available( h->mb.i_neighbour, predict_mode, &i_max );
+	h->predict_8x8_filter( p_dstc[0], h->edgeCb, h->mb.i_neighbour, 1 );
+	h->predict_8x8_filter( p_dstc[1], h->edgeCr, h->mb.i_neighbour, 1 );
 	
 	a->i_satd_i8x8chroma = COST_MAX;
 	
@@ -678,8 +765,8 @@ static void xavs_mb_analyse_intra_chroma( xavs_t *h, xavs_mb_analysis_t *a )
 		int i_mode = predict_mode[i];
 
 		/* we do the prediction */
-		h->predict_8x8c[i_mode]( p_dstc[0]);
-		h->predict_8x8c[i_mode]( p_dstc[1]);
+		h->predict_8x8c[i_mode]( p_dstc[0],h->edgeCb );
+		h->predict_8x8c[i_mode]( p_dstc[1],h->edgeCr );
 
 		/* we calculate the cost */
 		sadCb = h->pixf.mbcmp[PIXEL_8x8]( p_dstc[0], FDEC_STRIDE,
@@ -726,7 +813,7 @@ static void xavs_mb_analyse_intra( xavs_t *h, xavs_mb_analysis_t *a, int i_satd_
 		xavs_predict_8x8luma_mode_available( h->mb.i_neighbour8[idx], predict_mode, &i_max );
 
 		a->i_satd_i8x8 = COST_MAX;
-		h->predict_8x8_filter( p_dst_by, edge, h->mb.i_neighbour8[idx], 0 );
+		h->predict_8x8_filter( p_dst_by, edge, h->mb.i_neighbour8[idx], 0 ); //yangping
 
 		for( i = 0; i < i_max; i++ )        
 		{            
@@ -759,7 +846,8 @@ static void xavs_mb_analyse_intra( xavs_t *h, xavs_mb_analysis_t *a, int i_satd_
 
 static void xavs_intra_rd( xavs_t *h, xavs_mb_analysis_t *a, int i_satd_thresh )
 {
-    if( a->i_satd_i16x16 <= i_satd_thresh )
+/* There is no intra16x16 in avs yangping
+	if( a->i_satd_i16x16 <= i_satd_thresh )
     {
         h->mb.i_type = I_16x16;
         xavs_analyse_update_cache( h, a );
@@ -767,7 +855,7 @@ static void xavs_intra_rd( xavs_t *h, xavs_mb_analysis_t *a, int i_satd_thresh )
     }
     else
         a->i_satd_i16x16 = COST_MAX;
-
+*/ 
     if( a->i_satd_i8x8 <= i_satd_thresh && a->i_satd_i8x8 < COST_MAX )
     {
         h->mb.i_type = I_8x8;
@@ -807,7 +895,7 @@ static void xavs_intra_rd_refine( xavs_t *h, xavs_mb_analysis_t *a )
     }
 
     /* RD selection for chroma prediction */
-    predict_8x8chroma_mode_available( h->mb.i_neighbour, predict_mode, &i_max );
+    xavs_predict_8x8chroma_mode_available( h->mb.i_neighbour, predict_mode, &i_max );
     if( i_max > 1 )
     {
         i_thresh = a->i_satd_i8x8chroma * 5/4;
@@ -835,8 +923,8 @@ static void xavs_intra_rd_refine( xavs_t *h, xavs_mb_analysis_t *a )
                     xavs_predict_lossless_8x8_chroma( h, i_mode );
                 else
                 {
-                    h->predict_8x8c[i_mode]( h->mb.pic.p_fdec[1] );
-                    h->predict_8x8c[i_mode]( h->mb.pic.p_fdec[2] );
+                    h->predict_8x8c[i_mode]( h->mb.pic.p_fdec[1], h->edgeCb );
+                    h->predict_8x8c[i_mode]( h->mb.pic.p_fdec[2], h->edgeCr );
                 }
                 /* if we've already found a mode that needs no residual, then
                  * probably any mode with a residual will be worse.
@@ -879,6 +967,7 @@ static void xavs_intra_rd_refine( xavs_t *h, xavs_mb_analysis_t *a )
                     xavs_predict_lossless_8x8( h, p_dst_by, idx, i_mode, edge );
                 else
                     h->predict_8x8[i_mode]( p_dst_by, edge );
+
                 h->mb.i_cbp_luma = a->i_cbp_i8x8_luma;
                 i_satd = xavs_rd_cost_i8x8( h, a->i_lambda2, idx, i_mode );
 
@@ -2069,21 +2158,25 @@ int xavs_macroblock_analyse( xavs_t *h )
     int i_cost = COST_MAX;
     int i;
 
-    h->mb.i_qp = xavs_ratecontrol_qp( h );
-    if( h->param.rc.i_aq_mode )
-    {
-        xavs_adaptive_quant( h );
-        /* If the QP of this MB is within 1 of the previous MB, code the same QP as the previous MB,
-         * to lower the bit cost of the qp_delta.  Don't do this if QPRD is enabled. */
-        if( h->param.analyse.i_subpel_refine < 10 && abs(h->mb.i_qp - h->mb.i_last_qp) == 1 )
-            h->mb.i_qp = h->mb.i_last_qp;
-    }
+//    h->mb.i_qp = xavs_ratecontrol_qp( h );
+//    if( h->param.rc.i_aq_mode )
+//    {
+//        xavs_adaptive_quant( h );
+//        /* If the QP of this MB is within 1 of the previous MB, code the same QP as the previous MB,
+//         * to lower the bit cost of the qp_delta.  Don't do this if QPRD is enabled. */
+//        if( h->param.analyse.i_subpel_refine < 10 && abs(h->mb.i_qp - h->mb.i_last_qp) == 1 )
+//            h->mb.i_qp = h->mb.i_last_qp;
+//    }
 
+	h->mb.i_qp = h->sh.i_qp;
     xavs_mb_analyse_init( h, &analysis, h->mb.i_qp );
 
     /*--------------------------- Do the analysis ---------------------------*/
     if( h->sh.i_type == SLICE_TYPE_I )
     {
+#ifndef ZZF_DEBUG
+		analysis.i_mbrd =0;
+#endif
         if( analysis.i_mbrd )
             xavs_mb_cache_fenc_satd( h );
         xavs_mb_analyse_intra( h, &analysis, COST_MAX );
@@ -2093,6 +2186,8 @@ int xavs_macroblock_analyse( xavs_t *h )
         i_cost = analysis.i_satd_i16x16;
         h->mb.i_type = I_16x16;
         COPY2_IF_LT( i_cost, analysis.i_satd_i8x8, h->mb.i_type, I_8x8 );
+		// aloha'
+		h->mb.pic.i8x8_cbp = h->mb.i_cbp_luma;
 
         //if( analysis.i_satd_pcm < i_cost )
         //    h->mb.i_type = I_PCM;

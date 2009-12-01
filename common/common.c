@@ -58,17 +58,17 @@ void    xavs_param_default( xavs_param_t *param )
     param->vui.i_transfer  = 2;  /* undef */
     param->vui.i_colmatrix = 2;  /* undef */
     param->vui.i_chroma_loc= 0;  /* left center */
-    param->i_fps_num       = 25;
+    param->i_fps_num       = 30;
     param->i_fps_den       = 1;
     param->i_level_idc     = -1;
 
     /* Encoder parameters */
-    param->i_frame_reference = 3;
-    param->i_keyint_max = 250;
-    param->i_keyint_min = 25;
-    param->i_bframe = 3;
+    param->i_frame_reference = 1;
+    param->i_keyint_max = 1;
+    param->i_keyint_min = 1;
+    param->i_bframe = 0;
     param->i_scenecut_threshold = 40;
-    param->i_bframe_adaptive = XAVS_B_ADAPT_FAST;
+    param->i_bframe_adaptive = 0; //XAVS_B_ADAPT_FAST;
     param->i_bframe_bias = 0;
     param->b_bframe_pyramid = 0;
 
@@ -76,17 +76,17 @@ void    xavs_param_default( xavs_param_t *param )
     param->i_deblocking_filter_alphac0 = 0;
     param->i_deblocking_filter_beta = 0;
 
-    param->b_cabac = 1;
+    param->b_cabac = 0;
     param->i_cabac_init_idc = 0;
 
-    param->rc.i_rc_method = XAVS_RC_CRF;
-    param->rc.i_bitrate = 0;
+    param->rc.i_rc_method = XAVS_RC_CQP;
+    param->rc.i_bitrate = 350;
     param->rc.f_rate_tolerance = 1.0;
     param->rc.i_vbv_max_bitrate = 0;
     param->rc.i_vbv_buffer_size = 0;
     param->rc.f_vbv_buffer_init = 0.9;
-    param->rc.i_qp_constant = 23;
-    param->rc.f_rf_constant = 23;
+    param->rc.i_qp_constant = 26;
+    param->rc.f_rf_constant = 0;
     param->rc.i_qp_min = 10;
     param->rc.i_qp_max = 51;
     param->rc.i_qp_step = 4;
@@ -112,8 +112,8 @@ void    xavs_param_default( xavs_param_t *param )
     param->i_log_level = XAVS_LOG_INFO;
 
     /* */
-    param->analyse.intra = XAVS_ANALYSE_I4x4 | XAVS_ANALYSE_I8x8;
-    param->analyse.inter = XAVS_ANALYSE_I4x4 | XAVS_ANALYSE_I8x8
+    param->analyse.intra =  XAVS_ANALYSE_I8x8;
+    param->analyse.inter =  XAVS_ANALYSE_I8x8
                          | XAVS_ANALYSE_PSUB16x16 | XAVS_ANALYSE_BSUB16x16;
     param->analyse.i_direct_mv_pred = XAVS_DIRECT_PRED_SPATIAL;
     param->analyse.i_me_method = XAVS_ME_HEX;
@@ -121,7 +121,7 @@ void    xavs_param_default( xavs_param_t *param )
     param->analyse.b_psy = 1;
     param->analyse.f_psy_trellis = 0;
     param->analyse.i_me_range = 16;
-    param->analyse.i_subpel_refine = 7;
+    param->analyse.i_subpel_refine = 0;
     param->analyse.b_mixed_references = 1;
     param->analyse.b_chroma_me = 1;
     param->analyse.i_mv_range_thread = -1;
@@ -268,7 +268,7 @@ int xavs_param_parse( xavs_param_t *p, const char *name, const char *value )
     OPT("threads")
     {
         if( !strcmp(value, "auto") )
-            p->i_threads = XAVS_THREADS_AUTO;
+            p->i_threads = 1;//XAVS_THREADS_AUTO;
         else
             p->i_threads = atoi(value);
     }
@@ -648,7 +648,7 @@ static void xavs_log_default( void *p_unused, int i_level, const char *psz_fmt, 
 int xavs_picture_alloc( xavs_picture_t *pic, int i_csp, int i_width, int i_height )
 {
     pic->i_type = XAVS_TYPE_AUTO;
-    pic->i_qpplus1 = 0;
+    pic->i_qpplus1 = 1;
     pic->img.i_csp = i_csp;
     pic->img.i_plane = 3;
     pic->img.plane[0] = xavs_malloc( 3 * i_width * i_height / 2 );

@@ -422,15 +422,17 @@ static ALWAYS_INLINE int array_non_zero_int( void *v, int i_count )
 
 static inline int xavs_mb_predict_intra8x8_mode(xavs_t *h, int idx)
 {
-	const int ma = h->mb.cache.intra8x8_pred_mode[xavs_scan8[idx] - 1];
-	const int mb = h->mb.cache.intra8x8_pred_mode[xavs_scan8[idx] - 8];
-	const int m  = XAVS_MIN( xavs_mb_pred_mode8x8_fix(ma),
-		xavs_mb_pred_mode8x8_fix(mb) );
+
+	const int ma = h->mb.cache.intra4x4_pred_mode[xavs_scan8[idx] - 1];
+	const int mb = h->mb.cache.intra4x4_pred_mode[xavs_scan8[idx] - 8];
+	const int m  = XAVS_MIN( xavs_mb_pred_mode4x4_fix(ma),
+								xavs_mb_pred_mode4x4_fix(mb) );
 
 	if( m < 0 )
-		return I_PRED_4x4_DC;
+		return I_PRED_8x8_DC;
 
 	return m;
+
 }
 static inline int xavs_mb_predict_non_zero_code( xavs_t *h, int idx )
 {

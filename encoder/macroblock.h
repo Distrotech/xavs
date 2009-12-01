@@ -44,7 +44,8 @@ void xavs_predict_lossless_16x16( xavs_t *h, int i_mode );
 
 void xavs_macroblock_encode      ( xavs_t *h );
 void xavs_macroblock_write_cabac ( xavs_t *h, xavs_cabac_t *cb );
-void xavs_macroblock_write_cavlc ( xavs_t *h, bs_t *s );
+//void xavs_macroblock_write_cavlc ( xavs_t *h, bs_t *s );
+void xavs_macroblock_write_cavlc ( xavs_t *h, bs_t *s );//yangping
 
 void xavs_macroblock_encode_p8x8( xavs_t *h, int i8 );
 void xavs_macroblock_encode_p4x4( xavs_t *h, int i4 );
@@ -58,7 +59,7 @@ int xavs_quant_dc_trellis( xavs_t *h, int16_t *dct, int i_quant_cat,
 int xavs_quant_4x4_trellis( xavs_t *h, int16_t dct[4][4], int i_quant_cat,
                              int i_qp, int i_ctxBlockCat, int b_intra, int b_chroma, int idx );
 int xavs_quant_8x8_trellis( xavs_t *h, int16_t dct[8][8], int i_quant_cat,
-                             int i_qp, int b_intra, int idx );
+                             int i_qp, int b_intra, int b_chroma, int idx );
 
 void xavs_noise_reduction_update( xavs_t *h );
 

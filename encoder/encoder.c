@@ -29,6 +29,7 @@
 #include "analyse.h"
 #include "ratecontrol.h"
 #include "macroblock.h"
+#include "vlctest.h" //yangping
 
 #if VISUALIZE
 #include "common/visualize.h"
@@ -72,224 +73,6 @@ static void xavs_frame_dump( xavs_t *h )
     fclose( f );
 }
 
-
-/* Fill "default" values */
-static void xavs_slice_header_init( xavs_t *h, xavs_slice_header_t *sh,
-                                    xavs_sps_t *sps, xavs_pps_t *pps,
-                                    int i_idr_pic_id, int i_frame, int i_qp )
-{
-    xavs_param_t *param = &h->param;
-    int i;
-
-    /* First we fill all field */
-    sh->sps = sps;
-    sh->pps = pps;
-
-    sh->i_first_mb  = 0;
-    sh->i_last_mb   = h->sps->i_mb_width * h->sps->i_mb_height;
-    sh->i_pps_id    = pps->i_id;
-
-    sh->i_frame_num = i_frame;
-
-    sh->b_mbaff = h->param.b_interlaced;
-    sh->b_field_pic = 0;    /* no field support for now */
-    sh->b_bottom_field = 0; /* not yet used */
-
-    sh->i_idr_pic_id = i_idr_pic_id;
-
-    /* poc stuff, fixed later */
-    sh->i_poc_lsb = 0;
-    sh->i_delta_poc_bottom = 0;
-    sh->i_delta_poc[0] = 0;
-    sh->i_delta_poc[1] = 0;
-
-    sh->i_redundant_pic_cnt = 0;
-
-    if( !h->mb.b_direct_auto_read )
-    {
-        if( h->mb.b_direct_auto_write )
-            sh->b_direct_spatial_mv_pred = ( h->stat.i_direct_score[1] > h->stat.i_direct_score[0] );
-        else
-            sh->b_direct_spatial_mv_pred = ( param->analyse.i_direct_mv_pred == XAVS_DIRECT_PRED_SPATIAL );
-    }
-    /* else b_direct_spatial_mv_pred was read from the 2pass statsfile */
-
-    sh->b_num_ref_idx_override = 0;
-    sh->i_num_ref_idx_l0_active = 1;
-    sh->i_num_ref_idx_l1_active = 1;
-
-    sh->b_ref_pic_list_reordering_l0 = h->b_ref_reorder[0];
-    sh->b_ref_pic_list_reordering_l1 = h->b_ref_reorder[1];
-
-    /* If the ref list isn't in the default order, construct reordering header */
-    /* List1 reordering isn't needed yet */
-    if( sh->b_ref_pic_list_reordering_l0 )
-    {
-        int pred_frame_num = i_frame;
-        for( i = 0; i < h->i_ref0; i++ )
-        {
-            int diff = h->fref0[i]->i_frame_num - pred_frame_num;
-            if( diff == 0 )
-                xavs_log( h, XAVS_LOG_ERROR, "diff frame num == 0\n" );
-            sh->ref_pic_list_order[0][i].idc = ( diff > 0 );
-            sh->ref_pic_list_order[0][i].arg = abs( diff ) - 1;
-            pred_frame_num = h->fref0[i]->i_frame_num;
-        }
-    }
-
-    sh->i_cabac_init_idc = param->i_cabac_init_idc;
-
-    sh->i_qp = i_qp;
-    sh->i_qp_delta = i_qp - pps->i_pic_init_qp;
-    sh->b_sp_for_swidth = 0;
-    sh->i_qs_delta = 0;
-
-    /* If effective qp <= 15, deblocking would have no effect anyway */
-    if( param->b_deblocking_filter
-        && ( h->mb.b_variable_qp
-        || 15 < i_qp + 2 * XAVS_MIN(param->i_deblocking_filter_alphac0, param->i_deblocking_filter_beta) ) )
-    {
-        sh->i_disable_deblocking_filter_idc = 0;
-    }
-    else
-    {
-        sh->i_disable_deblocking_filter_idc = 1;
-    }
-    sh->i_alpha_c0_offset = param->i_deblocking_filter_alphac0 << 1;
-    sh->i_beta_offset = param->i_deblocking_filter_beta << 1;
-}
-
-static void xavs_slice_header_write( bs_t *s, xavs_slice_header_t *sh, int i_nal_ref_idc )
-{
-    int i;
-
-    if( sh->b_mbaff )
-    {
-        assert( sh->i_first_mb % (2*sh->sps->i_mb_width) == 0 );
-        bs_write_ue( s, sh->i_first_mb >> 1 );
-    }
-    else
-        bs_write_ue( s, sh->i_first_mb );
-
-    bs_write_ue( s, sh->i_type + 5 );   /* same type things */
-    bs_write_ue( s, sh->i_pps_id );
-    bs_write( s, sh->sps->i_log2_max_frame_num, sh->i_frame_num );
-
-    if( !sh->sps->b_frame_mbs_only )
-    {
-        bs_write1( s, sh->b_field_pic );
-        if ( sh->b_field_pic )
-            bs_write1( s, sh->b_bottom_field );
-    }
-
-    if( sh->i_idr_pic_id >= 0 ) /* NAL IDR */
-    {
-        bs_write_ue( s, sh->i_idr_pic_id );
-    }
-
-    if( sh->sps->i_poc_type == 0 )
-    {
-        bs_write( s, sh->sps->i_log2_max_poc_lsb, sh->i_poc_lsb );
-        if( sh->pps->b_pic_order && !sh->b_field_pic )
-        {
-            bs_write_se( s, sh->i_delta_poc_bottom );
-        }
-    }
-    else if( sh->sps->i_poc_type == 1 && !sh->sps->b_delta_pic_order_always_zero )
-    {
-        bs_write_se( s, sh->i_delta_poc[0] );
-        if( sh->pps->b_pic_order && !sh->b_field_pic )
-        {
-            bs_write_se( s, sh->i_delta_poc[1] );
-        }
-    }
-
-    if( sh->pps->b_redundant_pic_cnt )
-    {
-        bs_write_ue( s, sh->i_redundant_pic_cnt );
-    }
-
-    if( sh->i_type == SLICE_TYPE_B )
-    {
-        bs_write1( s, sh->b_direct_spatial_mv_pred );
-    }
-    if( sh->i_type == SLICE_TYPE_P || sh->i_type == SLICE_TYPE_SP || sh->i_type == SLICE_TYPE_B )
-    {
-        bs_write1( s, sh->b_num_ref_idx_override );
-        if( sh->b_num_ref_idx_override )
-        {
-            bs_write_ue( s, sh->i_num_ref_idx_l0_active - 1 );
-            if( sh->i_type == SLICE_TYPE_B )
-            {
-                bs_write_ue( s, sh->i_num_ref_idx_l1_active - 1 );
-            }
-        }
-    }
-
-    /* ref pic list reordering */
-    if( sh->i_type != SLICE_TYPE_I )
-    {
-        bs_write1( s, sh->b_ref_pic_list_reordering_l0 );
-        if( sh->b_ref_pic_list_reordering_l0 )
-        {
-            for( i = 0; i < sh->i_num_ref_idx_l0_active; i++ )
-            {
-                bs_write_ue( s, sh->ref_pic_list_order[0][i].idc );
-                bs_write_ue( s, sh->ref_pic_list_order[0][i].arg );
-
-            }
-            bs_write_ue( s, 3 );
-        }
-    }
-    if( sh->i_type == SLICE_TYPE_B )
-    {
-        bs_write1( s, sh->b_ref_pic_list_reordering_l1 );
-        if( sh->b_ref_pic_list_reordering_l1 )
-        {
-            for( i = 0; i < sh->i_num_ref_idx_l1_active; i++ )
-            {
-                bs_write_ue( s, sh->ref_pic_list_order[1][i].idc );
-                bs_write_ue( s, sh->ref_pic_list_order[1][i].arg );
-            }
-            bs_write_ue( s, 3 );
-        }
-    }
-
-    if( ( sh->pps->b_weighted_pred && ( sh->i_type == SLICE_TYPE_P || sh->i_type == SLICE_TYPE_SP ) ) ||
-        ( sh->pps->b_weighted_bipred == 1 && sh->i_type == SLICE_TYPE_B ) )
-    {
-        /* FIXME */
-    }
-
-    if( i_nal_ref_idc != 0 )
-    {
-        if( sh->i_idr_pic_id >= 0 )
-        {
-            bs_write1( s, 0 );  /* no output of prior pics flag */
-            bs_write1( s, 0 );  /* long term reference flag */
-        }
-        else
-        {
-            bs_write1( s, 0 );  /* adaptive_ref_pic_marking_mode_flag */
-        }
-    }
-
-    if( sh->pps->b_cabac && sh->i_type != SLICE_TYPE_I )
-    {
-        bs_write_ue( s, sh->i_cabac_init_idc );
-    }
-    bs_write_se( s, sh->i_qp_delta );      /* slice qp delta */
-
-    if( sh->pps->b_deblocking_filter_control )
-    {
-        bs_write_ue( s, sh->i_disable_deblocking_filter_idc );
-        if( sh->i_disable_deblocking_filter_idc != 1 )
-        {
-            bs_write_se( s, sh->i_alpha_c0_offset >> 1 );
-            bs_write_se( s, sh->i_beta_offset >> 1 );
-        }
-    }
-}
 
 /* If we are within a reasonable distance of the end of the memory allocated for the bitstream, */
 /* reallocate, adding an arbitrary amount of space (100 kilobytes). */
@@ -724,6 +507,9 @@ xavs_t *xavs_encoder_open   ( xavs_param_t *param )
     h->i_frame_num = 0;
     h->i_idr_pic_id = 0;
 
+	/*initial sequence header*/
+	xavs_sequence_init(h);
+
     h->sps = &h->sps_array[0];
     xavs_sps_init( h->sps, h->param.i_sps_id, &h->param );
 
@@ -746,6 +532,8 @@ xavs_t *xavs_encoder_open   ( xavs_param_t *param )
         h->frames.i_delay = XAVS_MAX( h->frames.i_delay, h->param.rc.i_lookahead );
     h->frames.i_delay += h->param.i_threads - 1;
     h->frames.i_delay = XAVS_MIN( h->frames.i_delay, XAVS_LOOKAHEAD_MAX );
+
+    h->frames.i_delay = 0;//fixme: remove this XAVS_MIN( h->frames.i_delay, XAVS_LOOKAHEAD_MAX );
 
     h->frames.i_max_ref0 = h->param.i_frame_reference;
     h->frames.i_max_ref1 = h->sps->vui.i_num_reorder_frames;
@@ -771,10 +559,9 @@ xavs_t *xavs_encoder_open   ( xavs_param_t *param )
     xavs_rdo_init( );
 
     /* init CPU functions */
-//     xavs_predict_16x16_init( h->param.cpu, h->predict_16x16 );
     xavs_predict_8x8c_init( h->param.cpu, h->predict_8x8c );
     xavs_predict_8x8_init( h->param.cpu, h->predict_8x8, &h->predict_8x8_filter );
-    //xavs_predict_4x4_init( h->param.cpu, h->predict_4x4 );
+
     if( !h->param.b_cabac )
         xavs_init_vlc_tables();
 
@@ -1134,19 +921,56 @@ static inline void xavs_reference_reset( xavs_t *h )
     h->fenc->i_poc = 0;
 }
 
+static inline void xavs_picture_init( xavs_t *h, int i_frame, int i_global_qp )
+{
+    if(i_frame)
+	{
+		h->ih.i_i_picture_start_code = 0xB3;
+		h->ih.i_bbv_delay = 0xFFFF;
+		h->ih.b_time_code_flag = 0;
+		h->ih.i_time_code = 0;		
+		h->ih.i_picture_distance	= h->fenc->i_frame % 256;	
+		h->ih.i_bbv_check_times = 0;
+		h->ih.b_progressive_frame = 1;
+		if(!h->ih.b_progressive_frame)
+		{
+			h->ih.b_picture_structure = 0;
+		}
+		h->ih.b_top_field_first = 0;
+		h->ih.b_repeat_first_field = 0;
+		h->ih.b_fixed_picture_qp = 0;
+		h->ih.i_picture_qp = i_global_qp;		
+		h->ih.i_reserved_bits  = 0;
+		h->ih.b_loop_filter_disable = !h->param.b_deblocking_filter;
+		h->ih.b_loop_filter_parameter_flag = 0;
+		if(h->ih.b_loop_filter_parameter_flag)
+		{
+			h->ih.i_alpha_c_offset = h->param.i_deblocking_filter_alphac0;
+			h->ih.i_beta_offset = h->param.i_deblocking_filter_beta;
+		}
+	}
+	else
+	{
+	}
+}
+
 static inline void xavs_slice_init( xavs_t *h, int i_nal_type, int i_global_qp )
 {
+	
     /* ------------------------ Create slice header  ----------------------- */
     if( i_nal_type == NAL_SLICE_IDR )
     {
-        xavs_slice_header_init( h, &h->sh, h->sps, h->pps, h->i_idr_pic_id, h->i_frame_num, i_global_qp );
+        xavs_picture_init(h, 1, i_global_qp);
+        xavs_slice_header_init( h, &h->sh, h->i_idr_pic_id, h->i_frame_num, i_global_qp );
+		h->sh.i_type=SLICE_TYPE_I;
 
         /* increment id */
         h->i_idr_pic_id = ( h->i_idr_pic_id + 1 ) % 65536;
     }
     else
     {
-        xavs_slice_header_init( h, &h->sh, h->sps, h->pps, -1, h->i_frame_num, i_global_qp );
+        xavs_picture_init(h, 0, i_global_qp);    
+        xavs_slice_header_init( h, &h->sh,  -1, h->i_frame_num, i_global_qp );
 
         /* always set the real higher num of ref frame used */
         h->sh.b_num_ref_idx_override = 1;
@@ -1183,10 +1007,9 @@ static int xavs_slice_write( xavs_t *h )
     memset( &h->stat.frame, 0, sizeof(h->stat.frame) );
 
     /* Slice */
-    //xavs_nal_start( h, h->i_nal_type, h->i_nal_ref_idc );
 
     /* Slice header */
-    xavs_slice_header_write( &h->out.bs, &h->sh, h->i_nal_ref_idc );
+    xavs_slice_header_write( &h->out.bs, &h->sh, &h->sqh );
     if( h->param.b_cabac )
     {
         /* alignment needed */
@@ -1202,6 +1025,11 @@ static int xavs_slice_write( xavs_t *h )
     i_mb_y = h->sh.i_first_mb / h->sps->i_mb_width;
     i_mb_x = h->sh.i_first_mb % h->sps->i_mb_width;
     i_skip = 0;
+
+#if TRACE_TB
+	//printf("Start bit pos: %d\n",bs_pos(&h->out.bs));
+	xavs_init_trace(h);
+#endif
 
     while( (mb_xy = i_mb_x + i_mb_y * h->sps->i_mb_width) < h->sh.i_last_mb )
     {
@@ -1226,6 +1054,16 @@ static int xavs_slice_write( xavs_t *h )
         if( xavs_bitstream_check_buffer( h ) )
             return -1;
 
+//test macroblock vlc
+#if TRACE_TB
+		snprintf(h->tracestring,TRACESTRING_SIZE,  "**********************MB (%i)**************************\n",mb_xy);
+		xavs_trace2out(h,h->tracestring);
+		snprintf(h->tracestring, TRACESTRING_SIZE, "MB Start Pos: %d\n",mb_spos);
+		xavs_trace2out(h,h->tracestring);
+		xavs_macroblock_vlc_tb( h );
+#define RDO_SKIP_BS 0
+#endif
+
         if( h->param.b_cabac )
         {
             if( mb_xy > h->sh.i_first_mb && !(h->sh.b_mbaff && (i_mb_y&1)) )
@@ -1248,7 +1086,7 @@ static int xavs_slice_write( xavs_t *h )
             {
                 if( h->sh.i_type != SLICE_TYPE_I )
                 {
-                    bs_write_ue( &h->out.bs, i_skip );  /* skip run */
+                    bs_write_ue( &h->out.bs, i_skip );  /* skip run; comments: what if the last mb is skip type */
                     i_skip = 0;
                 }
                 xavs_macroblock_write_cavlc( h, &h->out.bs );
@@ -1334,6 +1172,9 @@ static int xavs_slice_write( xavs_t *h )
                               + NALU_OVERHEAD * 8
                               - h->stat.frame.i_tex_bits
                               - h->stat.frame.i_mv_bits;
+#if TRACE_TB
+	fclose(h->ptrace);
+#endif
     return 0;
 }
 
@@ -1494,7 +1335,7 @@ int     xavs_encoder_encode( xavs_t *h,
             return 0;
         }
 
-        xavs_stack_align( xavs_slicetype_decide, h );
+         xavs_stack_align( xavs_slicetype_decide, h );
 
         /* 3: move some B-frames and 1 non-B to encode queue */
         while( IS_XAVS_TYPE_B( h->frames.next[bframes]->i_type ) )
@@ -1571,15 +1412,16 @@ int     xavs_encoder_encode( xavs_t *h,
     h->fenc->b_kept_as_ref =
     h->fdec->b_kept_as_ref = i_nal_ref_idc != NAL_PRIORITY_DISPOSABLE && h->param.i_keyint_max > 1;
 
-
-
     /* ------------------- Init                ----------------------------- */
     /* build ref list 0/1 */
     xavs_reference_build_list( h, h->fdec->i_poc );
 
     /* Init the rate control */
+
+    //FIXME: disabled ratecontrol 
     xavs_ratecontrol_start( h, h->fenc->i_qpplus1 );
-    i_global_qp = xavs_ratecontrol_qp( h );
+  
+    i_global_qp = 26; // xavs_ratecontrol_qp( h );
 
     pic_out->i_qpplus1 =
     h->fdec->i_qpplus1 = i_global_qp + 1;
@@ -1588,6 +1430,7 @@ int     xavs_encoder_encode( xavs_t *h,
         xavs_macroblock_bipred_init( h );
 
     /* ------------------------ Create slice header  ----------------------- */
+    i_nal_type=NAL_SLICE_IDR; //FIXME: now I frame only
     xavs_slice_init( h, i_nal_type, i_global_qp );
 
     if( i_nal_ref_idc != NAL_PRIORITY_DISPOSABLE )
@@ -1621,24 +1464,17 @@ int     xavs_encoder_encode( xavs_t *h,
     /* Write SPS and PPS */
     if( i_nal_type == NAL_SLICE_IDR && h->param.b_repeat_headers )
     {
-        if( h->fenc->i_frame == 0 )
-        {
-            /* identify ourself */
-            //xavs_nal_start( h, NAL_SEI, NAL_PRIORITY_DISPOSABLE );
-            if( xavs_sei_version_write( h, &h->out.bs ) )
-                return -1;
-            //xavs_nal_end( h );
-        }
+        xavs_sequence_write( &h->out.bs, &h->sqh );
+		        
+    }
 
-        /* generate sequence parameters */
-        //xavs_nal_start( h, NAL_SPS, NAL_PRIORITY_HIGHEST );
-        xavs_sps_write( &h->out.bs, h->sps );
-        //xavs_nal_end( h );
-
-        /* generate picture parameters */
-        //xavs_nal_start( h, NAL_PPS, NAL_PRIORITY_HIGHEST );
-        xavs_pps_write( &h->out.bs, h->pps );
-        //xavs_nal_end( h );
+    if(	h->sh.i_type == SLICE_TYPE_I )
+    {
+		xavs_i_picture_write( &h->out.bs, &h->ih, &h->sqh );
+    }
+    else//pb
+    {
+		xavs_pb_picture_write( &h->out.bs, &h->pbh, &h->sqh );
     }
 
     /* Write frame */
@@ -1669,6 +1505,12 @@ static int xavs_encoder_frame_end( xavs_t *h, xavs_t *thread_current,
         if( (intptr_t)ret )
             return (intptr_t)ret;
         h->b_thread_active = 0;
+    }
+
+    if( !h->fenc->i_reference_count )
+    {
+        pic_out->i_type = XAVS_TYPE_AUTO;
+        return;
     }
 
     xavs_frame_push_unused( thread_current, h->fenc );

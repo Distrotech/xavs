@@ -379,13 +379,357 @@ static void predict_8x8_up_right( uint8_t *src, uint8_t edge[60] )
 		}
 }
 
+/****************************************************************************
+* AVS chroma intra prediction functions:
+****************************************************************************/
+/*
+static void avs_predict_8x8c_p( uint8_t *src )
+{
+	uint8_t i;
+	uint8_t x,y;
+	int32_t a, b, c;
+	int32_t H = 0;
+	int32_t V = 0;
+	int32_t i00;
 
+	for( i = 0; i < 4; i++ )
+	{
+		H += ( i + 1 ) * ( src[4 + i - FDEC_STRIDE] - src[2 - i - FDEC_STRIDE] );
+		V += ( i + 1 ) * ( src[-1 + (i + 4) * FDEC_STRIDE] - src[-1 + (2 - i) * FDEC_STRIDE] );
+	}
+
+	a = 16 * ( src[ -1 + 7 * FDEC_STRIDE] + src[7 - FDEC_STRIDE] );
+	b = ( 17 * H + 16 ) >> 5;
+	c = ( 17 * V + 16 ) >> 5;
+	i00 = a - 3 * b - 3 * c + 16;
+
+	for( y = 0; y < 8; y++ )
+	{
+		int32_t  pix = i00;
+
+		for( x = 0; x < 8; x++ )
+		{
+			src[x] = xavs_clip_uint8( pix >> 5 );
+			pix += b;
+		}
+		src += FDEC_STRIDE;
+		i00 += c;
+	}
+}
+
+static void avs_predict_8x8c_dc_128( uint8_t *src )
+{
+	int i;
+
+	for( i = 0; i < 8; i++ )
+	{
+		uint32_t *p = (uint32_t*)src;
+		*p++ = 0x80808080;
+		*p++ = 0x80808080;
+		src += FDEC_STRIDE;
+	}
+}
+static void avs_predict_8x8c_dc_left( uint8_t *src )
+{
+	uint8_t i;
+	int32_t n[8];
+
+	for( i = 0; i < 8; i++ )
+	{
+		uint32_t  v;
+		uint32_t  *p;
+		n[i] = (src[(i - 1) * FDEC_STRIDE - 1] + (src[i * FDEC_STRIDE - 1] << 1)
+			+ src[(i + 1) * FDEC_STRIDE - 1] + 2) >> 2;		 
+		v = 0x01010101 * n[i];
+		p = ( uint32_t * )src;
+		*p++ = v;
+		*p++ = v;
+		src += FDEC_STRIDE;
+	}
+}
+static void avs_predict_8x8c_dc_top( uint8_t *src )
+{
+	uint8_t i;
+	int32_t m[8];
+
+	for(i = 0; i < 8; i++ )
+	{
+		m[i] = (src[i - FDEC_STRIDE - 1] + (src[i - FDEC_STRIDE] << 1)
+			+ src[i - FDEC_STRIDE + 1] + 2) >> 2;	  
+	}
+
+	for( i = 0; i < 8; i++ )
+	{
+		src[0] = m[0];
+		src[1] = m[1];
+		src[2] = m[2];
+		src[3] = m[3];
+		src[4] = m[4];
+		src[5] = m[5];
+		src[6] = m[6];
+		src[7] = m[7];
+		src += FDEC_STRIDE;
+
+	}
+}
+static void avs_predict_8x8c_dc( uint8_t *src )
+{
+	int32_t  m[8];
+	int32_t  n[8];
+	uint8_t   i;
+
+	for(i = 0; i < 8; i++)
+	{
+		m[i] = (src[i - FDEC_STRIDE - 1] + (src[i - FDEC_STRIDE] << 1)
+			+ src[i - FDEC_STRIDE + 1] + 2) >> 2;
+		n[i] = (src[(i - 1) * FDEC_STRIDE - 1] + (src[i * FDEC_STRIDE - 1] << 1) 
+			+ src[(i + 1) * FDEC_STRIDE - 1] + 2) >> 2;
+	}
+
+	for(  i = 0 ; i < 8 ; i ++)
+	{
+		src[0] =  xavs_clip_uint8(( m[0] + n[i] ) >> 1);
+		src[1] =  xavs_clip_uint8(( m[1] + n[i] ) >> 1);
+		src[2] =  xavs_clip_uint8(( m[2] + n[i] ) >> 1);
+		src[3] =  xavs_clip_uint8(( m[3] + n[i] ) >> 1);
+		src[4] =  xavs_clip_uint8(( m[4] + n[i] ) >> 1);
+		src[5] =  xavs_clip_uint8(( m[5] + n[i] ) >> 1);
+		src[6] =  xavs_clip_uint8(( m[6] + n[i] ) >> 1);
+		src[7] =  xavs_clip_uint8(( m[7] + n[i] ) >> 1);
+		src += FDEC_STRIDE;
+	}
+}
+static void avs_predict_8x8c_h( uint8_t *src  )
+{
+	int i;
+
+	for( i = 0; i < 8; i++ )
+	{
+		uint32_t v = 0x01010101 * src[-1];
+		uint32_t *p = (uint32_t*)src;
+		*p++ = v;
+		*p++ = v;
+		src += FDEC_STRIDE;
+	}
+}
+static void avs_predict_8x8c_v( uint8_t *src )
+{
+	uint32_t v0 = *(uint32_t*)&src[0-FDEC_STRIDE];
+	uint32_t v1 = *(uint32_t*)&src[4-FDEC_STRIDE];
+	int i;
+
+	for( i = 0; i < 8; i++ )
+	{
+		uint32_t *p = (uint32_t*)src;
+		*p++ = v0;
+		*p++ = v1;
+		src += FDEC_STRIDE;
+	}
+}
+*/
+/****************************************************************************
+* avs 8x8 prediction for intra luma block
+****************************************************************************/
+/*
+static inline uint8_t xavs_clip_uint8( int x )
+{
+	return x&(~255) ? (-x)>>31 : x;
+}
+
+
+static void avs_predict_8x8_dc_128( uint8_t *src )
+{
+	int i;
+
+	for( i = 0; i < 8; i++ )
+	{
+		uint32_t *p = (uint32_t*)src;
+		*p++ = 0x80808080;
+		*p++ = 0x80808080;
+		src += FDEC_STRIDE;
+	}
+}
+static void avs_predict_8x8_dc_left( uint8_t *src )
+{
+	uint8_t i;
+	int32_t n[8];
+
+	for( i = 0; i < 8; i++ )
+	{
+		uint32_t  v;
+		uint32_t  *p;
+		n[i] = (src[(i - 1) * FDEC_STRIDE - 1] + (src[i * FDEC_STRIDE - 1] << 1)
+			+ src[(i + 1) * FDEC_STRIDE - 1] + 2) >> 2;		 
+		v = 0x01010101 * n[i];
+		p = ( uint32_t * )src;
+		*p++ = v;
+		*p++ = v;
+		src += FDEC_STRIDE;
+	}
+}
+static void avs_predict_8x8_dc_top( uint8_t *src )
+{
+	uint8_t i;
+	int32_t m[8];
+
+	for(i = 0; i < 8; i++ )
+	{
+		m[i] = (src[i - FDEC_STRIDE - 1] + (src[i - FDEC_STRIDE] << 1)
+			+ src[i - FDEC_STRIDE + 1] + 2) >> 2;	  
+	}
+
+	for( i = 0; i < 8; i++ )
+	{
+		src[0] = m[0];
+		src[1] = m[1];
+		src[2] = m[2];
+		src[3] = m[3];
+		src[4] = m[4];
+		src[5] = m[5];
+		src[6] = m[6];
+		src[7] = m[7];
+		src += FDEC_STRIDE;      
+	}
+}
+static void avs_predict_8x8_dc( uint8_t *src )
+{
+	int32_t  m[8];
+	int32_t  n[8];
+	uint8_t   i;
+
+	for(i = 0; i < 8; i++)
+	{
+		m[i] = (src[i - FDEC_STRIDE - 1] + (src[i - FDEC_STRIDE] << 1)
+			+ src[i - FDEC_STRIDE + 1] + 2) >> 2;
+		n[i] = (src[(i - 1) * FDEC_STRIDE - 1] + (src[i * FDEC_STRIDE - 1] << 1) 
+			+ src[(i + 1) * FDEC_STRIDE - 1] + 2) >> 2;
+	}
+
+	for(  i = 0 ; i < 8 ; i++)
+	{
+		src[0] =  xavs_clip_uint8(( m[0] + n[i] ) >> 1);
+		src[1] =  xavs_clip_uint8(( m[1] + n[i] ) >> 1);
+		src[2] =  xavs_clip_uint8(( m[2] + n[i] ) >> 1);
+		src[3] =  xavs_clip_uint8(( m[3] + n[i] ) >> 1);
+		src[4] =  xavs_clip_uint8(( m[4] + n[i] ) >> 1);
+		src[5] =  xavs_clip_uint8(( m[5] + n[i] ) >> 1);
+		src[6] =  xavs_clip_uint8(( m[6] + n[i] ) >> 1);
+		src[7] =  xavs_clip_uint8(( m[7] + n[i] ) >> 1);
+		src += FDEC_STRIDE;
+	}
+}
+static void avs_predict_8x8_h( uint8_t *src )
+{
+	int i;
+
+	for( i = 0; i < 8; i++ )
+	{
+		uint32_t v = 0x01010101 * src[-1];
+		uint32_t *p = (uint32_t*)src;
+		*p++ = v;
+		*p++ = v;
+		src += FDEC_STRIDE;
+	}
+}
+static void avs_predict_8x8_v( uint8_t *src )
+{
+	uint32_t v0 = *(uint32_t*)&src[0-FDEC_STRIDE];
+	uint32_t v1 = *(uint32_t*)&src[4-FDEC_STRIDE];
+	int i;
+
+	for( i = 0; i < 8; i++ )
+	{
+		uint32_t *p = (uint32_t*)src;
+		*p++ = v0;
+		*p++ = v1;
+		src += FDEC_STRIDE;
+	}
+}
+
+static void avs_predict_8x8_ddl( uint8_t *src )
+{
+	int32_t m[15];
+	int32_t n[15];
+	uint8_t i;
+	src[16 - FDEC_STRIDE] = src[15 - FDEC_STRIDE];
+	src[16 * FDEC_STRIDE - 1] = src[15 * FDEC_STRIDE - 1];
+
+	for(  i = 0 ; i < 15 ; i ++)
+	{   
+		m[i] = (src[i - FDEC_STRIDE] + (src[i - FDEC_STRIDE + 1] << 1)
+			+ src[i - FDEC_STRIDE + 2] + 2) >> 2;
+		n[i] = (src[i * FDEC_STRIDE - 1] + (src[(i + 1) * FDEC_STRIDE - 1] << 1)
+			+ src[(i + 2) * FDEC_STRIDE - 1] + 2) >> 2;
+	}   
+
+	SRC(0,0) = (m[0] + n[0]) >> 1;
+	SRC(0,1) = SRC(1,0) = (m[1] + n[1]) >> 1;
+	SRC(0,2) = SRC(1,1) = SRC(2,0) = (m[2] + n[2]) >> 1;
+	SRC(0,3) = SRC(1,2) = SRC(2,1) = SRC(3,0) = (m[3] + n[3]) >> 1;
+	SRC(0,4) = SRC(1,3) = SRC(2,2) = SRC(3,1) = SRC(4,0) = (m[4] + n[4]) >> 1;
+	SRC(0,5) = SRC(1,4) = SRC(2,3) = SRC(3,2) = SRC(4,1) = SRC(5,0)
+		= (m[5] + n[5]) >> 1;
+	SRC(0,6) = SRC(1,5) = SRC(2,4) = SRC(3,3) = SRC(4,2) = SRC(5,1)
+		= SRC(6,0) = (m[6] + n[6]) >> 1;
+	SRC(0,7) = SRC(1,6) = SRC(2,5) = SRC(3,4) = SRC(4,3) = SRC(5,2) 
+		= SRC(6,1) = SRC(7,0) = (m[7] + n[7]) >> 1;
+	SRC(1,7) = SRC(2,6) = SRC(3,5) = SRC(4,4) = SRC(5,3) = SRC(6,2)
+		= SRC(7,1) = (m[8] + n[8]) >> 1;
+	SRC(2,7) = SRC(3,6) = SRC(4,5) = SRC(5,4) = SRC(6,3) = SRC(7,2)
+		= (m[9] + n[9]) >> 1;
+	SRC(3,7) = SRC(4,6) = SRC(5,5) = SRC(6,4) = SRC(7,3) = (m[10] + n[10]) >> 1;
+	SRC(4,7) = SRC(5,6) = SRC(6,5) = SRC(7,4) = (m[11] + n[11]) >> 1;
+	SRC(5,7) = SRC(6,6) = SRC(7,5) = (m[12] + n[12]) >> 1;
+	SRC(6,7) = SRC(7,6) = (m[13] + n[13]) >> 1;
+	SRC(7,7) = (m[14] + n[14]) >> 1;
+}
+
+static void avs_predict_8x8_ddr( uint8_t *src )
+{
+	int32_t m[8];
+	int32_t n[8];
+	uint8_t i;
+
+	for( i = 0; i < 8; i ++ )
+	{   
+		m[i] = (src[i - FDEC_STRIDE - 2] + (src[i - FDEC_STRIDE - 1] << 1)
+			+ src[i - FDEC_STRIDE ] + 2) >> 2;
+		n[i] = (src[(i - 2) * FDEC_STRIDE - 1] + (src[(i - 1) * FDEC_STRIDE-1] << 1)
+			+src[i * FDEC_STRIDE-1] + 2) >> 2;
+	}   
+
+	SRC(0,7) = n[7];
+	SRC(0,6) = SRC(1,7) = n[6];
+	SRC(0,5) = SRC(1,6) = SRC(2,7) = n[5];
+	SRC(0,4) = SRC(1,5) = SRC(2,6) = SRC(3,7) = n[4];
+	SRC(0,3) = SRC(1,4) = SRC(2,5) = SRC(3,6) = SRC(4,7) = n[3];
+	SRC(0,2) = SRC(1,3) = SRC(2,4) = SRC(3,5) = SRC(4,6) = SRC(5,7) = n[2];
+	SRC(0,1) = SRC(1,2) = SRC(2,3) = SRC(3,4) = SRC(4,5) = SRC(5,6) = SRC(6,7) = n[1];
+	SRC(0,0) = SRC(1,1) = SRC(2,2) = SRC(3,3) = SRC(4,4) = SRC(5,5) = SRC(6,6) = SRC(7,7)
+		= (src[-1] + (src[ -FDEC_STRIDE - 1] << 1) + src[ -FDEC_STRIDE] + 2) >> 2;
+	SRC(1,0) = SRC(2,1) = SRC(3,2) = SRC(4,3) = SRC(5,4) = SRC(6,5) = SRC(7,6) = m[1];
+	SRC(2,0) = SRC(3,1) = SRC(4,2) = SRC(5,3) = SRC(6,4) = SRC(7,5) = m[2];
+	SRC(3,0) = SRC(4,1) = SRC(5,2) = SRC(6,3) = SRC(7,4) = m[3];
+	SRC(4,0) = SRC(5,1) = SRC(6,2) = SRC(7,3) = m[4];
+	SRC(5,0) = SRC(6,1) = SRC(7,2) = m[5];
+	SRC(6,0) = SRC(7,1) = m[6];
+	SRC(7,0) = m[7];
+
+}
+*/
 /****************************************************************************
  * Exported functions:
  ****************************************************************************/
 
-void xavs_predict_8x8c_init( int cpu, xavs_predict_t pf[7] )
+void xavs_predict_8x8c_init( int cpu, xavs_predict8x8_t pf[7] )
 {
+//	pf[I_PRED_CHROMA_V ]     = avs_predict_8x8c_v;
+//	pf[I_PRED_CHROMA_H ]     = avs_predict_8x8c_h;
+//	pf[I_PRED_CHROMA_DC]     = avs_predict_8x8c_dc;
+//	pf[I_PRED_CHROMA_P ]     = avs_predict_8x8c_p;
+//	pf[I_PRED_CHROMA_DC_LEFT]= avs_predict_8x8c_dc_left;
+//	pf[I_PRED_CHROMA_DC_TOP ]= avs_predict_8x8c_dc_top;
+//	pf[I_PRED_CHROMA_DC_128 ]= avs_predict_8x8c_dc_128;
 	pf[I_PRED_CHROMA_V ]     	= predict_8x8c_v;
 	pf[I_PRED_CHROMA_H ]     	= predict_8x8c_h;
 	pf[I_PRED_CHROMA_DC]     	= predict_8x8c_dc;
@@ -408,14 +752,23 @@ void xavs_predict_8x8c_init( int cpu, xavs_predict_t pf[7] )
 
 void xavs_predict_8x8_init( int cpu, xavs_predict8x8_t pf[12], xavs_predict_8x8_filter_t *predict_filter )
 {
-	pf[AVS_I_PRED_8x8_V ]		= predict_8x8_v;
-	pf[AVS_I_PRED_8x8_H ]		= predict_8x8_h;
-	pf[AVS_I_PRED_8x8_DC]		= predict_8x8_dc;
-	pf[AVS_I_PRED_8x8_DLF ]		= predict_8x8_down_left;
-	pf[AVS_I_PRED_8x8_URT]		= predict_8x8_up_right;
-	pf[AVS_I_PRED_8x8_DC_LEFT]	= predict_8x8_dc_left;
-	pf[AVS_I_PRED_8x8_DC_TOP ]	= predict_8x8_dc_top;
-	pf[AVS_I_PRED_8x8_DC_128 ]	= predict_8x8_dc_128;
+//	pf[I_PRED_8x8_V]      = avs_predict_8x8_v;
+//	pf[I_PRED_8x8_H]      = avs_predict_8x8_h;
+//	pf[I_PRED_8x8_DC]     = avs_predict_8x8_dc;
+//	pf[I_PRED_8x8_DDL]    = avs_predict_8x8_ddl;
+//	pf[I_PRED_8x8_DDR]    = avs_predict_8x8_ddr;
+//	pf[I_PRED_8x8_DC_LEFT]= avs_predict_8x8_dc_left;
+//	pf[I_PRED_8x8_DC_TOP] = avs_predict_8x8_dc_top;
+//	pf[I_PRED_8x8_DC_128] = avs_predict_8x8_dc_128;
+
+	pf[I_PRED_8x8_V]      = predict_8x8_v;
+	pf[I_PRED_8x8_H]      = predict_8x8_h;
+	pf[I_PRED_8x8_DC]     = predict_8x8_dc;
+	pf[I_PRED_8x8_DDL]    = predict_8x8_down_left;
+	pf[I_PRED_8x8_DDR]    = predict_8x8_up_right;
+	pf[I_PRED_8x8_DC_LEFT]= predict_8x8_dc_left;
+	pf[I_PRED_8x8_DC_TOP] = predict_8x8_dc_top;
+	pf[I_PRED_8x8_DC_128] = predict_8x8_dc_128;
 
 	*predict_filter				= predict_8x8_filter;
 

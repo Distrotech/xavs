@@ -282,7 +282,7 @@ static uint64_t xavs_rd_cost_i4x4( xavs_t *h, int i_lambda2, int i4, int i_mode 
     }
     else
     {
-        i_bits = xavs_partition_i4x4_size_cavlc( h, i4, i_mode ) * i_lambda2;
+//        i_bits = xavs_partition_i4x4_size_cavlc( h, i4, i_mode ) * i_lambda2;
     }
 
     return (i_ssd<<8) + i_bits;
@@ -601,18 +601,21 @@ int xavs_quant_dc_trellis( xavs_t *h, int16_t *dct, int i_quant_cat,
                             int i_qp, int i_ctxBlockCat, int b_intra, int b_chroma )
 {
 
+   return 0;
 }
 
 int xavs_quant_4x4_trellis( xavs_t *h, int16_t dct[4][4], int i_quant_cat,
                              int i_qp, int i_ctxBlockCat, int b_intra, int b_chroma, int idx )
 {
 
+   return 0;
 }
 
 int xavs_quant_8x8_trellis( xavs_t *h, int16_t dct[8][8], int i_quant_cat,
-                             int i_qp, int b_intra, int idx )
+                             int i_qp, int b_intra, int b_chroma, int idx )
 {
 
+   return 0;
 }
 
 

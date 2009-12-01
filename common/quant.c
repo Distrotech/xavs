@@ -132,6 +132,7 @@ static int xavs_coeff_last64( int16_t *l )
 {
     return xavs_coeff_last_internal( l, 64 );
 }
+#if 0
 #define level_run(num)\
 static int xavs_coeff_level_run##num( int16_t *dct, xavs_run_level_t *runlevel )\
 {\
@@ -154,10 +155,52 @@ level_run(4)
 level_run(15)
 level_run(16)
 level_run(64)
+#else
+static int xavs_coeff_level_run64( int16_t *dct, xavs_run_level_t *runlevel )
+{
+	int i_last = runlevel->last = xavs_coeff_last64(dct);
+	int i_total = 0;
+	int icoef, ipos, run, curr_val;
+
+	run  = -1;
+	ipos = 0;
+	for (icoef=0; icoef<64; icoef++)
+	{
+		run++;
+		curr_val = dct[icoef];
+		if (curr_val != 0)
+		{
+			runlevel->level[ipos] = curr_val;
+			runlevel->run[ipos]   = run;
+			run = -1;
+			ipos++;
+		}
+
+	}
+	i_total = ipos;
+
+	/*
+	do
+	{
+	int r = 0;
+	while( i <=i_last && dct[i] == 0 )
+	{
+	r++;
+	i++;
+	}
+	runlevel->level[i_total] = dct[i];
+	runlevel->run[i_total++] = r;
+	} while( ++i<=i_last);
+	*/
+	return i_total;
+}
+#endif
 void xavs_quant_init( xavs_t *h, int cpu, xavs_quant_function_t *pf )
 {
     pf->quant_8x8 = quant_8x8;
     pf->dequant_8x8 = dequant_8x8;
+    pf->coeff_level_run[ DCT_LUMA_8x8] = xavs_coeff_level_run64;
+    pf->coeff_last[ DCT_LUMA_8x8] = xavs_coeff_last64;    
 
 #ifdef HAVE_MMX
     if( cpu&XAVS_CPU_MMX )

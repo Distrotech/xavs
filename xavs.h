@@ -33,7 +33,7 @@
 
 #include <stdarg.h>
 
-#define XAVS_BUILD 0.1
+#define XAVS_BUILD 1
 
 /* xavs_t:
  *      opaque handler for encoder */

@@ -131,33 +131,19 @@ static void Help( xavs_param_t *defaults, int b_longhelp )
 {
 #define H0 printf
 #define H1 if(b_longhelp) printf
-    H0( "xavs core:%d%s\n"
+    H0( "xavs core:%d %s\n"
         "Syntax: xavs [options] -o outfile infile [widthxheight]\n"
         "\n"
         "Infile can be raw YUV 4:2:0 (in which case resolution is required),\n"
-        "  or YUV4MPEG 4:2:0 (*.y4m),\n"
-        "  or AVI or Avisynth if compiled with AVIS support (%s).\n"
         "Outfile type is selected by filename:\n"
         " .avs -> Raw bytestream\n"
-        " .mkv -> Matroska\n"
-        " .mp4 -> MP4 if compiled with GPAC support (%s)\n"
         "\n"
         "Options:\n"
         "\n"
         "  -h, --help                  List the more commonly used options\n"
         "      --longhelp              List all options\n"
         "\n",
-        XAVS_BUILD, XAVS_VERSION,
-#ifdef AVIS_INPUT
-        "yes",
-#else
-        "no",
-#endif
-#ifdef MP4_OUTPUT
-        "yes"
-#else
-        "no"
-#endif
+        XAVS_BUILD,XAVS_VERSION
       );
     H0( "Presets:\n" );
     H0( "\n" );
@@ -1072,7 +1058,8 @@ static int  Encode_frame( xavs_t *h, hnd_t hout, xavs_picture_t *pic )
         fprintf( stderr, "xavs [error]: xavs_encoder_encode failed\n" );
         return -1;
     }
-
+   write_nalu_bsf ( hout,h->out.bs.p_start,  h->out.bs.p-h->out.bs.p_start) ;
+   fflush(hout);
     for( i = 0; i < i_nal; i++ )
     {
         int i_size;

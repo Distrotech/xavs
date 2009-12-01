@@ -83,14 +83,13 @@ static inline int bs_pos( bs_t *s )
 {
     return( 8 * (s->p - s->p_start) + (WORD_SIZE*8) - s->i_left );
 }
-
-/* Write the rest of cur_bits to the bitstream; results in a bitstream no longer 32/64-bit aligned. */
 static inline void bs_flush( bs_t *s )
 {
-    *(intptr_t*)s->p = endian_fix( s->cur_bits << s->i_left );
-    s->p += WORD_SIZE - s->i_left / 8;
-    s->i_left = WORD_SIZE*8;
+*(intptr_t*)s->p = endian_fix( s->cur_bits << s->i_left );
+s->p += WORD_SIZE - s->i_left / 8;
+s->i_left = WORD_SIZE*8;
 }
+
 
 static inline void bs_write( bs_t *s, int i_count, uint32_t i_bits )
 {
@@ -128,6 +127,81 @@ static inline void bs_write( bs_t *s, int i_count, uint32_t i_bits )
     }
 }
 
+static inline void bs_write1( bs_t *s, uint32_t i_bit )
+{
+s->cur_bits <<= 1;
+s->cur_bits |= i_bit;
+s->i_left--;
+if( s->i_left == WORD_SIZE*8-32 )
+{
+*(uint32_t*)s->p = endian_fix32( s->cur_bits );
+s->p += 4;
+s->i_left = WORD_SIZE*8;
+}
+}
+/*
+static inline void bs_init( bs_t *s, void *p_data, int i_data )
+{
+s->p_start = p_data;
+s->p       = p_data;
+s->p_end   = s->p + i_data;
+s->i_left  = 8;
+}
+static inline int bs_pos( bs_t *s )
+{
+return( 8 * ( s->p - s->p_start ) + 8 - s->i_left );
+}
+*/
+/* Write the rest of cur_bits to the bitstream; results in a bitstream no longer 32/64-bit aligned. */
+/*
+static inline void bs_flush( bs_t *s )
+{
+*(intptr_t*)s->p = ( s->cur_bits << s->i_left );
+s->p += 1 - s->i_left / 8;
+s->i_left = 8;
+}
+*/
+
+/*
+static inline void bs_write( bs_t *s, int i_count, uint32_t i_bits )
+{
+	if( s->p >= s->p_end - 4 )
+		return;
+	while( i_count > 0 )
+	{
+		if( i_count < 32 )
+			i_bits &= (1<<i_count)-1;
+		if( i_count < s->i_left )
+		{
+			*s->p = (*s->p << i_count) | i_bits;
+			s->i_left -= i_count;
+			break;
+		}
+		else
+		{
+			*s->p = (*s->p << s->i_left) | (i_bits >> (i_count - s->i_left));
+			i_count -= s->i_left;
+			s->p++;
+			s->i_left = 8;
+		}
+	}
+}
+
+static inline void bs_write1( bs_t *s, uint32_t i_bit )
+{
+	if( s->p < s->p_end )
+	{
+		*s->p <<= 1;
+		*s->p |= i_bit;
+		s->i_left--;
+		if( s->i_left == 0 )
+		{
+			s->p++;
+			s->i_left = 8;
+		}
+	}
+}
+*/
 /* Special case to eliminate branch in normal bs_write. */
 /* Golomb never writes an even-size code, so this is only used in slice headers. */
 static inline void bs_write32( bs_t *s, uint32_t i_bits )
@@ -136,18 +210,6 @@ static inline void bs_write32( bs_t *s, uint32_t i_bits )
     bs_write( s, 16, i_bits );
 }
 
-static inline void bs_write1( bs_t *s, uint32_t i_bit )
-{
-    s->cur_bits <<= 1;
-    s->cur_bits |= i_bit;
-    s->i_left--;
-    if( s->i_left == WORD_SIZE*8-32 )
-    {
-        *(uint32_t*)s->p = endian_fix32( s->cur_bits );
-        s->p += 4;
-        s->i_left = WORD_SIZE*8;
-    }
-}
 
 static inline void bs_align_0( bs_t *s )
 {

@@ -459,19 +459,19 @@ static inline void deblock_luma_c( xavs_t *h,uint8_t *pix, int xstride, int ystr
 			//}
 			//else
 			{ //bs == 1
-                delta = xavs_clip3( -tc0, tc0, ( (q0 - p0) * 3 + (p1 - q1) + 4) >> 3 ) ;
+                delta = xavs_clip3( ( (q0 - p0) * 3 + (p1 - q1) + 4) >> 3, -tc0, tc0 ) ;
 				pix[ -1*xstride] = xavs_clip_uint8(p0 + delta);
 				pix[  0*xstride] = xavs_clip_uint8(q0 - delta);
 				if (!Chroma)
 				{
 					if (ap)
 					{
-						delta =  xavs_clip3( -tc0, tc0, ( (p0 - p1) * 3 + (p2 - q0) + 4) >> 3 ) ;
+						delta =  xavs_clip3( ( (p0 - p1) * 3 + (p2 - q0) + 4) >> 3 , -tc0, tc0) ;
 						pix[ -2*xstride] = xavs_clip_uint8(p1 + delta);
 					}
 					if (aq)
 					{
-						delta =  xavs_clip3( -tc0, tc0, ( (q1 - q0) * 3 + (p0 - q2) + 4) >> 3 ) ;
+						delta =  xavs_clip3( ( (q1 - q0) * 3 + (p0 - q2) + 4) >> 3 , -tc0, tc0 ) ;
 						pix[ -2*xstride] = xavs_clip_uint8(q1 - delta);
 					}
 					
@@ -529,19 +529,19 @@ static inline void deblock_chroma_c( xavs_t *h,uint8_t *pix, int xstride, int ys
 			//}
 			//else 
 			{//bs == 1
-				delta = xavs_clip3( -tc0, tc0, ( (q0 - p0) * 3 + (p1 - q1) + 4) >> 3 ) ;
+				delta = xavs_clip3( ( (q0 - p0) * 3 + (p1 - q1) + 4) >> 3 , -tc0, tc0) ;
 				pix[ -1*xstride] = xavs_clip_uint8(p0 + delta);
 				pix[  0*xstride] = xavs_clip_uint8(q0 - delta);
 				if (!Chroma)
 				{
 					if (ap)
 					{
-						delta =  xavs_clip3( -tc0, tc0, ( (p0 - p1) * 3 + (p2 - q0) + 4) >> 3 ) ;
+						delta =  xavs_clip3(( (p0 - p1) * 3 + (p2 - q0) + 4) >> 3,  -tc0, tc0) ;
 						pix[ -2*xstride] = xavs_clip_uint8(p1 + delta);
 					}
 					if (aq)
 					{
-						delta =  xavs_clip3( -tc0, tc0, ( (q1 - q0) * 3 + (p0 - q2) + 4) >> 3 ) ;
+						delta =  xavs_clip3( ( (q1 - q0) * 3 + (p0 - q2) + 4) >> 3, -tc0, tc0) ;
 						pix[ -2*xstride] = xavs_clip_uint8(q1 - delta);
 					}
 
@@ -664,9 +664,9 @@ static void deblock_h_chroma_intra_c( xavs_t *h,uint8_t *pix, int stride, int al
 
 static inline void deblock_edge( xavs_t *h, uint8_t *pix1, uint8_t *pix2, int i_stride, uint8_t bS[4], int i_qp, int b_chroma, xavs_deblock_inter_t pf_inter )
 {
-    const int alpha = i_alpha_table[xavs_clip3(0,63,i_qp+h->sh.i_alpha_c0_offset)]; 
-    const int beta  = i_beta_table[xavs_clip3(0,63,i_qp + h->sh.i_beta_offset)];
-    int8_t tc = i_tc0_table[xavs_clip3(0,63,i_qp+h->sh.i_alpha_c0_offset)];
+    const int alpha = i_alpha_table[xavs_clip3(i_qp+h->sh.i_alpha_c0_offset, 0,63)]; 
+    const int beta  = i_beta_table[xavs_clip3(i_qp + h->sh.i_beta_offset,0,63)];
+    int8_t tc = i_tc0_table[xavs_clip3(i_qp+h->sh.i_alpha_c0_offset,0,63)];
 
     if( !alpha || !beta )
         return;
@@ -677,8 +677,8 @@ static inline void deblock_edge( xavs_t *h, uint8_t *pix1, uint8_t *pix2, int i_
 
 static inline void deblock_edge_intra( xavs_t *h, uint8_t *pix1, uint8_t *pix2, int i_stride, uint8_t bS[4], int i_qp, int b_chroma, xavs_deblock_intra_t pf_intra )
 {
-	const int alpha = i_alpha_table[xavs_clip3(0,63,i_qp+h->sh.i_alpha_c0_offset)]; 
-	const int beta  = i_beta_table[xavs_clip3(0,63,i_qp + h->sh.i_beta_offset)];
+	const int alpha = i_alpha_table[xavs_clip3(i_qp+h->sh.i_alpha_c0_offset,0,63)]; 
+	const int beta  = i_beta_table[xavs_clip3(i_qp + h->sh.i_beta_offset,0,63)];
 
     if( !alpha || !beta )
         return;

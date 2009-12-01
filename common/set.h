@@ -46,7 +46,9 @@ enum cqm4_e
 enum cqm8_e
 {
     CQM_8IY = 0,
-    CQM_8PY = 1
+    CQM_8PY = 1,
+    CQM_8IC = 2,
+    CQM_8PC = 3
 };
 
 typedef struct
