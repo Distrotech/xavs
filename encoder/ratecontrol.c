@@ -349,7 +349,9 @@ int xavs_ratecontrol_new( xavs_t *h )
         {
             xavs_log(h, XAVS_LOG_WARNING, "VBV is incompatible with constant QP, ignored.\n");
             h->param.rc.i_vbv_max_bitrate = 0;
-            h->param.rc.i_vbv_buffer_size = 0;
+            //h->param.rc.i_vbv_buffer_size = 0;
+	    //set the max value for the constant QP 
+            h->param.rc.i_vbv_buffer_size = 150; //for level6.0 set (2457600/16/1024) =150 
         }
         else if( h->param.rc.i_vbv_max_bitrate == 0 )
         {

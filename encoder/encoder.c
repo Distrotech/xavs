@@ -507,8 +507,8 @@ xavs_t *xavs_encoder_open   ( xavs_param_t *param )
     h->i_frame_num = 0;
     h->i_idr_pic_id = 0;
 
-	/*initial sequence header*/
-	xavs_sequence_init(h);
+    /*initial sequence header*/
+    xavs_sequence_init(h);
 
     h->sps = &h->sps_array[0];
     xavs_sps_init( h->sps, h->param.i_sps_id, &h->param );
