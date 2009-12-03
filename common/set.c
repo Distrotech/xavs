@@ -245,6 +245,7 @@ void xavs_sequence_init( xavs_t *h )
 	h->sqh.i_bit_rate_lower            = h->param.rc.i_bitrate & (0x3FFFF); // lower 18 bits of bitrate
 	h->sqh.i_bit_rate_upper            = h->param.rc.i_bitrate >> 18; // bits upper to 18 bits
 	h->sqh.b_low_delay                 = (h->param.i_bframe == 0);
+
 	h->sqh.i_bbv_buffer_size           = h->param.rc.i_vbv_buffer_size;
     
 }
