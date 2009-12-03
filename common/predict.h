@@ -122,11 +122,12 @@ static const int8_t xavs_mb_pred_mode8x8_fix[7] =
 /*Max = 5*/
 enum intra8x8_pred_e
 {
-    I_PRED_8x8_V  = 0,
-    I_PRED_8x8_H  = 1,
-    I_PRED_8x8_DC = 2,
-    I_PRED_8x8_DDL= 3,
-    I_PRED_8x8_DDR= 4,
+    I_PRED_8x8_V  = 0,  //Vertical
+    I_PRED_8x8_H  = 1,  //Horizontal
+    I_PRED_8x8_DC = 2,  //DC 
+    I_PRED_8x8_DDL= 3,  //down left 
+    I_PRED_8x8_DDR= 4,  //down right
+
     I_PRED_8x8_VR = 5,
     I_PRED_8x8_HD = 6,
     I_PRED_8x8_VL = 7,

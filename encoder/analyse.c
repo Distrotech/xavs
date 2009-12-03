@@ -420,8 +420,6 @@ static void xavs_mb_analyse_init( xavs_t *h, xavs_mb_analysis_t *a, int i_qp )
     }
 }
 
-
-
 /*
  * Handle intra mb
  */
@@ -458,68 +456,10 @@ static void predict_16x16_mode_available( unsigned int i_neighbour, int *mode, i
         *pi_count = 1;
     }
 }
-/* Max = 5 */
-/*
-static void xavs_predict_8x8luma_mode_available( unsigned int i_neighbour, int *mode, int *pi_count )
-{
-	int count=0;
 
-	if( i_neighbour & MB_TOPLEFT )
-    {
-        *mode++ = AVS_I_PRED_8x8_V;
-        *mode++ = AVS_I_PRED_8x8_DC;
-        *mode++ = AVS_I_PRED_8x8_H;
-		count   += 3;
-
-		if ( i_neighbour & MB_DOWNLEFT)
-		{
-			*mode++ = AVS_I_PRED_8x8_DLF;
-			count   += 1;
-		}
-
-		if ( i_neighbour & MB_TOPRIGHT)
-		{
-			*mode++ = AVS_I_PRED_8x8_URT;
-			count   += 1;
-		}
-		*pi_count = count;		
-    }	
-    else	if( i_neighbour & MB_LEFT )
-    {
-        *mode++ = AVS_I_PRED_8x8_DC_LEFT;
-        *mode++ = AVS_I_PRED_8x8_H;
-		count   += 2;
-
-		if ( i_neighbour & MB_DOWNLEFT)
-		{
-			*mode++ = AVS_I_PRED_8x8_DLF;
-			count   += 1;
-		}
-        *pi_count = count;
-    }	
-    else if( i_neighbour & MB_TOP )
-    {
-        *mode++ = AVS_I_PRED_8x8_DC_TOP;
-        *mode++ = AVS_I_PRED_8x8_V;
-		count   += 2;
-
-		if ( i_neighbour & MB_DOWNLEFT)
-		{
-			*mode++ = AVS_I_PRED_8x8_DLF;
-			count   += 1;
-		}
-		*pi_count = count;
-    }
-    else
-    {
-        *mode = AVS_I_PRED_8x8_DC_128;
-        *pi_count = 1;
-    }
-}
-*/
 /* MAX = 5 yangping*/
 static void xavs_predict_8x8luma_mode_available_t( unsigned int i_neighbour,
-										   int *mode, int *pi_count )
+					           int *mode, int *pi_count )
 {
 	int b_l = i_neighbour & MB_LEFT;
 	int b_t = i_neighbour & MB_TOP;
@@ -553,7 +493,7 @@ static void xavs_predict_8x8luma_mode_available_t( unsigned int i_neighbour,
 }
 
 static void xavs_predict_8x8luma_mode_available( unsigned int i_neighbour,
-												int *mode, int *pi_count )
+                                                 int *mode, int *pi_count )
 {
 	int b_l = i_neighbour & MB_LEFT;
 	int b_t = i_neighbour & MB_TOP;
@@ -579,6 +519,7 @@ static void xavs_predict_8x8luma_mode_available( unsigned int i_neighbour,
 		*pi_count = 1;
 	}
 }
+
 /* Max = 4 yangping*/
 static void xavs_predict_8x8chroma_mode_available_t( unsigned int i_neighbour, int *mode, int *pi_count )
 {
@@ -752,7 +693,7 @@ static void xavs_mb_analyse_intra_chroma( xavs_t *h, xavs_mb_analysis_t *a )
 	p_srcc[0] = h->mb.pic.p_fenc[1];
 	p_srcc[1] = h->mb.pic.p_fenc[2];
 
-	xavs_predict_8x8chroma_mode_available( h->mb.i_neighbour, predict_mode, &i_max );
+	xavs_predict_8x8chroma_mode_available_t( h->mb.i_neighbour, predict_mode, &i_max );
 	h->predict_8x8_filter( p_dstc[0], h->edgeCb, h->mb.i_neighbour, 1 );
 	h->predict_8x8_filter( p_dstc[1], h->edgeCr, h->mb.i_neighbour, 1 );
 	
@@ -796,7 +737,7 @@ static void xavs_mb_analyse_intra( xavs_t *h, xavs_mb_analysis_t *a, int i_satd_
     int b_merged_satd = !!h->pixf.intra_mbcmp_x3_16x16 && !h->mb.b_lossless;
 
     int i_best = COST_MAX;
-	int ii,jj;
+    int ii,jj;
 
     for( idx = 0; idx <4; idx++ )
     {
@@ -808,9 +749,9 @@ static void xavs_mb_analyse_intra( xavs_t *h, xavs_mb_analysis_t *a, int i_satd_
         	DECLARE_ALIGNED_16( uint8_t edge[60] );	
 		/*---------------- Try all mode and calculate their score ---------------*/
 		/* 8x8 prediction selection */    
-        int i_pred_mode = xavs_mb_predict_intra8x8_mode( h, idx );	
+                int i_pred_mode = xavs_mb_predict_intra8x8_mode( h, idx );	
 
-		xavs_predict_8x8luma_mode_available( h->mb.i_neighbour8[idx], predict_mode, &i_max );
+		xavs_predict_8x8luma_mode_available_t( h->mb.i_neighbour8[idx], predict_mode, &i_max );
 
 		a->i_satd_i8x8 = COST_MAX;
 		h->predict_8x8_filter( p_dst_by, edge, h->mb.i_neighbour8[idx], 0 ); //yangping
@@ -824,24 +765,22 @@ static void xavs_mb_analyse_intra( xavs_t *h, xavs_mb_analysis_t *a, int i_satd_
 
 			h->predict_8x8[i_mode]( p_dst_by, edge );            
 
-			sad		= h->pixf.mbcmp[PIXEL_8x8]( p_dst_by, FDEC_STRIDE, p_src_by, FENC_STRIDE );
+			sad  = h->pixf.mbcmp[PIXEL_8x8]( p_dst_by, FDEC_STRIDE, p_src_by, FENC_STRIDE );
 //			i_satd	= sad + a->i_lambda * (i_pred_mode == xavs_mb_pred_mode8x8_fix(i_mode) ? 1 : 4);    
 			i_satd	= sad;    
 			
 			COPY2_IF_LT( a->i_satd_i8x8, i_satd, a->i_predict8x8[idx], i_mode );            
 			
 			a->i_satd_i8x8_dir[i_mode][idx] = i_satd;    
-
 		}	
-		/* we need to encode this block now (for next ones) */
+
+        /* we need to encode this block now (for next ones) */
         h->predict_8x8[a->i_predict8x8[idx]]( p_dst_by, edge );
         xavs_mb_encode_i8x8( h, idx, a->i_qp );
 
         xavs_macroblock_cache_intra8x8_pred( h, 2*x, 2*y, a->i_predict8x8[idx] );
 
-
     }
-	
 }
 
 static void xavs_intra_rd( xavs_t *h, xavs_mb_analysis_t *a, int i_satd_thresh )
@@ -895,7 +834,7 @@ static void xavs_intra_rd_refine( xavs_t *h, xavs_mb_analysis_t *a )
     }
 
     /* RD selection for chroma prediction */
-    xavs_predict_8x8chroma_mode_available( h->mb.i_neighbour, predict_mode, &i_max );
+    xavs_predict_8x8chroma_mode_available_t( h->mb.i_neighbour, predict_mode, &i_max );
     if( i_max > 1 )
     {
         i_thresh = a->i_satd_i8x8chroma * 5/4;
@@ -2168,14 +2107,14 @@ int xavs_macroblock_analyse( xavs_t *h )
 //            h->mb.i_qp = h->mb.i_last_qp;
 //    }
 
-	h->mb.i_qp = h->sh.i_qp;
+    h->mb.i_qp = h->sh.i_qp;
     xavs_mb_analyse_init( h, &analysis, h->mb.i_qp );
 
     /*--------------------------- Do the analysis ---------------------------*/
     if( h->sh.i_type == SLICE_TYPE_I )
     {
 #ifndef ZZF_DEBUG
-		analysis.i_mbrd =0;
+	analysis.i_mbrd =0;
 #endif
         if( analysis.i_mbrd )
             xavs_mb_cache_fenc_satd( h );
@@ -2186,8 +2125,9 @@ int xavs_macroblock_analyse( xavs_t *h )
         i_cost = analysis.i_satd_i16x16;
         h->mb.i_type = I_16x16;
         COPY2_IF_LT( i_cost, analysis.i_satd_i8x8, h->mb.i_type, I_8x8 );
-		// aloha'
-		h->mb.pic.i8x8_cbp = h->mb.i_cbp_luma;
+
+	// aloha'
+	h->mb.pic.i8x8_cbp = h->mb.i_cbp_luma;
 
         //if( analysis.i_satd_pcm < i_cost )
         //    h->mb.i_type = I_PCM;

@@ -781,7 +781,7 @@ struct xavs_t
         {
             /* real intra4x4_pred_mode if I_4X4 or I_8X8, I_PRED_4x4_DC if mb available, -1 if not */
             int8_t  intra4x4_pred_mode[XAVS_SCAN8_SIZE];
-			int8_t  intra8x8_pred_mode[XAVS_SCAN8_SIZE];
+            int8_t  intra8x8_pred_mode[XAVS_SCAN8_SIZE];
             /* i_non_zero_count if available else 0x80 */
             uint8_t non_zero_count[XAVS_SCAN8_SIZE];
 

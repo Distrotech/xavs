@@ -889,11 +889,10 @@ void xavs_macroblock_cache_load( xavs_t *h, int i_mb_x, int i_mb_y )
     int i_left_xy = -1;
     int i_top_type = -1;    /* gcc warn */
     int i_left_type= -1;
-
     int i;
 
-	/*reset cbp*/ 
-	h->mb.i_cbp_luma = 0;
+    /*reset cbp*/ 
+    h->mb.i_cbp_luma = 0;
     h->mb.i_cbp_chroma = 0;
 
     /* init index */
@@ -916,7 +915,6 @@ void xavs_macroblock_cache_load( xavs_t *h, int i_mb_x, int i_mb_y )
 
         /* load intra4x4 */
         *(uint32_t*)&h->mb.cache.intra4x4_pred_mode[xavs_scan8[0] - 8] = *(uint32_t*)&h->mb.intra4x4_pred_mode[i_top_xy][0];
-
         /* load non_zero_count */
         *(uint32_t*)&h->mb.cache.non_zero_count[xavs_scan8[0] - 8] = *(uint32_t*)&h->mb.non_zero_count[i_top_xy][12];
         /* shift because xavs_scan8[16] is misaligned */
@@ -1235,28 +1233,29 @@ void xavs_macroblock_cache_save( xavs_t *h )
 
     h->mb.type[i_mb_xy] = i_mb_type;
     h->mb.i_mb_prev_xy = i_mb_xy;
-
-
 	
-	    *(uint64_t*)intra4x4_pred_mode = I_PRED_4x4_DC * 0x0101010101010101ULL;
+   //*(uint64_t*)intra4x4_pred_mode = I_PRED_4x4_DC * 0x0101010101010101ULL;
+    *(uint32_t*)&intra4x4_pred_mode[0] = *(uint32_t*)&h->mb.cache.intra4x4_pred_mode[xavs_scan8[10] ];
+    *(uint32_t*)&intra4x4_pred_mode[4] = pack8to32(h->mb.cache.intra4x4_pred_mode[xavs_scan8[5] ],
+                                                   h->mb.cache.intra4x4_pred_mode[xavs_scan8[7] ],
+                                                   h->mb.cache.intra4x4_pred_mode[xavs_scan8[13] ], 0);
 
+    /* save non zero count */
+    *(uint32_t*)&non_zero_count[0*4] = *(uint32_t*)&h->mb.cache.non_zero_count[xavs_scan8[0]+0*8];
+    *(uint32_t*)&non_zero_count[1*4] = *(uint32_t*)&h->mb.cache.non_zero_count[xavs_scan8[0]+1*8];
+    *(uint32_t*)&non_zero_count[2*4] = *(uint32_t*)&h->mb.cache.non_zero_count[xavs_scan8[0]+2*8];
+    *(uint32_t*)&non_zero_count[3*4] = *(uint32_t*)&h->mb.cache.non_zero_count[xavs_scan8[0]+3*8];
+    *(uint16_t*)&non_zero_count[16+0*2] = *(uint32_t*)&h->mb.cache.non_zero_count[xavs_scan8[16+0*2]-1] >> 8;
+    *(uint16_t*)&non_zero_count[16+1*2] = *(uint32_t*)&h->mb.cache.non_zero_count[xavs_scan8[16+1*2]-1] >> 8;
+    *(uint16_t*)&non_zero_count[16+2*2] = *(uint32_t*)&h->mb.cache.non_zero_count[xavs_scan8[16+2*2]-1] >> 8;
+    *(uint16_t*)&non_zero_count[16+3*2] = *(uint32_t*)&h->mb.cache.non_zero_count[xavs_scan8[16+3*2]-1] >> 8;
 
+    if( h->mb.i_type != I_16x16 && h->mb.i_cbp_luma == 0 && h->mb.i_cbp_chroma == 0 )
+        h->mb.i_qp = h->mb.i_last_qp;
 
-        /* save non zero count */
-        *(uint32_t*)&non_zero_count[0*4] = *(uint32_t*)&h->mb.cache.non_zero_count[xavs_scan8[0]+0*8];
-        *(uint32_t*)&non_zero_count[1*4] = *(uint32_t*)&h->mb.cache.non_zero_count[xavs_scan8[0]+1*8];
-        *(uint32_t*)&non_zero_count[2*4] = *(uint32_t*)&h->mb.cache.non_zero_count[xavs_scan8[0]+2*8];
-        *(uint32_t*)&non_zero_count[3*4] = *(uint32_t*)&h->mb.cache.non_zero_count[xavs_scan8[0]+3*8];
-        *(uint16_t*)&non_zero_count[16+0*2] = *(uint32_t*)&h->mb.cache.non_zero_count[xavs_scan8[16+0*2]-1] >> 8;
-        *(uint16_t*)&non_zero_count[16+1*2] = *(uint32_t*)&h->mb.cache.non_zero_count[xavs_scan8[16+1*2]-1] >> 8;
-        *(uint16_t*)&non_zero_count[16+2*2] = *(uint32_t*)&h->mb.cache.non_zero_count[xavs_scan8[16+2*2]-1] >> 8;
-        *(uint16_t*)&non_zero_count[16+3*2] = *(uint32_t*)&h->mb.cache.non_zero_count[xavs_scan8[16+3*2]-1] >> 8;
-
-        if( h->mb.i_type != I_16x16 && h->mb.i_cbp_luma == 0 && h->mb.i_cbp_chroma == 0 )
-            h->mb.i_qp = h->mb.i_last_qp;
-        h->mb.qp[i_mb_xy] = h->mb.i_qp;
-        h->mb.i_last_dqp = h->mb.i_qp - h->mb.i_last_qp;
-        h->mb.i_last_qp = h->mb.i_qp;
+    h->mb.qp[i_mb_xy] = h->mb.i_qp;
+    h->mb.i_last_dqp = h->mb.i_qp - h->mb.i_last_qp;
+    h->mb.i_last_qp = h->mb.i_qp;
 
 
     if( h->mb.i_cbp_luma == 0 && h->mb.i_type != I_8x8 )
