@@ -178,26 +178,23 @@ static const char slice_type_to_char[] = {  'P', 'B', 'I', 'S', 'S' };
 
 typedef struct
 {
-    int  i_slice_start_code;//片起始码，前24位是0x000001,后8位是slice_vertical_position，该片中的第一个宏块在图像中的垂直位置，以宏块为单位，值的范围是0x00~0xAF
+    int  i_slice_start_code;// slice start code
     int  i_slice_vertical_position;
-	int  i_slice_vertical_position_extension;//片垂直位置扩展，如果图像的vertical_size小于或等于2800，比特流中不应出现该元素
-    int  b_fixed_slice_qp;//固定片内量化因子标志，值为1说明在该片内量化因子不变；值为0说明该片内量化因子可变
-    int  i_slice_qp;//该片的量化因子
-    int  b_slice_weighting_flag;//片加权预测标志，值为1表示宏块的运动补偿可使用加权预测；值为0表示宏块的运动补偿不应使用加权预测
-    int  i_luma_scale[4];//预测亮度时的缩放参数
-    int  i_luma_shift[4];//预测亮度时的平移参数
-    //int  i_marker_bit;//一个比特的标记位
-    int  i_chroma_scale[4];//预测色度时的缩放参数
-    int  i_chroma_shift[4];//预测色度时的平移参数
-    //int  i_marker_bit;//一个比特的标记位
-    int  b_mb_weighting_flag;//宏块加权预测标志，值为0时表示所有非帧内预测宏块都应采用加权运动补偿；值为1时表示每个非帧内预测宏块由weightingPrediction决定是否采用加权预测
-    int  i_mb_skip_run;//跳过宏块计数
+    int  i_slice_vertical_position_extension;//
+    int  b_fixed_slice_qp;//slice fixe qp, 1 means fixed qp in slice, otherwise variable qp
+    int  i_slice_qp;//quantization parameters of current slice
+    int  b_slice_weighting_flag;//
+    int  i_luma_scale[4];//
+    int  i_luma_shift[4];//
+    //int  i_marker_bit;//
+    int  i_chroma_scale[4];//
+    int  i_chroma_shift[4];//
+    //int  i_marker_bit;//
+    int  b_mb_weighting_flag;//MB weighted prediction flag
+    int  i_mb_skip_run;//
     int  b_picture_fixed_qp;
 	
-	
-	
-	
-	xavs_sps_t *sps;
+    xavs_sps_t *sps;
     xavs_pps_t *pps;
 
     int i_type;

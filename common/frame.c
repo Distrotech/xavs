@@ -521,90 +521,89 @@ static inline void xavs_deblock_edge(xavs_t * h, uint8_t * pix, int i_stride, in
 
 void xavs_frame_deblocking_filter( xavs_t *h, int i_slice_type )
 {
-    const int s8x8 = 2 * h->mb.i_mb_stride; /*一行MB 8x8块的宽度，其中h->mb.i_mb_stride为一行MB的个数*/
+    /*8x8 block width, h->mb.i_mb_stride is the MB numbers for one row*/
+    const int s8x8 = 2 * h->mb.i_mb_stride; 
     const int s4x4 = 4 * h->mb.i_mb_stride;
 	int mb_y;
 	int mb_x;
 
     for( mb_y = 0, mb_x = 0; mb_y < h->sps->i_mb_height; )
     {
-       	  const int mb_xy = mb_y * h->mb.i_mb_stride + mb_x; /*该MB在一帧图像中的顺序*/
-	      const int mb_8x8 = 2 * s8x8 * mb_y + 2 * mb_x; /*8x8块在一帧图像中的顺序*/
-		  const int mb_4x4 = 4 * s4x4 * mb_y + 4 * mb_x;
-		  int i_edge, i_dir;
-		  int i_qp, i_qpn; 
+       	  const int mb_xy = mb_y * h->mb.i_mb_stride + mb_x; /*the MB order in the picture */
+	  const int mb_8x8 = 2 * s8x8 * mb_y + 2 * mb_x; /*the 8x8 block order in the picture */
+          const int mb_4x4 = 4 * s4x4 * mb_y + 4 * mb_x;
+          int i_edge, i_dir;
+          int i_qp, i_qpn; 
 
-          /*当前宏块起始位置的亮度、色度坐标*/
-		 int i_pix_y[3] = { 16 * mb_y * h->fdec->i_stride[0] + 16 * mb_x,
+          /*current MB start position for luma and chroma*/
+          int i_pix_y[3] = { 16 * mb_y * h->fdec->i_stride[0] + 16 * mb_x,
 		                     8 * mb_y * h->fdec->i_stride[1] + 8 * mb_x,
 		                     8 * mb_y * h->fdec->i_stride[2] + 8 * mb_x };			   
-		   /*i_dir == 0 -> vertical edge
-		     i_dir == 1  -> horizontal edge */
+	  /*i_dir == 0 -> vertical edge
+	   i_dir == 1  -> horizontal edge */
 
-		   for(i_dir = 0; i_dir < 2; i_dir++)
+          for(i_dir = 0; i_dir < 2; i_dir++)
 		   {
-		   	    int i_start = (( i_dir == 0 && mb_x != 0 ) || ( i_dir == 1 && mb_y != 0 ) ) ? 0 : 1;
-				  /*如果为边界则不需要进行滤波*/
-			    for(i_edge = i_start; i_edge < 2; i_edge++)
-			   	{
-			   	    int mbn_xy, mbn_8x8,mbn_4x4;
-			        int bS[2]; /*每条边的滤波强度，注意此时只有两条边*/
+		   	int i_start = (( i_dir == 0 && mb_x != 0 ) || ( i_dir == 1 && mb_y != 0 ) ) ? 0 : 1;
+                        /*if edge, no deblocking is required*/
+			for(i_edge = i_start; i_edge < 2; i_edge++)
+			  {
+                             int mbn_xy, mbn_8x8,mbn_4x4;
+                             int bS[2]; /*strength of each edge */ 
 
-				    mbn_xy = i_edge > 0 ? mb_xy : (i_dir == 0 ? mb_xy - 1 : mb_xy - h->mb.i_mb_stride);
-			        mbn_8x8 = i_edge  > 0 ? mb_8x8 : (i_dir == 0 ? mb_8x8 -2 : mb_8x8 - 2 * s8x8);
-                    mbn_4x4 = i_edge > 0 ? mb_4x4 : ( i_dir == 0 ? mb_4x4 - 4 : mb_4x4 - 4 * s4x4 );
+                             mbn_xy = i_edge > 0 ? mb_xy : (i_dir == 0 ? mb_xy - 1 : mb_xy - h->mb.i_mb_stride);
+                             mbn_8x8 = i_edge  > 0 ? mb_8x8 : (i_dir == 0 ? mb_8x8 -2 : mb_8x8 - 2 * s8x8);
+                             mbn_4x4 = i_edge > 0 ? mb_4x4 : ( i_dir == 0 ? mb_4x4 - 4 : mb_4x4 - 4 * s4x4 );
 
-				     /*Get bs for each 8px for the current edge*/
-			         if(IS_INTRA(h->mb.type[mb_xy]) ||IS_INTRA(h->mb.type[mbn_xy]))
-					 {
-			   	        bS[0] = bS[1] = 2; 
-					 }
-			         else
-					 {
-			   	        int i;
+			     /*Get bs for each 8px for the current edge*/
+			     if(IS_INTRA(h->mb.type[mb_xy]) ||IS_INTRA(h->mb.type[mbn_xy]))
+                               {
+                                 bS[0] = bS[1] = 2; 
+                               }
+			     else
+			       {
+			          int i;
+				  for(i = 0; i < 2; i++)
+				  {
+                                    int x = i_dir== 0 ? i_edge : i;
+                                    int y = i_dir == 0 ? i : i_edge;
+                                    int xn = (x - (i_dir == 0 ? 1 : 0 ))&0x01; 
+                                    int yn = (y - (i_dir == 0 ? 0 : 1 ))&0x01;
+                                    int i8p = mb_8x8 + x + y * s8x8;
+                                    int i8q = mbn_8x8 + xn + yn * s8x8;//2)
+                                    int k;
+                                    int i4p= mb_4x4+2*x+2*y*s4x4;
+                                    int i4q= mbn_4x4+2*xn+2*yn*s4x4;
 
-				        for(i = 0; i < 2; i++)
-				      	{
-				      	    int x = i_dir== 0 ? i_edge : i;
-					        int y = i_dir == 0 ? i : i_edge;
-					        int xn = (x - (i_dir == 0 ? 1 : 0 ))&0x01; 
-					        int yn = (y - (i_dir == 0 ? 0 : 1 ))&0x01;
-					        int i8p = mb_8x8 + x + y * s8x8;
-					        int i8q = mbn_8x8 + xn + yn * s8x8;//2)
-				            int k;
-                            int i4p= mb_4x4+2*x+2*y*s4x4;
-                            int i4q= mbn_4x4+2*xn+2*yn*s4x4;
+                                    bS[i] = 0;
 
-					        bS[i] = 0;
-
-					        for(k= 0; k< 1 + (i_slice_type == SLICE_TYPE_B); k++)
-							{
-					    	    if(h->mb.ref[k][i8p] != h->mb.ref[k][i8q] ||
-						           abs(h->mb.mv[k][i4p][0] - h->mb.mv[k][i4q][0]) >= 4 ||
-						           abs(h->mb.mv[k][i4p][1] - h->mb.mv[k][i4q][1])>= 4)
-								{
-					    	   	    bS[i] = 1;
-							        break;
-					    	   	}
-					    	}
-				      	}			  				   	
-			   	  }
+				    for(k= 0; k< 1 + (i_slice_type == SLICE_TYPE_B); k++)
+				     {
+					if(h->mb.ref[k][i8p] != h->mb.ref[k][i8q] ||
+					   abs(h->mb.mv[k][i4p][0] - h->mb.mv[k][i4q][0]) >= 4 ||
+					   abs(h->mb.mv[k][i4p][1] - h->mb.mv[k][i4q][1])>= 4)
+					   {
+					    	bS[i] = 1;
+						break;
+					   }
+				      }
+				   }			  				   	
+			       }
 
 			      	/*filter*/
-				    /*Y plane*/
-				    i_qp  = h->mb.qp[mb_xy];
-				    i_qpn = h->mb.qp[mbn_xy];
+				/*Y plane*/
+				i_qp  = h->mb.qp[mb_xy];
+				i_qpn = h->mb.qp[mbn_xy];
 
-				    if(i_dir == 0)
-					{
-
-				       /*Vertical edge Y*/
-				       xavs_deblock_edge(h, &h->fdec->plane[0][i_pix_y[0] + 8 * i_edge],
+				if(i_dir == 0)
+				{
+				   /*Vertical edge Y*/
+				   xavs_deblock_edge(h, &h->fdec->plane[0][i_pix_y[0] + 8 * i_edge],
 				                    h->fdec->i_stride[0], bS, (i_qp + i_qpn + 1)>> 1, 0,
 				                    h->loopf.deblock_h_luma, h->loopf.deblock_h_luma_intra );
 
-				      if(!(i_edge & 1))
-					  {
+				   if(!(i_edge & 1))
+				    {
 				     	   //U/V planes
 					       int i_qpc = ( i_chroma_qp_table[xavs_clip3( i_qp, 0, 63)] +
 					                    i_chroma_qp_table[xavs_clip3( i_qpn, 0, 63)] + 1 ) >> 1;
@@ -614,10 +613,10 @@ void xavs_frame_deblocking_filter( xavs_t *h, int i_slice_type )
 					       xavs_deblock_edge(h, &h->fdec->plane[2][i_pix_y[2] + 4 * i_edge],
 						                h->fdec->i_stride[2], bS, i_qpc, 1,
 						                h->loopf.deblock_h_chroma, h->loopf.deblock_h_chroma_intra);
-					 }
-					}
-				   else
-				   {
+				    }
+				}
+				else
+				{
 				      //horizontal edge
 				      xavs_deblock_edge(h, &h->fdec->plane[0][i_pix_y[0] + 8 * i_edge * h->fdec->i_stride[0]],
 				                   h->fdec->i_stride[0], bS, (i_qp + i_qpn + 1)>>1, 0,
@@ -635,16 +634,17 @@ void xavs_frame_deblocking_filter( xavs_t *h, int i_slice_type )
 					   	               h->loopf.deblock_v_chroma, h->loopf.deblock_v_chroma_intra);
 					   
 					  }
-				   }
 				}
-		}
-		 mb_x++;
+                          }
+		   }
+		
+        mb_x++;
         if( mb_x >= h->sps->i_mb_width )
         {
             mb_x = 0;
             mb_y++;
         }		
- }
+    }
 }
 
 

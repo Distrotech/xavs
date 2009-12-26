@@ -280,7 +280,7 @@ static inline void mc_hc( uint8_t *src, int i_src_stride, uint8_t *dst, int i_ds
 
 static const int hpel_ref0[16] = {0,1,1,1,2,0,1,3,2,2,3,2,2,0,1,0};
 static const int hpel_ref1[16] = {0,0,0,0,0,3,3,0,2,3,3,3,0,3,3,3};
-//static const int hpel_ref0[16] = {0,0,1,1,0,0,1,1,2,2,3,3,2,2,3,3};//Ö»×ö1/2²åÖµ
+//static const int hpel_ref0[16] = {0,0,1,1,0,0,1,1,2,2,3,3,2,2,3,3};// only 1/2 interpolation
 
 static void mc_luma( uint8_t *src[4], int i_src_stride,
                      uint8_t *dst,    int i_dst_stride,
@@ -294,8 +294,7 @@ static void mc_luma( uint8_t *src[4], int i_src_stride,
     
     if( qpel_idx & 5 ) /* qpel interpolation needed */
     {
-		uint8_t *src2 = src[0] + offset + ((mvx&3) == 3)+((mvy&3) == 3) * i_src_stride;
-    
+        uint8_t *src2 = src[0] + offset + ((mvx&3) == 3)+((mvy&3) == 3) * i_src_stride;
         pixel_avg( dst, i_dst_stride, src1, i_src_stride,
                    src2, i_src_stride, i_width, i_height,qpel_idx );
     }
