@@ -156,7 +156,7 @@ void xavs_sequence_end_write( bs_t *s )
 
 void xavs_i_picture_write( bs_t *s, xavs_i_pic_header_t *ih, xavs_seq_header_t *sqh )
 {
-    bs_write( s, 8, 0xB3);//ih->i_i_picture_start_code);
+        bs_write( s, 8, 0xB3);//ih->i_i_picture_start_code);
 	bs_write( s, 16, ih->i_bbv_delay);
 	bs_write1( s, 0);//ih->b_time_code_flag);
 	//if(ih->b_time_code_flag)
@@ -175,19 +175,20 @@ void xavs_i_picture_write( bs_t *s, xavs_i_pic_header_t *ih, xavs_seq_header_t *
 	//if(!ih->b_progressive_frame && !ih->b_picture_structure)
 		//bs_write1( s, ih->b_skip_mode_flag);
 	bs_write( s, 4, ih->i_reserved_bits);
-	bs_write1( s, 0);//ih->b_loop_filter_disable);
-	//if(!ih->b_loop_filter_disable)
-		bs_write1( s, 0);//ih->b_loop_filter_parameter_flag);
-	//if(ih->b_loop_filter_parameter_flag)
-	//{
-		//bs_write_se( s, ih->i_alpha_c_offset);
-		//bs_write_se( s, ih->i_beta_offset);
-	//}
+	bs_write1( s, ih->b_loop_filter_disable);
+	if(!ih->b_loop_filter_disable)
+		bs_write1( s, ih->b_loop_filter_parameter_flag);
+	if(ih->b_loop_filter_parameter_flag)
+	{
+		bs_write_se( s, ih->i_alpha_c_offset);
+		bs_write_se( s, ih->i_beta_offset);
+	}
 	bs_rbsp_trailing( s );
 }
+
 void xavs_pb_picture_write( bs_t *s, xavs_pb_pic_header_t *pbh, xavs_seq_header_t *sqh )
 {
-    bs_write( s, 8, pbh->i_pb_picture_start_code);
+        bs_write( s, 8, pbh->i_pb_picture_start_code);
 	bs_write( s, 16, pbh->i_bbv_delay);
 	bs_write( s, 2, pbh->i_picture_coding_type);
 	bs_write( s, 8, pbh->i_picture_distance);
@@ -208,14 +209,14 @@ void xavs_pb_picture_write( bs_t *s, xavs_pb_pic_header_t *pbh, xavs_seq_header_
 	//bs_write1( s, pbh->b_no_forward_reference_flag);
 	bs_write( s, 4, 0);//reserved bits
 	bs_write1( s, 1);//pbh->b_skip_mode_flag);
-	bs_write1( s, 0);//pbh->b_loop_filter_disable);
-	//if(!pbh->b_loop_filter_disable)
-		bs_write1( s, 0);//pbh->b_loop_filter_parameter_flag);
-	/*if(pbh->b_loop_filter_parameter_flag)
+	bs_write1( s, pbh->b_loop_filter_disable);
+	if(!pbh->b_loop_filter_disable)
+		bs_write1( s, pbh->b_loop_filter_parameter_flag);
+	if(pbh->b_loop_filter_parameter_flag)
 	{
 		bs_write_se( s, pbh->i_alpha_c_offset);
 		bs_write_se( s, pbh->i_beta_offset);
-	}*/
+	}
 	bs_rbsp_trailing( s );
 }
 
@@ -354,7 +355,6 @@ void xavs_sps_init( xavs_sps_t *sps, int i_id, xavs_param_t *param )
         sps->vui.i_log2_max_mv_length_vertical = (int)(log(param->analyse.i_mv_range*4-1)/log(2)) + 1;
     }
 }
-
 
 void xavs_sps_write( bs_t *s, xavs_sps_t *sps )
 {
@@ -639,27 +639,6 @@ void xavs_sei_version_write( xavs_t *h, bs_t *s )
 
     bs_rbsp_trailing( s );
 }
-/*
-const xavs_level_t xavs_levels[] =
-{
-    { 10,   1485,    99,   152064,     64,    175,  64, 64,  0, 0, 0, 1 },
-//  {"1b",  1485,    99,   152064,    128,    350,  64, 64,  0, 0, 0, 1 },
-    { 11,   3000,   396,   345600,    192,    500, 128, 64,  0, 0, 0, 1 },
-    { 12,   6000,   396,   912384,    384,   1000, 128, 64,  0, 0, 0, 1 },
-    { 13,  11880,   396,   912384,    768,   2000, 128, 64,  0, 0, 0, 1 },
-    { 20,  11880,   396,   912384,   2000,   2000, 128, 64,  0, 0, 0, 1 },
-    { 21,  19800,   792,  1824768,   4000,   4000, 256, 64,  0, 0, 0, 0 },
-    { 22,  20250,  1620,  3110400,   4000,   4000, 256, 64,  0, 0, 0, 0 },
-    { 30,  40500,  1620,  3110400,  10000,  10000, 256, 32, 22, 0, 1, 0 },
-    { 31, 108000,  3600,  6912000,  14000,  14000, 512, 16, 60, 1, 1, 0 },
-    { 32, 216000,  5120,  7864320,  20000,  20000, 512, 16, 60, 1, 1, 0 },
-    { 40, 245760,  8192, 12582912,  20000,  25000, 512, 16, 60, 1, 1, 0 },
-    { 41, 245760,  8192, 12582912,  50000,  62500, 512, 16, 24, 1, 1, 0 },
-    { 42, 522240,  8704, 13369344,  50000,  62500, 512, 16, 24, 1, 1, 1 },
-    { 50, 589824, 22080, 42393600, 135000, 135000, 512, 16, 24, 1, 1, 1 },
-    { 51, 983040, 36864, 70778880, 240000, 240000, 512, 16, 24, 1, 1, 1 },
-    { 0 }
-};*/
 
 const xavs_level_t xavs_levels[]  =
 {
@@ -675,7 +654,8 @@ const xavs_level_t xavs_levels[]  =
 	{ 66,  1920,   1152,   60,     62668800,  20000000,  3686400,  8160,   244800, -512, 511.75, -256, 255.75, -2048, 2047.75, 0, 0, 3200, 4224 },
     
 	{ 0 }
-};//added by li  090903
+};
+
 void xavs_validate_levels( xavs_t *h )
 {
     int mbs;
@@ -705,3 +685,4 @@ void xavs_validate_levels( xavs_t *h )
 
     /* TODO check the rest of the limits */
 }
+

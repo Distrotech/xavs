@@ -307,7 +307,8 @@ typedef struct {
     int frame_only;  // forbid interlacing 
 	int bits_per_mb_420; // max bits per MB after coded for 4:2:0 
 	int bits_per_mb_422; // max bits per MB after coded for 4:2:2 
-} xavs_level_t;  //added by li  090903
+} xavs_level_t;  
+
 /* all of the levels defined in the standard, terminated by .level_idc=0 */
 extern const xavs_level_t xavs_levels[];
 

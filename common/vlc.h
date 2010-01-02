@@ -651,8 +651,8 @@ static const char AVS_2DVLC_CHROMA_T[5][26][27] =
 	{-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
   }
 };
+
 static const char VLC_Golomb_Order_T[3][7][2] =       //[interlace/frame][intra/inter/chroma][tablenum][grad/maxlevel]
-// maxlevel changed by dj
 {
 	{
 		{2,9}, {2,9}, {2,9}, {2,9}, {2,9}, {2,9}, {2,9},
@@ -664,7 +664,7 @@ static const char VLC_Golomb_Order_T[3][7][2] =       //[interlace/frame][intra/
 		{2,9}, {0,9}, {1,9}, {1,9}, {0,9}, {-1,-1}, {-1,-1},
 	},
 };
-/* added by dj */
+
 static const char MaxRun_T[3][7] = 
 {
 	{22,14,9,6,4,2,1},

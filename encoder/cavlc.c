@@ -108,20 +108,18 @@ bs_write_ue_k(bs_t *s, unsigned int code_num, unsigned int grad, unsigned int ma
 	//set data bits
     bs_write( s, numbits, res|code_num);
 }
+
 /****************************************************************************
  * block_residual_write_cavlc:
  ****************************************************************************/
 static void xavs_block_luma_write_cavlc( xavs_t *h, bs_t *s, int i_block_idx, int *l, int i_count )
 {
     int level_arr[65], run_arr[65];
-	int idx;
-	int level,run;
-
-	int ipos,icoef;
-	int16_t curr_val;
-
-	//added by wrg
-	int symbol2D;
+    int idx;
+    int level,run;
+    int ipos,icoef;
+    int16_t curr_val; 
+    int symbol2D;
     int escape_level_diff;           
     int tablenum;   
     static const int incVlc_intra[7] = { 0,1,2,4,7,10,3000};    
@@ -129,10 +127,8 @@ static void xavs_block_luma_write_cavlc( xavs_t *h, bs_t *s, int i_block_idx, in
     const char (*AVS_2DVLC_table_intra)[26][27];   
     const char (*AVS_2DVLC_table_inter)[26][27];
 
-
     AVS_2DVLC_table_intra = AVS_2DVLC_INTRA_T;
     AVS_2DVLC_table_inter = AVS_2DVLC_INTER_T;
-
 
     /* first find i_last */
 	run  = -1;
@@ -271,24 +267,22 @@ static void xavs_block_luma_write_cavlc( xavs_t *h, bs_t *s, int i_block_idx, in
       
     }// inter
 }
+
 static void xavs_block_chroma_write_cavlc( xavs_t *h, bs_t *s, int i_block_idx, int *l, int i_count  )
 {
     int level_arr[65], run_arr[65];
-	int idx;
-	int level,run;
+    int idx;
+    int level,run;
+    int ipos,icoef;
+    int16_t curr_val;
 
-	int ipos,icoef;
-	int16_t curr_val;
-
-	//added by wrg
-	int symbol2D;
+    int symbol2D;
     int escape_level_diff;           
     int tablenum;   
     static const int incVlc_chroma[5] = { 0,1,2,4,3000};   
     const char (*AVS_2DVLC_table_chroma)[26][27];
     
-	AVS_2DVLC_table_chroma = AVS_2DVLC_CHROMA_T;
-	
+    AVS_2DVLC_table_chroma = AVS_2DVLC_CHROMA_T;
 
     /* first find i_last */
 	run  = -1;
@@ -960,3 +954,4 @@ static int xavs_partition_i8x8_size_cavlc( xavs_t *h, int i8, int i_mode )
     return h->out.bs.i_bits_encoded;
 }
 #endif
+

@@ -708,10 +708,10 @@ static inline void xavs_reference_reset( xavs_t *h )
 static void xavs_i_pic_header_init(xavs_t *h, xavs_i_pic_header_t *ih, int i_qp)
 {
 	ih->i_i_picture_start_code = 0xB3;
-	ih->i_bbv_delay = 0xFFFF;//它规定了BBV从收到图像起始码的最后一个字节到开始解码图像之间要等待的时间;
+	ih->i_bbv_delay = 0xFFFF;//
 	ih->b_time_code_flag = 0;// if there's time code in this picture header
 	//if (ih->b_time_code_flag)
-	//{//time_code描述从当前帧开始第一个picture_distance为0的帧的显示时间。
+	//{//time_code
 	ih->i_time_code = 0;//need to change
 	//}
 	
@@ -767,21 +767,23 @@ static void xavs_pb_pic_header_init(xavs_t *h, xavs_pb_pic_header_t *pbh, int i_
 		pbh->i_beta_offset = h->param.i_deblocking_filter_beta;
 	}
 }
+
 static inline void xavs_slice_init( xavs_t *h,  int i_slice_type, int i_qp )
 {
     xavs_slice_header_init( &h->sh, i_qp);
     
-	h->sh.i_type      = i_slice_type;
-	h->sh.i_first_mb  = 0;
+    h->sh.i_type      = i_slice_type;
+    h->sh.i_first_mb  = 0;
     h->sh.i_last_mb   = h->mb.i_mb_count;
     h->sh.i_frame_num = h->i_frame_num;
     h->sh.i_qp = i_qp;
+
     /* If effective qp <= 15, deblocking would have no effect anyway */
     h->sh.i_disable_deblocking_filter_idc = !h->param.b_deblocking_filter;
     h->sh.i_alpha_c0_offset = h->param.i_deblocking_filter_alphac0;
     h->sh.i_beta_offset = h->param.i_deblocking_filter_beta;
 
-	h->sh.i_num_ref_idx_l0_active = h->i_ref0 <= 0 ? 1 : h->i_ref0;
+    h->sh.i_num_ref_idx_l0_active = h->i_ref0 <= 0 ? 1 : h->i_ref0;
     h->sh.i_num_ref_idx_l1_active = h->i_ref1 <= 0 ? 1 : h->i_ref1;
 
     h->fdec->i_frame_num = h->sh.i_frame_num;
@@ -832,17 +834,17 @@ static int xavs_slice_write( xavs_t *h )
 
         TIMER_START( i_mtime_write );
   
-		if( IS_SKIP( h->mb.i_type ) )
-                i_skip++;
+        if( IS_SKIP( h->mb.i_type ) )
+              i_skip++;
         else
-            {
-                if( h->sh.i_type != SLICE_TYPE_I )
-                {
+        {
+            if( h->sh.i_type != SLICE_TYPE_I )
+             {
                     bs_write_ue( &h->out.bs, i_skip );  /* skip run */
                     i_skip = 0;
-                }
-                xavs_macroblock_write_cavlc( h, &h->out.bs );
-            }
+             }
+             xavs_macroblock_write_cavlc( h, &h->out.bs );
+        }
 
         TIMER_STOP( i_mtime_write );
 
@@ -873,6 +875,7 @@ static int xavs_slice_write( xavs_t *h )
                 }
             }
         }
+
         if( h->mb.i_cbp_luma && !IS_INTRA(h->mb.i_type) )
         {
             h->stat.frame.i_mb_count_8x8dct[0] ++;
@@ -889,8 +892,7 @@ static int xavs_slice_write( xavs_t *h )
     }
 
     /* rbsp_slice_trailing_bits */
-     bs_rbsp_trailing( &h->out.bs );
-
+    bs_rbsp_trailing( &h->out.bs );
 
     xavs_nal_end( h );
 
@@ -1124,14 +1126,12 @@ do_encode:
         i_slice_type  = SLICE_TYPE_B;
     }
 
-
     h->fdec->i_poc =
     h->fenc->i_poc = 2 * (h->fenc->i_frame - h->frames.i_last_idr);
     h->fdec->i_type = h->fenc->i_type;
     h->fdec->i_frame = h->fenc->i_frame;
     h->fenc->b_kept_as_ref =
     h->fdec->b_kept_as_ref = i_nal_ref_idc != NAL_PRIORITY_DISPOSABLE;
-
 
     /* ------------------- Init                ----------------------------- */
     /* build ref list 0/1 */
@@ -1153,13 +1153,13 @@ do_encode:
 	/* ------------------------ Create picture header  ----------------------- */
 	if( i_slice_type == SLICE_TYPE_I )
 	{
-		xavs_i_pic_header_init( h,&h->ih,i_global_qp);
+            xavs_i_pic_header_init( h,&h->ih,i_global_qp);
 	    h->sh.b_picture_fixed_qp = h->ih.b_fixed_picture_qp;
 	}
 	else
 	{
-        xavs_pb_pic_header_init( h,&h->pbh,i_global_qp,i_slice_type);
-		h->sh.b_picture_fixed_qp = h->pbh.b_fixed_picture_qp;
+            xavs_pb_pic_header_init( h,&h->pbh,i_global_qp,i_slice_type);
+            h->sh.b_picture_fixed_qp = h->pbh.b_fixed_picture_qp;
 	}
 
     /* ------------------------ Create slice header  ----------------------- */

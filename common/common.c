@@ -123,17 +123,16 @@ void    xavs_param_default( xavs_param_t *param )
     param->analyse.i_mv_range = -1; // set from level_idc
     param->analyse.i_chroma_qp_offset = 0;
     param->analyse.b_fast_pskip = 0;
-	param->analyse.b_transform_8x8 = 1;
+    param->analyse.b_transform_8x8 = 1;
     param->analyse.i_trellis = 1;
     param->analyse.i_luma_deadzone[0] = 21;  /*intra*/
     param->analyse.i_luma_deadzone[1] = 11;  /*inter*/
     param->analyse.b_psnr = 1;
-	param->analyse.b_skip_mode = 1;//run
+    param->analyse.b_skip_mode = 1;//run
     
-	/*added by li 090904*/
-	param->i_chroma_format = 1;        /* 1: 4:2:0, 2: 4:2:2 */
-	param->i_sample_precision = 1;     /* 1: 8 bits per sample */
-	param->i_aspect_ratio = 1;         /* '0001':1/1, '0010':4/3, '0011': 16/9, '0100':2.21/ 1 */
+    param->i_chroma_format = 1;        /* 1: 4:2:0, 2: 4:2:2 */
+    param->i_sample_precision = 1;     /* 1: 8 bits per sample */
+    param->i_aspect_ratio = 1;         /* '0001':1/1, '0010':4/3, '0011': 16/9, '0100':2.21/ 1 */
 
     param->i_cqm_preset = XAVS_CQM_FLAT;
     memset( param->cqm_4iy, 16, 16 );
