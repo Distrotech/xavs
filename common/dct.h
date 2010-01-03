@@ -119,3 +119,4 @@ void scan_zigzag_8x8full( int level[64], int16_t dct[8][8] );
 void sub_zigzag_8x8full( int level[64], const uint8_t *p_src, uint8_t *p_dst );
 
 #endif
+

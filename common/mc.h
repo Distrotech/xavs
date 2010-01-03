@@ -54,3 +54,4 @@ typedef struct
 void xavs_mc_init( int cpu, xavs_mc_functions_t *pf );
 
 #endif
+

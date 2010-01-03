@@ -62,7 +62,7 @@ void    xavs_param_default( xavs_param_t *param )
     param->i_fps_den       = 1;
     param->i_level_idc     = 64; /* as close to "unrestricted" as we can get */
     
-	param->i_frame_total   = 300;
+    param->i_frame_total   = 300;
 
     /* Encoder parameters */
     param->i_frame_reference = 2;
@@ -73,7 +73,7 @@ void    xavs_param_default( xavs_param_t *param )
     param->b_bframe_adaptive = 0;
     param->i_bframe_bias = 0;
     param->b_bframe_pyramid = 0;
-	param->analyse.b_bframe_rdo=0;
+    param->analyse.b_bframe_rdo=0;
 
     param->b_deblocking_filter = 1;
     param->i_deblocking_filter_alphac0 = 0;

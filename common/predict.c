@@ -134,87 +134,86 @@ static void predict_8x8c_dc( uint8_t *src, int i_neighbor )
 {
     PREDICT_8x8_LOAD_LEFT(0)
     PREDICT_8x8_LOAD_TOP(0)
-	//for(  i = 0 ; i < 8 ; i++)
+    //for(  i = 0 ; i < 8 ; i++)
      
-     src[0] =  xavs_clip_uint8(( t0 + l0 ) >> 1);
-	 src[1] =  xavs_clip_uint8(( t1 + l0 ) >> 1);
-     src[2] =  xavs_clip_uint8(( t2 + l0 ) >> 1);
-	 src[3] =  xavs_clip_uint8(( t3 + l0 ) >> 1);
-	 src[4] =  xavs_clip_uint8(( t4 + l0 ) >> 1);
-     src[5] =  xavs_clip_uint8(( t5 + l0) >> 1);
-  	 src[6] =  xavs_clip_uint8(( t6 + l0 ) >> 1);
-  	 src[7] =  xavs_clip_uint8(( t7 + l0 ) >> 1);
-     src += FDEC_STRIDE;
+    src[0] =  xavs_clip_uint8(( t0 + l0 ) >> 1);
+    src[1] =  xavs_clip_uint8(( t1 + l0 ) >> 1);
+    src[2] =  xavs_clip_uint8(( t2 + l0 ) >> 1);
+    src[3] =  xavs_clip_uint8(( t3 + l0 ) >> 1);
+    src[4] =  xavs_clip_uint8(( t4 + l0 ) >> 1);
+    src[5] =  xavs_clip_uint8(( t5 + l0) >> 1);
+    src[6] =  xavs_clip_uint8(( t6 + l0 ) >> 1);
+    src[7] =  xavs_clip_uint8(( t7 + l0 ) >> 1);
+    src += FDEC_STRIDE;
 	 
-	 src[0] =  xavs_clip_uint8(( t0 + l1 ) >> 1);
-	 src[1] =  xavs_clip_uint8(( t1 + l1 ) >> 1);
-     src[2] =  xavs_clip_uint8(( t2 + l1 ) >> 1);
-	 src[3] =  xavs_clip_uint8(( t3 + l1 ) >> 1);
-	 src[4] =  xavs_clip_uint8(( t4 + l1 ) >> 1);
-     src[5] =  xavs_clip_uint8(( t5 + l1 ) >> 1);
-  	 src[6] =  xavs_clip_uint8(( t6 + l1 ) >> 1);
-  	 src[7] =  xavs_clip_uint8(( t7 + l1 ) >> 1);
-     src += FDEC_STRIDE;
+    src[0] =  xavs_clip_uint8(( t0 + l1 ) >> 1);
+    src[1] =  xavs_clip_uint8(( t1 + l1 ) >> 1);
+    src[2] =  xavs_clip_uint8(( t2 + l1 ) >> 1);
+    src[3] =  xavs_clip_uint8(( t3 + l1 ) >> 1);
+    src[4] =  xavs_clip_uint8(( t4 + l1 ) >> 1);
+    src[5] =  xavs_clip_uint8(( t5 + l1 ) >> 1);
+    src[6] =  xavs_clip_uint8(( t6 + l1 ) >> 1);
+    src[7] =  xavs_clip_uint8(( t7 + l1 ) >> 1);
+    src += FDEC_STRIDE;
 
-	 src[0] =  xavs_clip_uint8(( t0 + l2 ) >> 1);
-	 src[1] =  xavs_clip_uint8(( t1 + l2 ) >> 1);
-     src[2] =  xavs_clip_uint8(( t2 + l2 ) >> 1);
-	 src[3] =  xavs_clip_uint8(( t3 + l2 ) >> 1);
-	 src[4] =  xavs_clip_uint8(( t4 + l2 ) >> 1);
-     src[5] =  xavs_clip_uint8(( t5 + l2 ) >> 1);
-  	 src[6] =  xavs_clip_uint8(( t6 + l2 ) >> 1);
-  	 src[7] =  xavs_clip_uint8(( t7 + l2 ) >> 1);
-     src += FDEC_STRIDE;
+    src[0] =  xavs_clip_uint8(( t0 + l2 ) >> 1);
+    src[1] =  xavs_clip_uint8(( t1 + l2 ) >> 1);
+    src[2] =  xavs_clip_uint8(( t2 + l2 ) >> 1);
+    src[3] =  xavs_clip_uint8(( t3 + l2 ) >> 1);
+    src[4] =  xavs_clip_uint8(( t4 + l2 ) >> 1);
+    src[5] =  xavs_clip_uint8(( t5 + l2 ) >> 1);
+    src[6] =  xavs_clip_uint8(( t6 + l2 ) >> 1);
+    src[7] =  xavs_clip_uint8(( t7 + l2 ) >> 1);
+    src += FDEC_STRIDE;
 
-	 src[0] =  xavs_clip_uint8(( t0 + l3 ) >> 1);
-	 src[1] =  xavs_clip_uint8(( t1 + l3 ) >> 1);
-     src[2] =  xavs_clip_uint8(( t2 + l3 ) >> 1);
-	 src[3] =  xavs_clip_uint8(( t3 + l3 ) >> 1);
-	 src[4] =  xavs_clip_uint8(( t4 + l3 ) >> 1);
-     src[5] =  xavs_clip_uint8(( t5 + l3 ) >> 1);
-  	 src[6] =  xavs_clip_uint8(( t6 + l3 ) >> 1);
-  	 src[7] =  xavs_clip_uint8(( t7 + l3 ) >> 1);
-     src += FDEC_STRIDE;
+    src[0] =  xavs_clip_uint8(( t0 + l3 ) >> 1);
+    src[1] =  xavs_clip_uint8(( t1 + l3 ) >> 1);
+    src[2] =  xavs_clip_uint8(( t2 + l3 ) >> 1);
+    src[3] =  xavs_clip_uint8(( t3 + l3 ) >> 1);
+    src[4] =  xavs_clip_uint8(( t4 + l3 ) >> 1);
+    src[5] =  xavs_clip_uint8(( t5 + l3 ) >> 1);
+    src[6] =  xavs_clip_uint8(( t6 + l3 ) >> 1);
+    src[7] =  xavs_clip_uint8(( t7 + l3 ) >> 1);
+    src += FDEC_STRIDE;
 
-	 src[0] =  xavs_clip_uint8(( t0 + l4 ) >> 1);
-	 src[1] =  xavs_clip_uint8(( t1 + l4 ) >> 1);
-     src[2] =  xavs_clip_uint8(( t2 + l4 ) >> 1);
-	 src[3] =  xavs_clip_uint8(( t3 + l4 ) >> 1);
-	 src[4] =  xavs_clip_uint8(( t4 + l4 ) >> 1);
-     src[5] =  xavs_clip_uint8(( t5 + l4 ) >> 1);
-  	 src[6] =  xavs_clip_uint8(( t6 + l4 ) >> 1);
-  	 src[7] =  xavs_clip_uint8(( t7 + l4 ) >> 1);
-     src += FDEC_STRIDE;
+    src[0] =  xavs_clip_uint8(( t0 + l4 ) >> 1);
+    src[1] =  xavs_clip_uint8(( t1 + l4 ) >> 1);
+    src[2] =  xavs_clip_uint8(( t2 + l4 ) >> 1);
+    src[3] =  xavs_clip_uint8(( t3 + l4 ) >> 1);
+    src[4] =  xavs_clip_uint8(( t4 + l4 ) >> 1);
+    src[5] =  xavs_clip_uint8(( t5 + l4 ) >> 1);
+    src[6] =  xavs_clip_uint8(( t6 + l4 ) >> 1);
+    src[7] =  xavs_clip_uint8(( t7 + l4 ) >> 1);
+    src += FDEC_STRIDE;
 
-	 src[0] =  xavs_clip_uint8(( t0 + l5 ) >> 1);
-	 src[1] =  xavs_clip_uint8(( t1 + l5 ) >> 1);
-     src[2] =  xavs_clip_uint8(( t2 + l5 ) >> 1);
-	 src[3] =  xavs_clip_uint8(( t3 + l5 ) >> 1);
-	 src[4] =  xavs_clip_uint8(( t4 + l5 ) >> 1);
-     src[5] =  xavs_clip_uint8(( t5 + l5 ) >> 1);
-  	 src[6] =  xavs_clip_uint8(( t6 + l5 ) >> 1);
-  	 src[7] =  xavs_clip_uint8(( t7 + l5 ) >> 1);
-     src += FDEC_STRIDE;
+    src[0] =  xavs_clip_uint8(( t0 + l5 ) >> 1);
+    src[1] =  xavs_clip_uint8(( t1 + l5 ) >> 1);
+    src[2] =  xavs_clip_uint8(( t2 + l5 ) >> 1);
+    src[3] =  xavs_clip_uint8(( t3 + l5 ) >> 1);
+    src[4] =  xavs_clip_uint8(( t4 + l5 ) >> 1);
+    src[5] =  xavs_clip_uint8(( t5 + l5 ) >> 1);
+    src[6] =  xavs_clip_uint8(( t6 + l5 ) >> 1);
+    src[7] =  xavs_clip_uint8(( t7 + l5 ) >> 1);
+    src += FDEC_STRIDE;
 
-	 src[0] =  xavs_clip_uint8(( t0 + l6 ) >> 1);
-	 src[1] =  xavs_clip_uint8(( t1 + l6 ) >> 1);
-     src[2] =  xavs_clip_uint8(( t2 + l6 ) >> 1);
-	 src[3] =  xavs_clip_uint8(( t3 + l6 ) >> 1);
-	 src[4] =  xavs_clip_uint8(( t4 + l6 ) >> 1);
-     src[5] =  xavs_clip_uint8(( t5 + l6 ) >> 1);
-  	 src[6] =  xavs_clip_uint8(( t6 + l6 ) >> 1);
-  	 src[7] =  xavs_clip_uint8(( t7 + l6 ) >> 1);
-     src += FDEC_STRIDE;
+    src[0] =  xavs_clip_uint8(( t0 + l6 ) >> 1);
+    src[1] =  xavs_clip_uint8(( t1 + l6 ) >> 1);
+    src[2] =  xavs_clip_uint8(( t2 + l6 ) >> 1);
+    src[3] =  xavs_clip_uint8(( t3 + l6 ) >> 1);
+    src[4] =  xavs_clip_uint8(( t4 + l6 ) >> 1);
+    src[5] =  xavs_clip_uint8(( t5 + l6 ) >> 1);
+    src[6] =  xavs_clip_uint8(( t6 + l6 ) >> 1);
+    src[7] =  xavs_clip_uint8(( t7 + l6 ) >> 1);
+    src += FDEC_STRIDE;
 
-	 src[0] =  xavs_clip_uint8(( t0 + l7 ) >> 1);
-	 src[1] =  xavs_clip_uint8(( t1 + l7 ) >> 1);
-     src[2] =  xavs_clip_uint8(( t2 + l7 ) >> 1);
-	 src[3] =  xavs_clip_uint8(( t3 + l7 ) >> 1);
-	 src[4] =  xavs_clip_uint8(( t4 + l7 ) >> 1);
-     src[5] =  xavs_clip_uint8(( t5 + l7 ) >> 1);
-  	 src[6] =  xavs_clip_uint8(( t6 + l7 ) >> 1);
-  	 src[7] =  xavs_clip_uint8(( t7 + l7 ) >> 1);
-
+    src[0] =  xavs_clip_uint8(( t0 + l7 ) >> 1);
+    src[1] =  xavs_clip_uint8(( t1 + l7 ) >> 1);
+    src[2] =  xavs_clip_uint8(( t2 + l7 ) >> 1);
+    src[3] =  xavs_clip_uint8(( t3 + l7 ) >> 1);
+    src[4] =  xavs_clip_uint8(( t4 + l7 ) >> 1);
+    src[5] =  xavs_clip_uint8(( t5 + l7 ) >> 1);
+    src[6] =  xavs_clip_uint8(( t6 + l7 ) >> 1);
+    src[7] =  xavs_clip_uint8(( t7 + l7 ) >> 1);
 }
  
 static void predict_8x8c_h( uint8_t *src, int i_neighbor )
@@ -233,7 +232,7 @@ static void predict_8x8c_h( uint8_t *src, int i_neighbor )
 
 static void predict_8x8c_v( uint8_t *src, int i_neighbor )
 {
-     uint32_t v0 = *(uint32_t*)&src[0-FDEC_STRIDE];
+    uint32_t v0 = *(uint32_t*)&src[0-FDEC_STRIDE];
     uint32_t v1 = *(uint32_t*)&src[4-FDEC_STRIDE];
     uint8_t i;
 
@@ -351,9 +350,9 @@ static void predict_8x8_dc_left( uint8_t *src, int i_neighbor )
 
 static void predict_8x8_dc_top( uint8_t *src, int i_neighbor )
 {
-	int i;
+    int i;
     PREDICT_8x8_LOAD_TOP(0)
-	for( i = 0; i < 8; i++ )
+    for( i = 0; i < 8; i++ )
     {
       src[0] = t0;
       src[1] = t1;
@@ -469,7 +468,7 @@ static void predict_8x8_h( uint8_t *src, int i_neighbor )
 
 static void predict_8x8_v( uint8_t *src, int i_neighbor )
 {
-     uint32_t v0 = *(uint32_t*)&src[0-FDEC_STRIDE];
+    uint32_t v0 = *(uint32_t*)&src[0-FDEC_STRIDE];
     uint32_t v1 = *(uint32_t*)&src[4-FDEC_STRIDE];
     uint8_t i;
 

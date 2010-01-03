@@ -104,3 +104,4 @@ void          xavs_frame_init_lowres( int cpu, xavs_frame_t *frame );
 void          xavs_deblock_init( int cpu, xavs_deblock_function_t *pf );
 
 #endif
+

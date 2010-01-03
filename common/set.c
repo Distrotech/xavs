@@ -66,48 +66,45 @@ int xavs_cqm_init( xavs_t *h )
 	//initial the dequant and quant table with q for 8x8 
 	for( q = 0; q < 64; q++ )
 	{
-		for( i = 0; i < 64; i++ )
-        {
-           def_dequant8[q][i] = dequant8_table[q];
-           def_quant8[q][i]   = quant8_scale[i]; 
-		}
+	   for( i = 0; i < 64; i++ )
+            {
+              def_dequant8[q][i] = dequant8_table[q];
+              def_quant8[q][i]   = quant8_scale[i]; 
+	    }
 	}
 
 	//i_list =0 Intra Y ; i_list = 1 inter Y ; i_list =2 Intra C ; i_list =3 Inter C;
-    for( i_list = 0; i_list < 4; i_list++ )
+        for( i_list = 0; i_list < 4; i_list++ )
 	{
-	   for( q = 0; q < 64; q++ )
-       {
+          for( q = 0; q < 64; q++ )
+          {
             for( pos = 0; pos < 64; pos++ )
             {
-				int xx = pos%8; 
-			    int yy = pos/8; 
-				int mf; 
-        		h->dequant8_mf[i_list][q][yy][xx] = DIV(def_dequant8[q][pos] * 16, h->pps->scaling_list[i_list][pos]);
-				h->quant8_mf[i_list][q][pos] = mf = DIV(def_quant8[q][pos] * 16, h->pps->scaling_list[i_list][pos]);
+	       int xx = pos%8; 
+	       int yy = pos/8; 
+	       int mf; 
+               h->dequant8_mf[i_list][q][yy][xx] = DIV(def_dequant8[q][pos] * 16, h->pps->scaling_list[i_list][pos]);
+	       h->quant8_mf[i_list][q][pos] = mf = DIV(def_quant8[q][pos] * 16, h->pps->scaling_list[i_list][pos]);
 
-				//here the deadzone is a value from 0~32 2~5  
-				//deadzone 1/2, deadzone should be 0.5 * 1<<15  = (1<<5) * (1<<9)
-				//typical value intra  f=(1<<15)*10/31  inter  f=(1<<15)*10/62
-				if(i_list%2==0) /*intra*/
-		     	h->quant8_bias[i_list][q][pos] = XAVS_MIN( deadzone[i_list]<<9, (1<<15)*10/31 );
-				else /*inter*/
-		     	h->quant8_bias[i_list][q][pos] = XAVS_MIN( deadzone[i_list]<<9, (1<<15)*10/62 );
+	       //here the deadzone is a value from 0~32 2~5  
+	       //deadzone 1/2, deadzone should be 0.5 * 1<<15  = (1<<5) * (1<<9)
+	       //typical value intra  f=(1<<15)*10/31  inter  f=(1<<15)*10/62
+	       if(i_list%2==0) /*intra*/
+		h->quant8_bias[i_list][q][pos] = XAVS_MIN( deadzone[i_list]<<9, (1<<15)*10/31 );
+	       else /*inter*/
+		h->quant8_bias[i_list][q][pos] = XAVS_MIN( deadzone[i_list]<<9, (1<<15)*10/62 );
             }
-       }
+          }
 	}
-
 
     if( !h->mb.b_lossless && max_qp_err >= h->param.rc.i_qp_min )
     {
         xavs_log( h, XAVS_LOG_ERROR, "Quantization overflow.\n" );
-        xavs_log( h, XAVS_LOG_ERROR, "Your CQM is incompatible with QP < %d, but min QP is set to %d\n",
-                  max_qp_err+1, h->param.rc.i_qp_min );
+        xavs_log( h, XAVS_LOG_ERROR, "Your CQM is incompatible with QP < %d, but min QP is set to %d\n", max_qp_err+1, h->param.rc.i_qp_min );
 
         return -1;
     }
     return 0;
-
 }
 
 void xavs_cqm_delete( xavs_t *h )

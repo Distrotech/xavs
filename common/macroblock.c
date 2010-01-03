@@ -86,40 +86,38 @@ int xavs_mb_transform_8x8_allowed( xavs_t *h )
 void xavs_mb_predict_mv( xavs_t *h, int i_list, int idx, int i_width, int mvp[2] )
 {
     int16_t mv_a[2],mv_b[2],mv_c[2];
-	const int i8 = xavs_scan8[idx];
+    const int i8 = xavs_scan8[idx];
     const int i_ref= (h->sh.i_type==SLICE_TYPE_P)?h->mb.cache.ref[i_list][i8]:0;
-	//int     i_lista= h->mb.cache.list[i8-1];
+    //int     i_lista= h->mb.cache.list[i8-1];
     int     i_refa = h->mb.cache.ref[i_list][i8 - 1];
     //int16_t *mv_a  = h->mb.cache.mv[i_lista][i8 - 1];
-	 //mv_a[0]= h->mb.cache.mv[i_lista][i8 - 1][0];
-     //mv_a[1]= h->mb.cache.mv[i_lista][i8 - 1][1];
-	//int     i_listb= h->mb.cache.list[i8-8];
+    //mv_a[0]= h->mb.cache.mv[i_lista][i8 - 1][0];
+    //mv_a[1]= h->mb.cache.mv[i_lista][i8 - 1][1];
+    //int     i_listb= h->mb.cache.list[i8-8];
     int     i_refb = h->mb.cache.ref[i_list][i8 - 8];
     //int16_t *mv_b  = h->mb.cache.mv[i_listb][i8 - 8];
-	//int16_t mv_b[0]= h->mb.cache.mv[i_listb][i8 - 8][0];
-	//int16_t mv_b[1]= h->mb.cache.mv[i_listb][i8 - 8][1];
-	//int     i_listc= h->mb.cache.list[i8 - 8 + i_width];
+    //int16_t mv_b[0]= h->mb.cache.mv[i_listb][i8 - 8][0];
+    //int16_t mv_b[1]= h->mb.cache.mv[i_listb][i8 - 8][1];
+    //int     i_listc= h->mb.cache.list[i8 - 8 + i_width];
     int     i_refc = h->mb.cache.ref[i_list][i8 - 8 + i_width ];
     //int16_t *mv_c  = h->mb.cache.mv[i_listc][i8 - 8 + i_width];
     //int16_t mv_c[0]= h->mb.cache.mv[i_listc][i8 - 8 + i_width][0];
-	//int16_t mv_c[1]= h->mb.cache.mv[i_listc][i8 - 8 + i_width][1];
+    //int16_t mv_c[1]= h->mb.cache.mv[i_listc][i8 - 8 + i_width][1];
 
-	int MV_A[2];
-	int MV_B[2];
-	int MV_C[2];
+    int MV_A[2];
+    int MV_B[2];
+    int MV_C[2];
 	
-	int VAB;
-	int VBC;
-	int VCA;
+    int VAB;
+    int VBC;
+    int VCA;
 
-	int FMV;
+    int FMV;
+    int i_count;
+    int BlockDistanceE,BlockDistanceA,BlockDistanceB,BlockDistanceC;
 
-	int i_count;
-
-	int BlockDistanceE,BlockDistanceA,BlockDistanceB,BlockDistanceC;
-
-    mv_a[0]= h->mb.cache.mv[i_list][i8 - 1][0];
-    mv_a[1]= h->mb.cache.mv[i_list][i8 - 1][1];
+        mv_a[0]= h->mb.cache.mv[i_list][i8 - 1][0];
+        mv_a[1]= h->mb.cache.mv[i_list][i8 - 1][1];
     
 	mv_b[0]= h->mb.cache.mv[i_list][i8 - 8][0];
 	mv_b[1]= h->mb.cache.mv[i_list][i8 - 8][1];
@@ -127,57 +125,38 @@ void xavs_mb_predict_mv( xavs_t *h, int i_list, int idx, int i_width, int mvp[2]
 	mv_c[0]= h->mb.cache.mv[i_list][i8 - 8 + i_width][0];
 	mv_c[1]= h->mb.cache.mv[i_list][i8 - 8 + i_width][1];
 
-    /*if(i_lista!=i_list)
-	{
-		mv_a[0]=mv_a[1]=0;
-	    i_refa=-1;
-	}
-	if(i_listb!=i_list)
-	{
-		mv_b[0]=mv_b[1]=0;
-	    i_refb=-1;
-	}
-	if(i_listc!=i_list)
-	{
-		mv_c[0]=mv_c[1]=0;
-	    i_refc=-1;
-	}*/
 	BlockDistanceE=abs(h->fenc->i_poc-(i_list?h->fref1[i_ref]->i_poc:h->fref0[i_ref]->i_poc));
    
-    //if( (idx&0x03) == 3 || ( i_width == 2 && (idx&0x3) == 2 )|| i_refc == -2 )
      if( (idx&0x03) == 3 || ( i_width == 2 && (idx&0x3) == 2 )||( i_width == 4 && (idx&0xF) == 8 )|| i_refc == -2 )
     {
-	    //i_listc=h->mb.cache.list[i8 - 8 - 1];
         i_refc = h->mb.cache.ref[i_list][i8 - 8 - 1];
         mv_c[0]   = h->mb.cache.mv[i_list][i8 - 8 - 1][0];
 		mv_c[1]   = h->mb.cache.mv[i_list][i8 - 8 - 1][1];
     }
-	/*if(i_listc!=i_list)
-	{
-		mv_c[0]=mv_c[1]=0;
-	    i_refc=-1;
-	}*/
-	if(i_refa==-1||i_refa==-2)//||i_lista!=i_list)
-	{
+
+    if(i_refa==-1||i_refa==-2)//||i_lista!=i_list)
+    {
         BlockDistanceA=1;
-	    mv_a[0]=mv_a[1]=0;
-	}
-	else
+	mv_a[0]=mv_a[1]=0;
+    }
+    else
         BlockDistanceA=abs(h->fenc->i_poc-(i_list?h->fref1[i_refa]->i_poc:h->fref0[i_refa]->i_poc));
-	if(i_refb==-1||i_refb==-2)//||i_listb!=i_list)
-	{
-		BlockDistanceB=1;
+
+    if(i_refb==-1||i_refb==-2)//||i_listb!=i_list)
+    {
+        BlockDistanceB=1;
         mv_b[0]=mv_b[1]=0;
-	}
-	else
-		BlockDistanceB=abs(h->fenc->i_poc-(i_list?h->fref1[i_refb]->i_poc:h->fref0[i_refb]->i_poc));
-	if(i_refc==-1||i_refc==-2)//||i_listc!=i_list)
-	{
-		BlockDistanceC=1;
-	    mv_c[0]=mv_c[1]=0;
-	}
-	else
-		BlockDistanceC=abs(h->fenc->i_poc-(i_list?h->fref1[i_refc]->i_poc:h->fref0[i_refc]->i_poc));
+    }
+    else
+        BlockDistanceB=abs(h->fenc->i_poc-(i_list?h->fref1[i_refb]->i_poc:h->fref0[i_refb]->i_poc));
+
+    if(i_refc==-1||i_refc==-2)//||i_listc!=i_list)
+    {
+	BlockDistanceC=1;
+	mv_c[0]=mv_c[1]=0;
+    }
+    else
+        BlockDistanceC=abs(h->fenc->i_poc-(i_list?h->fref1[i_refc]->i_poc:h->fref0[i_refc]->i_poc));
 	
 
     if( h->mb.i_partition == D_16x8 )
@@ -213,23 +192,23 @@ void xavs_mb_predict_mv( xavs_t *h, int i_list, int idx, int i_width, int mvp[2]
 
     i_count = 0;
 
-	if( i_refa !=-1&&i_refa !=-2 ) i_count++;
+    if( i_refa !=-1&&i_refa !=-2 ) i_count++;
     if( i_refb !=-1&&i_refb !=-2  ) i_count++;
     if( i_refc !=-1&&i_refc !=-2  ) i_count++;
 
-	if( i_count == 1 )
+    if( i_count == 1 )
     {
-		if( i_refa !=-1&&i_refa !=-2 )
+      if( i_refa !=-1&&i_refa !=-2 )
         {
             mvp[0] = mv_a[0];
             mvp[1] = mv_a[1];
         }
-        else if( i_refb !=-1&&i_refb !=-2  )
+      else if( i_refb !=-1&&i_refb !=-2  )
         {
             mvp[0] = mv_b[0];
             mvp[1] = mv_b[1];
         }
-        else
+      else
         {
             mvp[0] = mv_c[0];
             mvp[1] = mv_c[1];
@@ -237,78 +216,45 @@ void xavs_mb_predict_mv( xavs_t *h, int i_list, int idx, int i_width, int mvp[2]
     }
     else 
     {
-        /*if((h->mb.i_neighbour4[idx] & MB_LEFT )&&(h->mb.i_mb_type_left!=I_8x8))
-		{
-         MV_A[0]=(abs(mv_a[0])*512+256)>>9;
-		 MV_A[1]=(abs(mv_a[1])*512+256)>>9;
-		}
-		else
-		{
-         MV_A[0]=(abs(mv_a[0])*1024+256)>>9;
-		 MV_A[1]=(abs(mv_a[1])*1024+256)>>9;
-		}
-        if((h->mb.i_neighbour4[idx] & MB_TOP )&&(h->mb.i_mb_type_top!=I_8x8))
-		{
-		 MV_B[0]=(abs(mv_b[0])*512+256)>>9;
-		 MV_B[1]=(abs(mv_b[1])*512+256)>>9;
-		}
-		else
-		{
-		 MV_B[0]=(abs(mv_b[0])*1024+256)>>9;
-		 MV_B[1]=(abs(mv_b[1])*1024+256)>>9;
-		}
-		if((h->mb.i_neighbour4[idx] & MB_TOPRIGHT )&&(h->mb.i_mb_type_topright!=I_8x8))
-			//||(h->mb.i_neighbour4[idx] & MB_TOPLEFT == MB_TOPLEFT))
-		{
-		 MV_C[0]=(abs(mv_c[0])*512+256)>>9;
-		 MV_C[1]=(abs(mv_c[1])*512+256)>>9;
-		}
-		else
-		{
-		 MV_C[0]=(abs(mv_c[0])*1024+256)>>9;
-		 MV_C[1]=(abs(mv_c[1])*1024+256)>>9;
-		}*/
+       MV_A[0]=(abs(mv_a[0])*BlockDistanceE*(512/BlockDistanceA)+256)>>9;
+       MV_A[1]=(abs(mv_a[1])*BlockDistanceE*(512/BlockDistanceA)+256)>>9;
 
-		 MV_A[0]=(abs(mv_a[0])*BlockDistanceE*(512/BlockDistanceA)+256)>>9;
-		 MV_A[1]=(abs(mv_a[1])*BlockDistanceE*(512/BlockDistanceA)+256)>>9;
+       MV_B[0]=(abs(mv_b[0])*BlockDistanceE*(512/BlockDistanceB)+256)>>9;
+       MV_B[1]=(abs(mv_b[1])*BlockDistanceE*(512/BlockDistanceB)+256)>>9;
 
-		 MV_B[0]=(abs(mv_b[0])*BlockDistanceE*(512/BlockDistanceB)+256)>>9;
-		 MV_B[1]=(abs(mv_b[1])*BlockDistanceE*(512/BlockDistanceB)+256)>>9;
+       MV_C[0]=(abs(mv_c[0])*BlockDistanceE*(512/BlockDistanceC)+256)>>9;
+       MV_C[1]=(abs(mv_c[1])*BlockDistanceE*(512/BlockDistanceC)+256)>>9;
 
-		 MV_C[0]=(abs(mv_c[0])*BlockDistanceE*(512/BlockDistanceC)+256)>>9;
-		 MV_C[1]=(abs(mv_c[1])*BlockDistanceE*(512/BlockDistanceC)+256)>>9;
+       MV_A[0]= (mv_a[0]>=0) ? MV_A[0] :(-MV_A[0]);
+       MV_A[1]= (mv_a[1]>=0) ? MV_A[1] :(-MV_A[1]);
+       MV_B[0]= (mv_b[0]>=0) ? MV_B[0] :(-MV_B[0]);
+       MV_B[1]= (mv_b[1]>=0) ? MV_B[1] :(-MV_B[1]);
+       MV_C[0]= (mv_c[0]>=0) ? MV_C[0] :(-MV_C[0]);
+       MV_C[1]= (mv_c[1]>=0) ? MV_C[1] :(-MV_C[1]);
 
-		MV_A[0]= (mv_a[0]>=0) ? MV_A[0] :(-MV_A[0]);
-		MV_A[1]= (mv_a[1]>=0) ? MV_A[1] :(-MV_A[1]);
-		MV_B[0]= (mv_b[0]>=0) ? MV_B[0] :(-MV_B[0]);
-		MV_B[1]= (mv_b[1]>=0) ? MV_B[1] :(-MV_B[1]);
-		MV_C[0]= (mv_c[0]>=0) ? MV_C[0] :(-MV_C[0]);
-		MV_C[1]= (mv_c[1]>=0) ? MV_C[1] :(-MV_C[1]);
+       VAB=abs(MV_A[0]-MV_B[0])+abs(MV_A[1]-MV_B[1]);
+       VBC=abs(MV_B[0]-MV_C[0])+abs(MV_B[1]-MV_C[1]);
+       VCA=abs(MV_C[0]-MV_A[0])+abs(MV_C[1]-MV_A[1]);
 
-		 VAB=abs(MV_A[0]-MV_B[0])+abs(MV_A[1]-MV_B[1]);
-		 VBC=abs(MV_B[0]-MV_C[0])+abs(MV_B[1]-MV_C[1]);
-		 VCA=abs(MV_C[0]-MV_A[0])+abs(MV_C[1]-MV_A[1]);
+       FMV=xavs_median( VAB, VBC, VCA );
 
-		 FMV=xavs_median( VAB, VBC, VCA );
-
-		if(FMV==VAB)
-        {
-			mvp[0]=MV_C[0];
-            mvp[1]=MV_C[1];
-		}
-		else if(FMV==VBC)
-		{
-            mvp[0]=MV_A[0];
-			mvp[1]=MV_A[1];
-		}
-		else
-		{
-			mvp[0]=MV_B[0];
-			mvp[1]=MV_B[1];
-		}
+       if(FMV==VAB)
+       {
+	 mvp[0]=MV_C[0];
+         mvp[1]=MV_C[1];
+       }
+       else if(FMV==VBC)
+       {
+         mvp[0]=MV_A[0];
+	 mvp[1]=MV_A[1];
+       }
+       else
+       {
+         mvp[0]=MV_B[0];
+         mvp[1]=MV_B[1];
+       }
     }
 }
-
 
 void xavs_mb_predict_mv_16x16( xavs_t *h, int i_list, int i_ref, int mvp[2] )
 {
@@ -319,21 +265,19 @@ void xavs_mb_predict_mv_16x16( xavs_t *h, int i_list, int i_ref, int mvp[2] )
     int     i_refc = h->mb.cache.ref[i_list][XAVS_SCAN8_0 - 8 + 4];
     int16_t *mv_c  = h->mb.cache.mv[i_list][XAVS_SCAN8_0 - 8 + 4];
 
-	int MV_A[2];
-	int MV_B[2];
-	int MV_C[2];
+    int MV_A[2];
+    int MV_B[2];
+    int MV_C[2];
 	
-	int VAB;
-	int VBC;
-	int VCA;
-
-	int FMV;
-
+    int VAB;
+    int VBC;
+    int VCA;
+    int FMV;
     int i_count;
 
-	int BlockDistanceE,BlockDistanceA,BlockDistanceB,BlockDistanceC;
+    int BlockDistanceE,BlockDistanceA,BlockDistanceB,BlockDistanceC;
 
-	BlockDistanceE=abs(h->fenc->i_poc-(i_list?h->fref1[i_ref]->i_poc:h->fref0[i_ref]->i_poc));
+    BlockDistanceE=abs(h->fenc->i_poc-(i_list?h->fref1[i_ref]->i_poc:h->fref0[i_ref]->i_poc));
 
     if( i_refc == -2 )
     {
@@ -341,26 +285,28 @@ void xavs_mb_predict_mv_16x16( xavs_t *h, int i_list, int i_ref, int mvp[2] )
         mv_c   = h->mb.cache.mv[i_list][XAVS_SCAN8_0 - 8 - 1];
     }
 
-		if(i_refa==-1||i_refa==-2)
+    if(i_refa==-1||i_refa==-2)
         BlockDistanceA=1;
-	else
+    else
         BlockDistanceA=abs(h->fenc->i_poc-(i_list?h->fref1[i_refa]->i_poc:h->fref0[i_refa]->i_poc));
-	if(i_refb==-1||i_refb==-2)
-		BlockDistanceB=1;
-	else
-		BlockDistanceB=abs(h->fenc->i_poc-(i_list?h->fref1[i_refb]->i_poc:h->fref0[i_refb]->i_poc));
-	if(i_refc==-1||i_refc==-2)
-		BlockDistanceC=1;
-	else
-		BlockDistanceC=abs(h->fenc->i_poc-(i_list?h->fref1[i_refc]->i_poc:h->fref0[i_refc]->i_poc));
+
+    if(i_refb==-1||i_refb==-2)
+        BlockDistanceB=1;
+    else
+        BlockDistanceB=abs(h->fenc->i_poc-(i_list?h->fref1[i_refb]->i_poc:h->fref0[i_refb]->i_poc));
+
+    if(i_refc==-1||i_refc==-2)
+	BlockDistanceC=1;
+    else
+        BlockDistanceC=abs(h->fenc->i_poc-(i_list?h->fref1[i_refc]->i_poc:h->fref0[i_refc]->i_poc));
 
     i_count = 0;
 
-	if( i_refa !=-1&&i_refa !=-2 ) i_count++;
+    if( i_refa !=-1&&i_refa !=-2 ) i_count++;
     if( i_refb !=-1&&i_refb !=-2  ) i_count++;
     if( i_refc !=-1&&i_refc !=-2  ) i_count++;
 
-	if( i_count == 1 )
+    if( i_count == 1 )
     {
         if( i_refa !=-1&&i_refa !=-2 )
         {
@@ -380,77 +326,44 @@ void xavs_mb_predict_mv_16x16( xavs_t *h, int i_list, int i_ref, int mvp[2] )
     }
     else 
     {
-		/*if((h->mb.i_neighbour & MB_LEFT)&&(h->mb.i_mb_type_left!=I_8x8))
-		{
-         MV_A[0]=(abs(mv_a[0])*512+256)>>9;
-		 MV_A[1]=(abs(mv_a[1])*512+256)>>9;
-		}
-		else
-		{
-         MV_A[0]=(abs(mv_a[0])*1024+256)>>9;
-		 MV_A[1]=(abs(mv_a[1])*1024+256)>>9;
-		}
-		if((h->mb.i_neighbour & MB_TOP)&&(h->mb.i_mb_type_top!=I_8x8))
-		{
-		 MV_B[0]=(abs(mv_b[0])*512+256)>>9;
-		 MV_B[1]=(abs(mv_b[1])*512+256)>>9;
-		}
-		else
-		{
-		 MV_B[0]=(abs(mv_b[0])*1024+256)>>9;
-		 MV_B[1]=(abs(mv_b[1])*1024+256)>>9;
-		}
-		if((h->mb.i_neighbour & MB_TOPRIGHT)&&(h->mb.i_mb_type_topright!=I_8x8))
-			//||((h->mb.i_neighbour & MB_TOPLEFT)&&(h->mb.i_mb_type_topleft!=I_8x8)))
-		{
-		 MV_C[0]=(abs(mv_c[0])*512+256)>>9;
-		 MV_C[1]=(abs(mv_c[1])*512+256)>>9;
-		}
-		else
-		{
-		 MV_C[0]=(abs(mv_c[0])*1024+256)>>9;
-		 MV_C[1]=(abs(mv_c[1])*1024+256)>>9;
-		}*/
+      MV_A[0]=(abs(mv_a[0])*BlockDistanceE*(512/BlockDistanceA)+256)>>9;
+      MV_A[1]=(abs(mv_a[1])*BlockDistanceE*(512/BlockDistanceA)+256)>>9;
 
-		 MV_A[0]=(abs(mv_a[0])*BlockDistanceE*(512/BlockDistanceA)+256)>>9;
-		 MV_A[1]=(abs(mv_a[1])*BlockDistanceE*(512/BlockDistanceA)+256)>>9;
+      MV_B[0]=(abs(mv_b[0])*BlockDistanceE*(512/BlockDistanceB)+256)>>9;
+      MV_B[1]=(abs(mv_b[1])*BlockDistanceE*(512/BlockDistanceB)+256)>>9;
 
-		 MV_B[0]=(abs(mv_b[0])*BlockDistanceE*(512/BlockDistanceB)+256)>>9;
-		 MV_B[1]=(abs(mv_b[1])*BlockDistanceE*(512/BlockDistanceB)+256)>>9;
+      MV_C[0]=(abs(mv_c[0])*BlockDistanceE*(512/BlockDistanceC)+256)>>9;
+      MV_C[1]=(abs(mv_c[1])*BlockDistanceE*(512/BlockDistanceC)+256)>>9;
 
-		 MV_C[0]=(abs(mv_c[0])*BlockDistanceE*(512/BlockDistanceC)+256)>>9;
-		 MV_C[1]=(abs(mv_c[1])*BlockDistanceE*(512/BlockDistanceC)+256)>>9;
+      MV_A[0]= (mv_a[0]>0) ? MV_A[0] :(-MV_A[0]);
+      MV_A[1]= (mv_a[1]>0) ? MV_A[1] :(-MV_A[1]);
+      MV_B[0]= (mv_b[0]>0) ? MV_B[0] :(-MV_B[0]);
+      MV_B[1]= (mv_b[1]>0) ? MV_B[1] :(-MV_B[1]);
+      MV_C[0]= (mv_c[0]>0) ? MV_C[0] :(-MV_C[0]);
+      MV_C[1]= (mv_c[1]>0) ? MV_C[1] :(-MV_C[1]);
 
-	    MV_A[0]= (mv_a[0]>0) ? MV_A[0] :(-MV_A[0]);
-		MV_A[1]= (mv_a[1]>0) ? MV_A[1] :(-MV_A[1]);
-		MV_B[0]= (mv_b[0]>0) ? MV_B[0] :(-MV_B[0]);
-		MV_B[1]= (mv_b[1]>0) ? MV_B[1] :(-MV_B[1]);
-		MV_C[0]= (mv_c[0]>0) ? MV_C[0] :(-MV_C[0]);
-		MV_C[1]= (mv_c[1]>0) ? MV_C[1] :(-MV_C[1]);
+      VAB=abs(MV_A[0]-MV_B[0])+abs(MV_A[1]-MV_B[1]);
+      VBC=abs(MV_B[0]-MV_C[0])+abs(MV_B[1]-MV_C[1]);
+      VCA=abs(MV_C[0]-MV_A[0])+abs(MV_C[1]-MV_A[1]);
 
-	     VAB=abs(MV_A[0]-MV_B[0])+abs(MV_A[1]-MV_B[1]);
-		 VBC=abs(MV_B[0]-MV_C[0])+abs(MV_B[1]-MV_C[1]);
-		 VCA=abs(MV_C[0]-MV_A[0])+abs(MV_C[1]-MV_A[1]);
+      FMV=xavs_median( VAB, VBC, VCA );
 
-		 FMV=xavs_median( VAB, VBC, VCA );
-
-		if(FMV==VAB)
+      if(FMV==VAB)
         {
-			mvp[0]=MV_C[0];
-            mvp[1]=MV_C[1];
-		}
-		else if(FMV==VBC)
-		{
-            mvp[0]=MV_A[0];
-			mvp[1]=MV_A[1];
-		}
-		else
-		{
-			mvp[0]=MV_B[0];
-			mvp[1]=MV_B[1];
-		}
+          mvp[0]=MV_C[0];
+          mvp[1]=MV_C[1];
+	}
+      else if(FMV==VBC)
+        {
+          mvp[0]=MV_A[0];
+	  mvp[1]=MV_A[1];
+	}
+      else
+        {
+          mvp[0]=MV_B[0];
+          mvp[1]=MV_B[1];
+	}
     }
-   
 }
 
 void xavs_mb_predict_mv_pskip( xavs_t *h, int mv[2] )
@@ -484,9 +397,9 @@ static int xavs_mb_predict_mv_direct16x16_spatial( xavs_t *h )
     const int16_t (*l1mv0)[2] = (const int16_t (*)[2]) &h->fref1[0]->mv[0][ h->mb.i_b4_xy ];
     //const int16_t (*l1mv1)[2] = (const int16_t (*)[2]) &h->fref1[0]->mv[1][ h->mb.i_b4_xy ];
     int mvRef[2],mvFw[2],mvBw[2];
-	int BlockDistanceRef,BlockDistanceFw,BlockDistanceBw;
+    int BlockDistanceRef,BlockDistanceFw,BlockDistanceBw;
 
-	const int type_col = h->fref1[0]->mb_type[ h->mb.i_mb_xy ];
+    const int type_col = h->fref1[0]->mb_type[ h->mb.i_mb_xy ];
 
     if ( type_col == I_8x8 )
 	{
@@ -501,7 +414,7 @@ static int xavs_mb_predict_mv_direct16x16_spatial( xavs_t *h )
 	}
     else
 	{
-		for(i8=0;i8<4;i8++)
+           for(i8=0;i8<4;i8++)
 		{
 			const int x8 = i8%2;
 			const int y8 = i8/2;
@@ -509,30 +422,30 @@ static int xavs_mb_predict_mv_direct16x16_spatial( xavs_t *h )
 			const int o4 = 2*x8+2*y8*h->mb.i_b4_stride;
 
             mvRef[0] = l1mv0[o4][0];
-	        mvRef[1] = l1mv0[o4][1];
-			ref = l1ref0[o8];
+	    mvRef[1] = l1mv0[o4][1];
+	    ref = l1ref0[o8];
 
             BlockDistanceRef = ( h->fref1[0]->i_poc - h->fref1[0]->ref_poc[0][ref] + 512 )%512;
             BlockDistanceFw = ( h->fenc->i_poc - h->fref0[0]->i_poc+512 )%512;
             BlockDistanceBw =( h->fref1[0]->i_poc - h->fenc->i_poc + 512 ) % 512;
 
-	        mvFw[0] = (mvRef[0]>0) ? ((16384/BlockDistanceRef) * (1+mvRef[0] * BlockDistanceFw) - 1)>>14
-	                         :-((16384/BlockDistanceRef * (1-mvRef[0] * BlockDistanceFw) - 1)>>14);
+	    mvFw[0] = (mvRef[0]>0) ? ((16384/BlockDistanceRef) * (1+mvRef[0] * BlockDistanceFw) - 1)>>14 
+                                 : -((16384/BlockDistanceRef * (1-mvRef[0] * BlockDistanceFw) - 1)>>14);
    
-	        mvFw[1] = (mvRef[1]>0)?((16384/BlockDistanceRef)*(1+mvRef[1]*BlockDistanceFw)-1)>>14
+	    mvFw[1] = (mvRef[1]>0)?((16384/BlockDistanceRef)*(1+mvRef[1]*BlockDistanceFw)-1)>>14
 	                         :-(((16384/BlockDistanceRef)*(1-mvRef[1]*BlockDistanceFw)-1)>>14);
     
-	        mvBw[0] = (mvRef[0]>0)?-(((16384/BlockDistanceRef)*(1+mvRef[0]*BlockDistanceBw)-1)>>14)
+	    mvBw[0] = (mvRef[0]>0)?-(((16384/BlockDistanceRef)*(1+mvRef[0]*BlockDistanceBw)-1)>>14)
 	                         :((16384/BlockDistanceRef)*(1-mvRef[0]*BlockDistanceBw)-1)>>14;
 
 	        mvBw[1] = (mvRef[1]>0)?-(((16384/BlockDistanceRef)*(1+mvRef[1]*BlockDistanceBw)-1)>>14)
 	                         :((16384/BlockDistanceRef)*(1-mvRef[1]*BlockDistanceBw)-1)>>14;
 
             xavs_macroblock_cache_ref( h, 2*x8, 2*y8, 2, 2, 0, 0 );
-	        xavs_macroblock_cache_ref( h, 2*x8, 2*y8, 2, 2, 1, 0 );
-	        xavs_macroblock_cache_mv( h, 2*x8, 2*y8, 2, 2, 0, mvFw[0], mvFw[1]);
-	        xavs_macroblock_cache_mv( h, 2*x8, 2*y8, 2, 2, 1, mvBw[0], mvBw[1]);
-		}
+	    xavs_macroblock_cache_ref( h, 2*x8, 2*y8, 2, 2, 1, 0 );
+	    xavs_macroblock_cache_mv( h, 2*x8, 2*y8, 2, 2, 0, mvFw[0], mvFw[1]);
+	    xavs_macroblock_cache_mv( h, 2*x8, 2*y8, 2, 2, 1, mvBw[0], mvBw[1]);
+	}
 	   return 1;
 	} 
 
@@ -1515,3 +1428,4 @@ void xavs_macroblock_bipred_init( xavs_t *h )
         }
     }
 }
+

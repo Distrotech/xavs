@@ -36,10 +36,12 @@ static inline int xavs_tapfilter( uint8_t *pix, int i_pix_next )
 {
     return - pix[-1*i_pix_next] + 5*(pix[0] + pix[1*i_pix_next]) - pix[ 2*i_pix_next];
 }
+
 static inline int xavs_tapfilter1( uint8_t *pix )
 {
    return - pix[-1] + 5*(pix[0] + pix[1]) - pix[2] ;
 }
+
 static const int hpel_table[16][4] = 
 {
 	{0,0,0,0},{0,-1,0,1},{0,0,0,0},{0,1,0,-1},
@@ -47,77 +49,87 @@ static const int hpel_table[16][4] =
 	{0,0,0,0},{0,1,0,-1},{0,0,0,0},{0,-1,0,1},
 	{1,0,-1,0},{0,0,0,0},{-1,0,1,0},{0,0,0,0}
 };
+
 static inline void pixel_avg( uint8_t *dst,  int i_dst_stride,
                               uint8_t *src1, int i_src1_stride,
                               uint8_t *src2, int i_src2_stride,
                               int i_width, int i_height,int qpel_idx )
 {
-    int x, y;
-	//uint8_t src3[1024];
-	//uint8_t src4[1024];
-    for( y = 0; y < i_height; y++ )
-    {
-        for( x = 0; x < i_width; x++ )
-        {
-            if(qpel_idx==1)
-				dst[x]=xavs_clip_uint8(((96*src2[x]+42*src2[x+1]-7*src2[x+2]-2*src2[x-1]-src2[x-2])+64)>>7);
-			if(qpel_idx==3)
-				dst[x]=xavs_clip_uint8(((96*src2[x]+42*src2[x-1]-7*src2[x-2]-2*src2[x+1]-src2[x+2])+64)>>7);
-			if(qpel_idx==4)
-				dst[x]=xavs_clip_uint8(((-src2[x-2*i_src2_stride]-2*src2[x-i_src2_stride]+96*src2[x]
-				       +42*src2[x+i_src2_stride]-7*src2[x+2*i_src2_stride])+64)>>7);
-			if(qpel_idx==12) 
-				dst[x]=xavs_clip_uint8(((-7*src2[x-2*i_src2_stride]+42*src2[x-i_src2_stride]+96*src2[x]
-				       -2*src2[x+i_src2_stride]-src2[x+2*i_src2_stride])+64)>>7);
-			if(qpel_idx==9)
-				dst[x]=xavs_clip_uint8(((-(-src2[x-2-i_src2_stride]+5*src2[x-2]+5*src2[x-2+i_src2_stride]-src2[x-2+2*i_src2_stride])
-				       -2*(-src2[x-1-i_src2_stride]+5*src2[x-1]+5*src2[x-1+i_src2_stride]-src2[x-1+2*i_src2_stride])
-                       +96*(-src2[x-i_src2_stride]+5*src2[x]+5*src2[x+i_src2_stride]-src2[x+2*i_src2_stride])
-                       +42*(-src2[x+1-i_src2_stride]+5*src2[x+1]+5*src2[x+1+i_src2_stride]-src2[x+1+2*i_src2_stride])
-                       -7*(-src2[x+2-i_src2_stride]+5*src2[x+2]+5*src2[x+2+i_src2_stride]-src2[x+2+2*i_src2_stride]))+512)>>10);
-            if(qpel_idx==11)
-				dst[x]=xavs_clip_uint8(((-7*(-src2[x-2-i_src2_stride]+5*src2[x-2]+5*src2[x-2+i_src2_stride]-src2[x-2+2*i_src2_stride])
-				       +42*(-src2[x-1-i_src2_stride]+5*src2[x-1]+5*src2[x-1+i_src2_stride]-src2[x-1+2*i_src2_stride])
-                       +96*(-src2[x-i_src2_stride]+5*src2[x]+5*src2[x+i_src2_stride]-src2[x+2*i_src2_stride])
-                       -2*(-src2[x+1-i_src2_stride]+5*src2[x+1]+5*src2[x+1+i_src2_stride]-src2[x+1+2*i_src2_stride])
-                       -1*(-src2[x+2-i_src2_stride]+5*src2[x+2]+5*src2[x+2+i_src2_stride]-src2[x+2+2*i_src2_stride]))+512)>>10);
-            if(qpel_idx==6)
-				dst[x]=xavs_clip_uint8(((-(-src2[x-1-2*i_src2_stride]+5*src2[x-2*i_src2_stride]+5*src2[x+1-2*i_src2_stride]-src2[x+2-2*i_src2_stride])
-				       -2*(-src2[x-1-1*i_src2_stride]+5*src2[x-1*i_src2_stride]+5*src2[x+1-1*i_src2_stride]-src2[x+2-1*i_src2_stride])
-					   +96*(-src2[x-1]+5*src2[x]+5*src2[x+1]-src2[x+2])
-					   +42*(-src2[x-1+i_src2_stride]+5*src2[x+i_src2_stride]+5*src2[x+1+i_src2_stride]-src2[x+2+i_src2_stride])
-					   -7*(-src2[x-1+2*i_src2_stride]+5*src2[x+2*i_src2_stride]+5*src2[x+1+2*i_src2_stride]-src2[x+2+2*i_src2_stride]))+512)>>10);
-			if(qpel_idx==14)
-				dst[x]=xavs_clip_uint8(((-7*(-src2[x-1-2*i_src2_stride]+5*src2[x-2*i_src2_stride]+5*src2[x+1-2*i_src2_stride]-src2[x+2-2*i_src2_stride])
-				       +42*(-src2[x-1-1*i_src2_stride]+5*src2[x-1*i_src2_stride]+5*src2[x+1-1*i_src2_stride]-src2[x+2-1*i_src2_stride])
-                       +96*(-src2[x-1]+5*src2[x]+5*src2[x+1]-src2[x+2])
-					   -2*(-src2[x-1+i_src2_stride]+5*src2[x+i_src2_stride]+5*src2[x+1+i_src2_stride]-src2[x+2+i_src2_stride])
-					   -(-src2[x-1+2*i_src2_stride]+5*src2[x+2*i_src2_stride]+5*src2[x+1+2*i_src2_stride]-src2[x+2+2*i_src2_stride]))+512)>>10);
-			if(qpel_idx==5)
-				dst[x]=xavs_clip_uint8(((64*src2[x]-(-src2[x-1-1*i_src2_stride]+5*src2[x-1*i_src2_stride]+5*src2[x+1-1*i_src2_stride]-src2[x+2-1*i_src2_stride])
-				       +5*(-src2[x-1]+5*src2[x]+5*src2[x+1]-src2[x+2])
-					   +5*(-src2[x-1+1*i_src2_stride]+5*src2[x+1*i_src2_stride]+5*src2[x+1+1*i_src2_stride]-src2[x+2+1*i_src2_stride])
-					   -1*(-src2[x-1+2*i_src2_stride]+5*src2[x+2*i_src2_stride]+5*src2[x+1+2*i_src2_stride]-src2[x+2+2*i_src2_stride]))+64)>>7);
-			if(qpel_idx==7)
-				dst[x]=xavs_clip_uint8(((64*src2[x]-(-src2[x-2-1*i_src2_stride]+5*src2[x-1-1*i_src2_stride]+5*src2[x-1*i_src2_stride]-src2[x+1-1*i_src2_stride])
-				       +5*(-src2[x-2]+5*src2[x-1]+5*src2[x]-src2[x+1])
-					   +5*(-src2[x-2+1*i_src2_stride]+5*src2[x-1+1*i_src2_stride]+5*src2[x+1*i_src2_stride]-src2[x+1+1*i_src2_stride])
-					   -1*(-src2[x-2+2*i_src2_stride]+5*src2[x-1+2*i_src2_stride]+5*src2[x+2*i_src2_stride]-src2[x+1+2*i_src2_stride]))+64)>>7);
-			if(qpel_idx==13)
-				dst[x]=xavs_clip_uint8(((64*src2[x]-(-src2[x-1-2*i_src2_stride]+5*src2[x-2*i_src2_stride]+5*src2[x+1-2*i_src2_stride]-src2[x+2-2*i_src2_stride])
-				       +5*(-src2[x-1-1*i_src2_stride]+5*src2[x-1*i_src2_stride]+5*src2[x+1-1*i_src2_stride]-src2[x+2-1*i_src2_stride])
-					   +5*(-src2[x-1]+5*src2[x]+5*src2[x+1]-src2[x+2])
-					   -1*(-src2[x-1+1*i_src2_stride]+5*src2[x+1*i_src2_stride]+5*src2[x+1+1*i_src2_stride]-src2[x+2+1*i_src2_stride]))+64)>>7);
-			if(qpel_idx==15)
-				dst[x]=xavs_clip_uint8(((64*src2[x]-(-src2[x-2-2*i_src2_stride]+5*src2[x-1-2*i_src2_stride]+5*src2[x-2*i_src2_stride]-src2[x+1-2*i_src2_stride])
-				       +5*(-src2[x-2-1*i_src2_stride]+5*src2[x-1-1*i_src2_stride]+5*src2[x-1*i_src2_stride]-src2[x+1-1*i_src2_stride])
-					   +5*(-src2[x-2]+5*src2[x-1]+5*src2[x]-src2[x+1])
-					   -1*(-src2[x-2+1*i_src2_stride]+5*src2[x-1+1*i_src2_stride]+5*src2[x+1*i_src2_stride]-src2[x+1+1*i_src2_stride]))+64)>>7);
-        }
+ int x, y;
+ for( y = 0; y < i_height; y++ )
+ {
+  for( x = 0; x < i_width; x++ )
+  {
+   if(qpel_idx==1)
+     dst[x]=xavs_clip_uint8(((96*src2[x]+42*src2[x+1]-7*src2[x+2]-2*src2[x-1]-src2[x-2])+64)>>7);
+
+   if(qpel_idx==3)
+     dst[x]=xavs_clip_uint8(((96*src2[x]+42*src2[x-1]-7*src2[x-2]-2*src2[x+1]-src2[x+2])+64)>>7);
+
+   if(qpel_idx==4)
+     dst[x]=xavs_clip_uint8(((-src2[x-2*i_src2_stride]-2*src2[x-i_src2_stride]+96*src2[x]
+            +42*src2[x+i_src2_stride]-7*src2[x+2*i_src2_stride])+64)>>7);
+
+   if(qpel_idx==12) 
+     dst[x]=xavs_clip_uint8(((-7*src2[x-2*i_src2_stride]+42*src2[x-i_src2_stride]+96*src2[x]
+            -2*src2[x+i_src2_stride]-src2[x+2*i_src2_stride])+64)>>7);
+
+   if(qpel_idx==9)
+     dst[x]=xavs_clip_uint8(((-(-src2[x-2-i_src2_stride]+5*src2[x-2]+5*src2[x-2+i_src2_stride]-src2[x-2+2*i_src2_stride])
+           -2*(-src2[x-1-i_src2_stride]+5*src2[x-1]+5*src2[x-1+i_src2_stride]-src2[x-1+2*i_src2_stride])
+           +96*(-src2[x-i_src2_stride]+5*src2[x]+5*src2[x+i_src2_stride]-src2[x+2*i_src2_stride])
+           +42*(-src2[x+1-i_src2_stride]+5*src2[x+1]+5*src2[x+1+i_src2_stride]-src2[x+1+2*i_src2_stride])
+           -7*(-src2[x+2-i_src2_stride]+5*src2[x+2]+5*src2[x+2+i_src2_stride]-src2[x+2+2*i_src2_stride]) )+512)>>10);
+
+   if(qpel_idx==11)
+     dst[x]=xavs_clip_uint8(((-7*(-src2[x-2-i_src2_stride]+5*src2[x-2]+5*src2[x-2+i_src2_stride]-            src2[x-2+2*i_src2_stride])
+           +42*(-src2[x-1-i_src2_stride]+5*src2[x-1]+5*src2[x-1+i_src2_stride]-src2[x-1+2*i_src2_stride])
+           +96*(-src2[x-i_src2_stride]+5*src2[x]+5*src2[x+i_src2_stride]-src2[x+2*i_src2_stride])
+           -2*(-src2[x+1-i_src2_stride]+5*src2[x+1]+5*src2[x+1+i_src2_stride]-src2[x+1+2*i_src2_stride])
+           -1*(-src2[x+2-i_src2_stride]+5*src2[x+2]+5*src2[x+2+i_src2_stride]-src2[x+2+2*i_src2_stride]))+512)>>10);
+
+   if(qpel_idx==6)
+     dst[x]=xavs_clip_uint8(((-(-src2[x-1-2*i_src2_stride]+5*src2[x-2*i_src2_stride]+5*src2[x+1-2*i_src2_stride]-src2[x+2-2*i_src2_stride])
+            -2*(-src2[x-1-1*i_src2_stride]+5*src2[x-1*i_src2_stride]+5*src2[x+1-1*i_src2_stride]-src2[x+2-1*i_src2_stride])
+            +96*(-src2[x-1]+5*src2[x]+5*src2[x+1]-src2[x+2])
+            +42*(-src2[x-1+i_src2_stride]+5*src2[x+i_src2_stride]+5*src2[x+1+i_src2_stride]-src2[x+2+i_src2_stride])
+            -7*(-src2[x-1+2*i_src2_stride]+5*src2[x+2*i_src2_stride]+5*src2[x+1+2*i_src2_stride]-src2[x+2+2*i_src2_stride]))+512)>>10);
+
+   if(qpel_idx==14)
+     dst[x]=xavs_clip_uint8(((-7*(-src2[x-1-2*i_src2_stride]+5*src2[x-2*i_src2_stride]+5*src2[x+1-2*i_src2_stride]-src2[x+2-2*i_src2_stride])
+            +42*(-src2[x-1-1*i_src2_stride]+5*src2[x-1*i_src2_stride]+5*src2[x+1-1*i_src2_stride]-src2[x+2-1*i_src2_stride])
+            +96*(-src2[x-1]+5*src2[x]+5*src2[x+1]-src2[x+2])
+            -2*(-src2[x-1+i_src2_stride]+5*src2[x+i_src2_stride]+5*src2[x+1+i_src2_stride]-src2[x+2+i_src2_stride])
+            -(-src2[x-1+2*i_src2_stride]+5*src2[x+2*i_src2_stride]+5*src2[x+1+2*i_src2_stride]-src2[x+2+2*i_src2_stride]))+512)>>10);
+
+   if(qpel_idx==5)
+     dst[x]=xavs_clip_uint8(((64*src2[x]-(-src2[x-1-1*i_src2_stride]+5*src2[x-1*i_src2_stride]+5*src2[x+1-1*i_src2_stride]-src2[x+2-1*i_src2_stride])
+            +5*(-src2[x-1]+5*src2[x]+5*src2[x+1]-src2[x+2])
+            +5*(-src2[x-1+1*i_src2_stride]+5*src2[x+1*i_src2_stride]+5*src2[x+1+1*i_src2_stride]-src2[x+2+1*i_src2_stride])
+            -1*(-src2[x-1+2*i_src2_stride]+5*src2[x+2*i_src2_stride]+5*src2[x+1+2*i_src2_stride]-src2[x+2+2*i_src2_stride]))+64)>>7);
+
+   if(qpel_idx==7)
+     dst[x]=xavs_clip_uint8(((64*src2[x]-(-src2[x-2-1*i_src2_stride]+5*src2[x-1-1*i_src2_stride]+5*src2[x-1*i_src2_stride]-src2[x+1-1*i_src2_stride])
+            +5*(-src2[x-2]+5*src2[x-1]+5*src2[x]-src2[x+1])
+            +5*(-src2[x-2+1*i_src2_stride]+5*src2[x-1+1*i_src2_stride]+5*src2[x+1*i_src2_stride]-src2[x+1+1*i_src2_stride])
+            -1*(-src2[x-2+2*i_src2_stride]+5*src2[x-1+2*i_src2_stride]+5*src2[x+2*i_src2_stride]-src2[x+1+2*i_src2_stride]))+64)>>7);
+
+   if(qpel_idx==13)
+     dst[x]=xavs_clip_uint8(((64*src2[x]-(-src2[x-1-2*i_src2_stride]+5*src2[x-2*i_src2_stride]+5*src2[x+1-2*i_src2_stride]-src2[x+2-2*i_src2_stride])
+            +5*(-src2[x-1-1*i_src2_stride]+5*src2[x-1*i_src2_stride]+5*src2[x+1-1*i_src2_stride]-src2[x+2-1*i_src2_stride])
+            +5*(-src2[x-1]+5*src2[x]+5*src2[x+1]-src2[x+2])
+            -1*(-src2[x-1+1*i_src2_stride]+5*src2[x+1*i_src2_stride]+5*src2[x+1+1*i_src2_stride]-src2[x+2+1*i_src2_stride]))+64)>>7);
+
+   if(qpel_idx==15)
+     dst[x]=xavs_clip_uint8(((64*src2[x]-(-src2[x-2-2*i_src2_stride]+5*src2[x-1-2*i_src2_stride]+5*src2[x-2*i_src2_stride]-src2[x+1-2*i_src2_stride])
+            +5*(-src2[x-2-1*i_src2_stride]+5*src2[x-1-1*i_src2_stride]+5*src2[x-1*i_src2_stride]-src2[x+1-1*i_src2_stride])
+            +5*(-src2[x-2]+5*src2[x-1]+5*src2[x]-src2[x+1])
+            -1*(-src2[x-2+1*i_src2_stride]+5*src2[x-1+1*i_src2_stride]+5*src2[x+1*i_src2_stride]-src2[x+1+1*i_src2_stride]))+64)>>7);
+  }
         dst  += i_dst_stride;
         src1 += i_src1_stride;
         src2 += i_src2_stride;
-    }
+ }
 }
 
 static inline void pixel_avg_wxh( uint8_t *dst, int i_dst, uint8_t *src, int i_src, int width, int height )
@@ -216,6 +228,7 @@ static void mc_copy( uint8_t *src, int i_src_stride, uint8_t *dst, int i_dst_str
         dst += i_dst_stride;
     }
 }
+
 static inline void mc_hh( uint8_t *src, int i_src_stride, uint8_t *dst, int i_dst_stride, int i_width, int i_height )
 {
     int x, y;
@@ -230,6 +243,7 @@ static inline void mc_hh( uint8_t *src, int i_src_stride, uint8_t *dst, int i_ds
         dst += i_dst_stride;
     }
 }
+
 static inline void mc_hv( uint8_t *src, int i_src_stride, uint8_t *dst, int i_dst_stride, int i_width, int i_height )
 {
     int x, y;
@@ -244,6 +258,7 @@ static inline void mc_hv( uint8_t *src, int i_src_stride, uint8_t *dst, int i_ds
         dst += i_dst_stride;
     }
 }
+
 static inline void mc_hc( uint8_t *src, int i_src_stride, uint8_t *dst, int i_dst_stride, int i_width, int i_height )
 {
     uint8_t *out;
@@ -276,11 +291,8 @@ static inline void mc_hc( uint8_t *src, int i_src_stride, uint8_t *dst, int i_ds
     }
 }
 
-
-
 static const int hpel_ref0[16] = {0,1,1,1,2,0,1,3,2,2,3,2,2,0,1,0};
 static const int hpel_ref1[16] = {0,0,0,0,0,3,3,0,2,3,3,3,0,3,3,3};
-//static const int hpel_ref0[16] = {0,0,1,1,0,0,1,1,2,2,3,3,2,2,3,3};// only 1/2 interpolation
 
 static void mc_luma( uint8_t *src[4], int i_src_stride,
                      uint8_t *dst,    int i_dst_stride,
