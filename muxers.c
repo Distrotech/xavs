@@ -397,7 +397,7 @@ int read_frame_avis( xavs_picture_t *p_pic, hnd_t handle, int i_frame )
 {
     avis_input_t *h = handle;
 
-    p_pic->img.i_csp = xavs_CSP_YV12;
+    p_pic->img.i_csp = XAVS_CSP_YV12;
 
     if( AVIStreamRead(h->p_avi, i_frame, 1, p_pic->img.plane[0], h->width * h->height * 3 / 2, NULL, NULL ) )
         return -1;
