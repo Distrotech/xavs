@@ -5,7 +5,6 @@
 	Name="libxavs"
 	ProjectGUID="{C5A97D11-9A8B-4158-8240-65277021EE0D}"
 	RootNamespace="libxavs"
-	Keyword="Win32Proj"
 	>
 	<Platforms>
 		<Platform
@@ -16,11 +15,88 @@
 	</ToolFiles>
 	<Configurations>
 		<Configuration
-			Name="Debug|Win32"
-			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
+			Name="Release|Win32"
+			OutputDirectory=".\Release"
+			IntermediateDirectory=".\Release"
 			ConfigurationType="4"
-			CharacterSet="1"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="2"
+				InlineFunctionExpansion="2"
+				AdditionalIncludeDirectories="../../common,../../encoder,../../extras,../.."
+				PreprocessorDefinitions="NDEBUG;_LIB;WIN32;__XAVS__;ARCH_X86;HAVE_STDINT_H;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;"
+				StringPooling="true"
+				RuntimeLibrary="0"
+				EnableFunctionLevelLinking="true"
+				PrecompiledHeaderFile=".\Release/libxavs.pch"
+				AssemblerListingLocation=".\Release/"
+				ObjectFile=".\Release/"
+				ProgramDataBaseFileName=".\Release/"
+				WarningLevel="3"
+				SuppressStartupBanner="true"
+				CompileAs="0"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="NDEBUG"
+				Culture="2052"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLibrarianTool"
+				OutputFile="bin/libxavs.lib"
+				SuppressStartupBanner="true"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Debug|Win32"
+			OutputDirectory=".\Debug"
+			IntermediateDirectory=".\Debug"
+			ConfigurationType="4"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="2"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -40,21 +116,26 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../common,../../encoder,../../extras,../.."
-				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;ARCH_X86;HAVE_STDINT_H;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;"
-				MinimalRebuild="true"
+				AdditionalIncludeDirectories="../../common;../../encoder;../../extras;../.."
+				PreprocessorDefinitions="_DEBUG;_LIB;WIN32;__XAVS__;ARCH_X86;HAVE_STDINT_H;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;"
 				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
-				UsePrecompiledHeader="0"
+				RuntimeLibrary="1"
+				PrecompiledHeaderFile=".\Debug/libxavs.pch"
+				AssemblerListingLocation=".\Debug/"
+				ObjectFile=".\Debug/"
+				ProgramDataBaseFileName=".\Debug/"
 				WarningLevel="3"
-				Detect64BitPortabilityProblems="true"
-				DebugInformationFormat="4"
+				SuppressStartupBanner="true"
+				DebugInformationFormat="3"
+				CompileAs="0"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
 			/>
 			<Tool
 				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="_DEBUG"
+				Culture="2052"
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
@@ -62,66 +143,7 @@
 			<Tool
 				Name="VCLibrarianTool"
 				OutputFile="bin/libxavs.lib"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
-			/>
-		</Configuration>
-		<Configuration
-			Name="Release|Win32"
-			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
-			ConfigurationType="4"
-			CharacterSet="1"
-			WholeProgramOptimization="1"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
-				RuntimeLibrary="2"
-				UsePrecompiledHeader="0"
-				WarningLevel="3"
-				Detect64BitPortabilityProblems="true"
-				DebugInformationFormat="3"
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLibrarianTool"
+				SuppressStartupBanner="true"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -144,31 +166,106 @@
 	</References>
 	<Files>
 		<Filter
-			Name="extras"
-			Filter="cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx"
-			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
+			Name="Enc"
+			Filter=".c"
 			>
-			<File
-				RelativePath="..\..\extras\getopt.c"
-				>
-			</File>
 			<Filter
-				Name="extras_h"
+				Name="enc_h"
+				Filter=".h"
 				>
 				<File
-					RelativePath="..\..\extras\getopt.h"
+					RelativePath="..\..\encoder\analyse.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\extras\stdint.h"
+					RelativePath="..\..\encoder\analyse.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\encoder\cavlc.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\encoder\encoder.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\encoder\eval.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\encoder\macroblock.c"
+					>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\$(InputName)1.obj"
+							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\$(InputName)1.obj"
+							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\..\encoder\macroblock.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\encoder\me.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\encoder\me.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\encoder\ratecontrol.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\encoder\ratecontrol.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\encoder\set.c"
+					>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\$(InputName)1.obj"
+							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\$(InputName)1.obj"
+							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\..\encoder\set.h"
 					>
 				</File>
 			</Filter>
 		</Filter>
 		<Filter
 			Name="Core"
-			Filter="h;hpp;hxx;hm;inl;inc;xsd"
-			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
+			Filter=".c;.h;"
 			>
 			<File
 				RelativePath="..\..\common\common.c"
@@ -193,24 +290,6 @@
 			<File
 				RelativePath="..\..\common\macroblock.c"
 				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						ObjectFile="$(IntDir)\$(InputName)1.obj"
-						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						ObjectFile="$(IntDir)\$(InputName)1.obj"
-						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\common\mc.c"
@@ -238,6 +317,7 @@
 			</File>
 			<Filter
 				Name="core_h"
+				Filter=".h"
 				>
 				<File
 					RelativePath="..\..\common\bs.h"
@@ -298,81 +378,48 @@
 			</Filter>
 		</Filter>
 		<Filter
-			Name="Enc"
-			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav"
-			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
+			Name="extras"
+			Filter=".c"
 			>
 			<File
-				RelativePath="..\..\encoder\analyse.c"
+				RelativePath="..\..\extras\getopt.c"
 				>
-			</File>
-			<File
-				RelativePath="..\..\encoder\cavlc.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\encoder\encoder.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\encoder\eval.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\encoder\macroblock.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\encoder\me.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\encoder\ratecontrol.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\encoder\set.c"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						ObjectFile="$(IntDir)\$(InputName)1.obj"
-						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
-					/>
-				</FileConfiguration>
 				<FileConfiguration
 					Name="Release|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						ObjectFile="$(IntDir)\$(InputName)1.obj"
-						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+						Optimization="2"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+						ObjectFile=".\obj/util_release/"
+						ProgramDataBaseFileName="obj/util_release/"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="0"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+						BasicRuntimeChecks="3"
+						ObjectFile=".\obj/util_debug/"
+						ProgramDataBaseFileName="obj/util_debug/"
 					/>
 				</FileConfiguration>
 			</File>
 			<Filter
-				Name="enc_h"
+				Name="extras_h"
+				Filter=".h"
 				>
 				<File
-					RelativePath="..\..\encoder\analyse.h"
+					RelativePath="..\..\extras\getopt.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\encoder\macroblock.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\encoder\me.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\encoder\ratecontrol.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\encoder\set.h"
+					RelativePath="..\..\extras\stdint.h"
 					>
 				</File>
 			</Filter>

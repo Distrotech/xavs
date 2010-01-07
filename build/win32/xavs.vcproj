@@ -5,7 +5,6 @@
 	Name="xavs"
 	ProjectGUID="{DE913862-4BEE-4A29-99A2-8F8FE97A6A98}"
 	RootNamespace="xavs"
-	Keyword="Win32Proj"
 	>
 	<Platforms>
 		<Platform
@@ -17,16 +16,21 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
+			OutputDirectory=".\obj/xavs_Debug"
+			IntermediateDirectory=".\obj/xavs_Debug"
 			ConfigurationType="1"
-			CharacterSet="1"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="2"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"
@@ -36,35 +40,45 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
+				TypeLibraryName=".\obj/xavs_Debug/xavs.tlb"
+				HeaderFileName=""
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../common,../../encoder,../../extras,../.."
-				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;HAVE_STDINT_H;AVIS_INPUT;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;"
-				MinimalRebuild="true"
+				PreprocessorDefinitions="_DEBUG;_CONSOLE;WIN32;HAVE_STDINT_H;AVIS_INPUT;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;"
 				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
+				RuntimeLibrary="1"
 				UsePrecompiledHeader="0"
+				PrecompiledHeaderFile=".\obj/xavs_Debug/xavs.pch"
+				AssemblerListingLocation=".\obj/xavs_Debug/"
+				ObjectFile=".\obj/xavs_Debug/"
+				ProgramDataBaseFileName=".\obj/xavs_Debug/"
 				WarningLevel="3"
-				Detect64BitPortabilityProblems="true"
-				DebugInformationFormat="4"
+				SuppressStartupBanner="true"
+				DebugInformationFormat="3"
+				CompileAs="0"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
 			/>
 			<Tool
 				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="_DEBUG"
+				Culture="2052"
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="bin\libxavs.lib"
+				AdditionalDependencies="bin\libxavs.lib vfw32.lib winmm.lib"
 				OutputFile="bin/xavs.exe"
-				LinkIncremental="2"
+				LinkIncremental="1"
+				SuppressStartupBanner="true"
 				GenerateDebugInformation="true"
+				ProgramDatabaseFile=".\obj/xavs_Debug/xavs.pdb"
 				SubSystem="1"
 				TargetMachine="1"
 			/>
@@ -73,7 +87,6 @@
 			/>
 			<Tool
 				Name="VCManifestTool"
-				UseFAT32Workaround="true"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
@@ -96,17 +109,20 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
+			OutputDirectory=".\obj/xavs_Release"
+			IntermediateDirectory=".\obj/xavs_Release"
 			ConfigurationType="1"
-			CharacterSet="1"
-			WholeProgramOptimization="1"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="2"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"
@@ -116,32 +132,46 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
+				TypeLibraryName=".\obj/xavs_Release/xavs.tlb"
+				HeaderFileName=""
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
-				RuntimeLibrary="2"
+				Optimization="2"
+				InlineFunctionExpansion="1"
+				AdditionalIncludeDirectories="../../common;../../extras;../.."
+				PreprocessorDefinitions="NDEBUG;_CONSOLE;WIN32;HAVE_STDINT_H;AVIS_INPUT;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;"
+				StringPooling="true"
+				RuntimeLibrary="0"
+				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"
+				PrecompiledHeaderFile=".\obj/xavs_Release/xavs.pch"
+				AssemblerListingLocation=".\obj/xavs_Release/"
+				ObjectFile=".\obj/xavs_Release/"
+				ProgramDataBaseFileName=".\obj/xavs_Release/"
 				WarningLevel="3"
-				Detect64BitPortabilityProblems="true"
-				DebugInformationFormat="3"
+				SuppressStartupBanner="true"
+				CompileAs="0"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
 			/>
 			<Tool
 				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="NDEBUG"
+				Culture="2052"
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="bin\libxavs.lib vfw32.lib winmm.lib"
+				OutputFile="bin/xavs.exe"
 				LinkIncremental="1"
-				GenerateDebugInformation="true"
+				SuppressStartupBanner="true"
+				ProgramDatabaseFile=".\obj/xavs_Release/xavs.pdb"
 				SubSystem="1"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
 				TargetMachine="1"
 			/>
 			<Tool
