@@ -62,36 +62,31 @@ void    xavs_param_default( xavs_param_t *param )
     param->i_fps_den       = 1;
     param->i_level_idc     = 64; /* as close to "unrestricted" as we can get */
     
-    param->i_frame_total   = 300;
-
     /* Encoder parameters */
     param->i_frame_reference = 2;
     param->i_keyint_max = 250;
     param->i_keyint_min = 25;
-    param->i_bframe = 0;
+	param->i_bframe = 3;
     param->i_scenecut_threshold = 40;
-    param->b_bframe_adaptive = 0;
+	param->i_bframe_adaptive = 1;
     param->i_bframe_bias = 0;
-    param->b_bframe_pyramid = 0;
-    param->analyse.b_bframe_rdo=0;
+	param->analyse.b_bframe_rdo = 1 ;
 
     param->b_deblocking_filter = 1;
     param->i_deblocking_filter_alphac0 = 0;
     param->i_deblocking_filter_beta = 0;
 
-    param->b_cabac = 0;
-    param->i_cabac_init_idc = 0;
 
-    param->rc.b_cbr = 0;
-    param->rc.i_bitrate =0; //15000;//0;
-    param->rc.f_rate_tolerance = 1.0;
-    param->rc.i_vbv_max_bitrate = 0;
-    param->rc.i_vbv_buffer_size = 0;//122880;
-    param->rc.f_vbv_buffer_init = (float)0.9;
-    param->rc.i_qp_constant = 34;
-    param->rc.i_rf_constant = 0;
-    param->rc.i_qp_min = 10;
-    param->rc.i_qp_max = 64;
+	param->rc.i_rc_method = 2;/* 0:XAVS_RC_CQP; 1:XAVS_RC_CRF; 2:XAVS_RC_ABR*/
+	param->rc.i_bitrate = 750; 
+	param->rc.f_rate_tolerance = 1.0;
+	param->rc.i_vbv_max_bitrate = 1500;
+    param->rc.i_vbv_buffer_size = 1000;
+	param->rc.f_vbv_buffer_init = 0.9;
+	param->rc.i_qp_constant = 28;
+	param->rc.f_rf_constant = 28;
+	param->rc.i_qp_min = 15;
+	param->rc.i_qp_max = 50;
     param->rc.i_qp_step = 4;
     param->rc.f_ip_factor = (float)1.4;
     param->rc.f_pb_factor = (float)1.3;
@@ -100,7 +95,6 @@ void    xavs_param_default( xavs_param_t *param )
     param->rc.psz_stat_out = "xavs_2pass.log";
     param->rc.b_stat_read = 0;
     param->rc.psz_stat_in = "xavs_2pass.log";
-    param->rc.psz_rc_eq = "blurCplx^(1-qComp)";
     param->rc.f_qcompress = (float)0.6;
     param->rc.f_qblur = (float)0.5;
     param->rc.f_complexity_blur = 20;
@@ -112,15 +106,15 @@ void    xavs_param_default( xavs_param_t *param )
     param->i_log_level = XAVS_LOG_INFO;
 
     /* */
-    param->analyse.intra = XAVS_ANALYSE_I4x4 | XAVS_ANALYSE_I8x8;
-    param->analyse.inter = XAVS_ANALYSE_I4x4 | XAVS_ANALYSE_I8x8
+    param->analyse.intra =  XAVS_ANALYSE_I8x8;
+    param->analyse.inter =  XAVS_ANALYSE_I8x8
                          | XAVS_ANALYSE_PSUB16x16 | XAVS_ANALYSE_BSUB16x16;
-    param->analyse.i_direct_mv_pred = /*xavs_DIRECT_PRED_NONE;//*/XAVS_DIRECT_PRED_SPATIAL;
+    param->analyse.i_direct_mv_pred = XAVS_DIRECT_PRED_SPATIAL;
     param->analyse.i_me_method =XAVS_ME_UMH ;//xavs_ME_HEX;
     param->analyse.i_me_range = 32;
     param->analyse.i_subpel_refine = 5;
     param->analyse.b_chroma_me = 1;
-    param->analyse.i_mv_range = -1; // set from level_idc
+    param->analyse.i_mv_range = -1; 
     param->analyse.i_chroma_qp_offset = 0;
     param->analyse.b_fast_pskip = 0;
     param->analyse.b_transform_8x8 = 1;
@@ -188,7 +182,7 @@ static void xavs_log_default( void *p_unused, int i_level, const char *psz_fmt, 
 /****************************************************************************
  * xavs_picture_alloc:
  ****************************************************************************/
-void xavs_picture_alloc( xavs_picture_t *pic, int i_csp, int i_width, int i_height )
+int xavs_picture_alloc( xavs_picture_t *pic, int i_csp, int i_width, int i_height )
 {
     pic->i_type = XAVS_TYPE_AUTO;
     pic->i_qpplus1 = 0;
@@ -199,6 +193,8 @@ void xavs_picture_alloc( xavs_picture_t *pic, int i_csp, int i_width, int i_heig
         case XAVS_CSP_YV12:
             pic->img.i_plane = 3;
             pic->img.plane[0] = xavs_malloc( 3 * i_width * i_height / 2 );
+			if( !pic->img.plane[0] )
+				 return -1;
             pic->img.plane[1] = pic->img.plane[0] + i_width * i_height;
             pic->img.plane[2] = pic->img.plane[1] + i_width * i_height / 4;
             pic->img.i_stride[0] = i_width;
@@ -209,6 +205,8 @@ void xavs_picture_alloc( xavs_picture_t *pic, int i_csp, int i_width, int i_heig
         case XAVS_CSP_I422:
             pic->img.i_plane = 3;
             pic->img.plane[0] = xavs_malloc( 2 * i_width * i_height );
+			if( !pic->img.plane[0] )
+				 return -1;
             pic->img.plane[1] = pic->img.plane[0] + i_width * i_height;
             pic->img.plane[2] = pic->img.plane[1] + i_width * i_height / 2;
             pic->img.i_stride[0] = i_width;
@@ -219,6 +217,8 @@ void xavs_picture_alloc( xavs_picture_t *pic, int i_csp, int i_width, int i_heig
         case XAVS_CSP_I444:
             pic->img.i_plane = 3;
             pic->img.plane[0] = xavs_malloc( 3 * i_width * i_height );
+			if( !pic->img.plane[0] )
+				 return -1;
             pic->img.plane[1] = pic->img.plane[0] + i_width * i_height;
             pic->img.plane[2] = pic->img.plane[1] + i_width * i_height;
             pic->img.i_stride[0] = i_width;
@@ -229,6 +229,8 @@ void xavs_picture_alloc( xavs_picture_t *pic, int i_csp, int i_width, int i_heig
         case XAVS_CSP_YUYV:
             pic->img.i_plane = 1;
             pic->img.plane[0] = xavs_malloc( 2 * i_width * i_height );
+			if( !pic->img.plane[0] )
+				 return -1;
             pic->img.i_stride[0] = 2 * i_width;
             break;
 
@@ -236,20 +238,26 @@ void xavs_picture_alloc( xavs_picture_t *pic, int i_csp, int i_width, int i_heig
         case XAVS_CSP_BGR:
             pic->img.i_plane = 1;
             pic->img.plane[0] = xavs_malloc( 3 * i_width * i_height );
+			if( !pic->img.plane[0] )
+				 return -1;
             pic->img.i_stride[0] = 3 * i_width;
             break;
 
         case XAVS_CSP_BGRA:
             pic->img.i_plane = 1;
             pic->img.plane[0] = xavs_malloc( 4 * i_width * i_height );
+			if( !pic->img.plane[0] )
+				 return -1;
             pic->img.i_stride[0] = 4 * i_width;
             break;
 
         default:
             fprintf( stderr, "invalid CSP\n" );
             pic->img.i_plane = 0;
-            break;
+			if( !pic->img.plane[0] )
+				 return -1;
     }
+	return 0;
 }
 
 /****************************************************************************
@@ -455,7 +463,6 @@ char *xavs_param2string( xavs_param_t *p, int b_res )
         s += sprintf( s, "fps=%d/%d ", p->i_fps_num, p->i_fps_den );
     }
 
-    s += sprintf( s, "cabac=%d", p->b_cabac );
     s += sprintf( s, " ref=%d", p->i_frame_reference );
     s += sprintf( s, " deblock=%d:%d:%d", p->b_deblocking_filter,
                   p->i_deblocking_filter_alphac0, p->i_deblocking_filter_beta );
@@ -476,8 +483,8 @@ char *xavs_param2string( xavs_param_t *p, int b_res )
     s += sprintf( s, " bframes=%d", p->i_bframe );
     if( p->i_bframe )
     {
-        s += sprintf( s, " b_pyramid=%d b_adapt=%d b_bias=%d direct=%d wpredb=%d bime=%d",
-                      p->b_bframe_pyramid, p->b_bframe_adaptive, p->i_bframe_bias,
+		s += sprintf( s, "  b_adapt=%d b_bias=%d direct=%d wpredb=%d bime=%d",
+			p->i_bframe_adaptive, p->i_bframe_bias,
                       p->analyse.i_direct_mv_pred, p->analyse.b_weighted_bipred,
                       p->analyse.b_bidir_me );
     }
@@ -485,18 +492,18 @@ char *xavs_param2string( xavs_param_t *p, int b_res )
     s += sprintf( s, " keyint=%d keyint_min=%d scenecut=%d",
                   p->i_keyint_max, p->i_keyint_min, p->i_scenecut_threshold );
 
-    s += sprintf( s, " rc=%s", p->rc.b_stat_read && p->rc.b_cbr ? "2pass" :
-                               p->rc.b_cbr ? p->rc.i_vbv_buffer_size ? "cbr" : "abr" :
-                               p->rc.i_rf_constant ? "crf" : "cqp" );
-    if( p->rc.b_cbr || p->rc.i_rf_constant )
+	s += sprintf( s, " rc=%s", p->rc.b_stat_read && p->rc.i_rc_method ? "2pass" :
+		p->rc.i_rc_method ? p->rc.i_vbv_buffer_size ? "cbr" : "abr" :
+		p->rc.f_rf_constant ? "crf" : "cqp" );
+	if( p->rc.i_rc_method || p->rc.f_rf_constant )
     {
-        if( p->rc.i_rf_constant )
-            s += sprintf( s, " crf=%d", p->rc.i_rf_constant );
+		if( p->rc.f_rf_constant )
+			s += sprintf( s, " crf=%d", p->rc.f_rf_constant );
         else
             s += sprintf( s, " bitrate=%d ratetol=%.1f",
                           p->rc.i_bitrate, p->rc.f_rate_tolerance );
-        s += sprintf( s, " rceq='%s' qcomp=%.2f qpmin=%d qpmax=%d qpstep=%d",
-                      p->rc.psz_rc_eq, p->rc.f_qcompress,
+		s += sprintf( s, "qcomp=%.2f qpmin=%d qpmax=%d qpstep=%d",
+			p->rc.f_qcompress,
                       p->rc.i_qp_min, p->rc.i_qp_max, p->rc.i_qp_step );
         if( p->rc.b_stat_read )
             s += sprintf( s, " cplxblur=%.1f qblur=%.1f",
@@ -507,7 +514,7 @@ char *xavs_param2string( xavs_param_t *p, int b_res )
     }
     else
         s += sprintf( s, " qp=%d", p->rc.i_qp_constant );
-    if( p->rc.b_cbr || p->rc.i_qp_constant != 0 )
+	if( p->rc.i_rc_method || p->rc.i_qp_constant != 0 )
     {
         s += sprintf( s, " ip_ratio=%.2f", p->rc.f_ip_factor );
         if( p->i_bframe )

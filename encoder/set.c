@@ -83,20 +83,23 @@ void xavs_sequence_init( xavs_seq_header_t *sqh , xavs_param_t *param )
 
 	 sqh->i_horizontal_size           =  param->i_width;
 	 sqh->i_vertical_size             =  param->i_height;
-	//h->sqh.i_mb_width                  = (h->param.i_width + 15 ) / 16;
-	//h->sqh.i_mb_height                 = (h->param.i_height + 15 ) / 16;
 
 	 sqh->i_chroma_format             =  param->i_chroma_format;   // 4:2:0
 	 sqh->i_sample_precision          =  param->i_sample_precision; // 8 bits per sample
 	 sqh->i_aspect_ratio              =  param->i_aspect_ratio;  // 1:1
 	
-	//¼ÆËãÖ¡ÂÊ´úÂë
-	switch( param->i_fps_num/ param->i_fps_den) {
-	case 24:
+	switch( param->i_fps_num/ param->i_fps_den) 
+	{
+	  case 23:
+	    i_frame_rate_code = 1;
+	  case 24:
 		i_frame_rate_code = 2;//0010
 		break;
-	case 25:
+	  case 25:
 		i_frame_rate_code = 3;//0011
+		break;
+	  case 29:
+		i_frame_rate_code = 4;
 		break;
 	case 30:
 		i_frame_rate_code = 5;//0101
@@ -156,18 +159,19 @@ void xavs_sequence_end_write( bs_t *s )
 
 void xavs_i_picture_write( bs_t *s, xavs_i_pic_header_t *ih, xavs_seq_header_t *sqh )
 {
-        bs_write( s, 8, 0xB3);//ih->i_i_picture_start_code);
+    bs_write( s, 8, 0xB3);//ih->i_i_picture_start_code);
 	bs_write( s, 16, ih->i_bbv_delay);
-	bs_write1( s, 0);//ih->b_time_code_flag);
-	//if(ih->b_time_code_flag)
-		//bs_write( s, 24, ih->i_time_code);
+	bs_write1( s, ih->b_time_code_flag);
+	if(ih->b_time_code_flag)
+		bs_write( s, 24, ih->i_time_code);
 	bs_write1( s, 1);//marker bit
 	bs_write( s, 8, ih->i_picture_distance);
 	if(sqh->b_low_delay)
 		bs_write_ue( s, 1);//ih->i_bbv_check_times);
-	bs_write1( s, 1);//ih->b_progressive_frame);
-	//if(!ih->b_progressive_frame)
-		//bs_write1( s, ih->b_picture_structure);
+	bs_write1( s, ih->b_progressive_frame);
+	if(!ih->b_progressive_frame)
+		bs_write1( s, ih->b_picture_structure);
+
 	bs_write1( s, 1);//ih->b_top_field_first);
 	bs_write1( s, 0);//ih->b_repeat_first_field);
 	bs_write1( s, 1);//ih->b_fixed_picture_qp);
@@ -224,7 +228,7 @@ void xavs_sps_init( xavs_sps_t *sps, int i_id, xavs_param_t *param )
 {
     sps->i_id = i_id;
 
-    sps->b_qpprime_y_zero_transform_bypass = !param->rc.b_cbr && param->rc.i_qp_constant == 0;
+    sps->b_qpprime_y_zero_transform_bypass = param->rc.i_rc_method == XAVS_RC_CQP && param->rc.i_qp_constant == 0;
     if( sps->b_qpprime_y_zero_transform_bypass )
         sps->i_profile_idc  = PROFILE_HIGH444;
     else if( param->analyse.b_transform_8x8 || param->i_cqm_preset != XAVS_CQM_FLAT )
@@ -519,7 +523,7 @@ void xavs_pps_init( xavs_pps_t *pps, int i_id, xavs_param_t *param, xavs_sps_t *
     pps->b_weighted_pred = 0;
     pps->b_weighted_bipred = param->analyse.b_weighted_bipred ? 2 : 0;
 
-    pps->i_pic_init_qp = param->rc.b_cbr ? 26 : param->rc.i_qp_constant;
+    pps->i_pic_init_qp = param->rc.i_rc_method == XAVS_RC_ABR ? 30 : param->rc.i_qp_constant;
     pps->i_pic_init_qs = 26;
 
     pps->i_chroma_qp_index_offset = param->analyse.i_chroma_qp_offset;

@@ -246,7 +246,7 @@ void xavs_macroblock_encode( xavs_t *h )
     }
 
     /* encode chroma */
-    i_qp = i_chroma_qp_table[xavs_clip3( i_qp /*+ h->pps->i_chroma_qp_index_offset*/, 0, 51 )];
+    i_qp = i_chroma_qp_table[xavs_clip3( i_qp /*+ h->pps->i_chroma_qp_index_offset*/, 0, 63 )];
     if( IS_INTRA( h->mb.i_type ) )
     {
         const int i_mode = h->mb.i_chroma_pred_mode;
@@ -364,7 +364,7 @@ int xavs_macroblock_probe_skip( xavs_t *h, int b_bidir )
     }
 
     /* encode chroma */
-    i_qp = i_chroma_qp_table[xavs_clip3( i_qp + h->pps->i_chroma_qp_index_offset, 0, 51 )];
+    i_qp = i_chroma_qp_table[xavs_clip3( i_qp + h->pps->i_chroma_qp_index_offset, 0, 63 )];
 
 	i_decimate_mb = 0;
 
@@ -490,7 +490,7 @@ void xavs_macroblock_encode_p8x8( xavs_t *h, int i8 )
         }
     }
 
-    i_qp = i_chroma_qp_table[xavs_clip3( i_qp + h->pps->i_chroma_qp_index_offset, 0, 51 )];
+    i_qp = i_chroma_qp_table[xavs_clip3( i_qp + h->pps->i_chroma_qp_index_offset, 0, 63 )];
 
     for( ch = 0; ch < 2; ch++ )
     {

@@ -642,11 +642,9 @@ static inline void xavs_mb_mc_01xywh( xavs_t *h, int x, int y, int width, int he
 	int BlockDistanceFw=h->fenc->i_poc-h->fref0[i_ref0]->i_poc;
     int BlockDistanceBw=h->fref1[0]->i_poc-h->fenc->i_poc;
 
-    int mvx1;//=xavs_clip3((-((h->mb.cache.mv[0][i8][0]*BlockDistanceBw*(512/BlockDistanceFw)+256)>>9)),h->mb.mv_min[0], h->mb.mv_max[0]);
-    int mvy1;//=xavs_clip3((-((h->mb.cache.mv[0][i8][1]*BlockDistanceBw*(512/BlockDistanceFw)+256)>>9)),h->mb.mv_min[1], h->mb.mv_max[1]);
+    int mvx1;
+    int mvy1;
 
-    //const int mvx1   = xavs_clip3( mvBw[0], h->mb.mv_min[0], h->mb.mv_max[0] );
-    //const int mvy1   = xavs_clip3( mvBw[1], h->mb.mv_min[1], h->mb.mv_max[1] );
     DECLARE_ALIGNED( uint8_t, tmp[16*16], 16 );
     int i_mode = xavs_size2pixel[height][width];
 	if(x==0 && y==0)
@@ -661,7 +659,7 @@ static inline void xavs_mb_mc_01xywh( xavs_t *h, int x, int y, int width, int he
 		||h->mb.i_sub_partition[i]==D_DIRECT_8x8)
 	{ 
 	   mvx1=xavs_clip3(h->mb.cache.mv[1][i8][0],h->mb.mv_min[0], h->mb.mv_max[0]);
-       mvy1=xavs_clip3(h->mb.cache.mv[1][i8][1],h->mb.mv_min[0], h->mb.mv_max[0]);
+       mvy1=xavs_clip3(h->mb.cache.mv[1][i8][1],h->mb.mv_min[1], h->mb.mv_max[1]);
 	}
     else
 	{
@@ -725,53 +723,11 @@ void xavs_mb_mc_8x8( xavs_t *h, int i8 )
         case D_L0_8x8:
             xavs_mb_mc_0xywh( h, x, y, 2, 2 );
             break;
-        case D_L0_8x4:
-            xavs_mb_mc_0xywh( h, x, y+0, 2, 1 );
-            xavs_mb_mc_0xywh( h, x, y+1, 2, 1 );
-            break;
-        case D_L0_4x8:
-            xavs_mb_mc_0xywh( h, x+0, y, 1, 2 );
-            xavs_mb_mc_0xywh( h, x+1, y, 1, 2 );
-            break;
-        case D_L0_4x4:
-            xavs_mb_mc_0xywh( h, x+0, y+0, 1, 1 );
-            xavs_mb_mc_0xywh( h, x+1, y+0, 1, 1 );
-            xavs_mb_mc_0xywh( h, x+0, y+1, 1, 1 );
-            xavs_mb_mc_0xywh( h, x+1, y+1, 1, 1 );
-            break;
         case D_L1_8x8:
             xavs_mb_mc_1xywh( h, x, y, 2, 2 );
             break;
-        case D_L1_8x4:
-            xavs_mb_mc_1xywh( h, x, y+0, 2, 1 );
-            xavs_mb_mc_1xywh( h, x, y+1, 2, 1 );
-            break;
-        case D_L1_4x8:
-            xavs_mb_mc_1xywh( h, x+0, y, 1, 2 );
-            xavs_mb_mc_1xywh( h, x+1, y, 1, 2 );
-            break;
-        case D_L1_4x4:
-            xavs_mb_mc_1xywh( h, x+0, y+0, 1, 1 );
-            xavs_mb_mc_1xywh( h, x+1, y+0, 1, 1 );
-            xavs_mb_mc_1xywh( h, x+0, y+1, 1, 1 );
-            xavs_mb_mc_1xywh( h, x+1, y+1, 1, 1 );
-            break;
         case D_BI_8x8:
             xavs_mb_mc_01xywh( h, x, y, 2, 2 );
-            break;
-        case D_BI_8x4:
-            xavs_mb_mc_01xywh( h, x, y+0, 2, 1 );
-            xavs_mb_mc_01xywh( h, x, y+1, 2, 1 );
-            break;
-        case D_BI_4x8:
-            xavs_mb_mc_01xywh( h, x+0, y, 1, 2 );
-            xavs_mb_mc_01xywh( h, x+1, y, 1, 2 );
-            break;
-        case D_BI_4x4:
-            xavs_mb_mc_01xywh( h, x+0, y+0, 1, 1 );
-            xavs_mb_mc_01xywh( h, x+1, y+0, 1, 1 );
-            xavs_mb_mc_01xywh( h, x+0, y+1, 1, 1 );
-            xavs_mb_mc_01xywh( h, x+1, y+1, 1, 1 );
             break;
         case D_DIRECT_8x8:
             xavs_mb_mc_direct8x8( h, x, y );

@@ -35,7 +35,8 @@ typedef struct
     int     i_frame;    /* Presentation frame number */
     int     i_frame_num; /* Coded frame number */
     int     b_kept_as_ref;
-    float   f_qp_avg;
+	float   f_qp_avg_rc; /* QPs as decided by ratecontrol */
+	float   f_qp_avg_aq; /* QPs as decided by AQ in addition to ratecontrol */
 
     /* YUV buffer */
     int     i_plane;
@@ -69,8 +70,21 @@ typedef struct
     int     *i_row_satd;
     int     *i_row_bits;
     int     *i_row_qp;
+	float   *f_qp_offset; 
 
 } xavs_frame_t;
+
+/* synchronized frame list */
+typedef struct
+{
+   xavs_frame_t **list;
+   int i_max_size;
+   int i_size;
+   xavs_pthread_mutex_t     mutex;
+   xavs_pthread_cond_t      cv_fill;  /* event signaling that the list became fuller */
+   xavs_pthread_cond_t      cv_empty; /* event signaling that the list became emptier */
+} xavs_synch_frame_list_t;
+
 
 typedef void (*xavs_deblock_inter_t)( uint8_t *pix, int stride, int alpha, int beta, int8_t *tc0 );
 typedef void (*xavs_deblock_intra_t)( uint8_t *pix, int stride, int alpha, int beta );

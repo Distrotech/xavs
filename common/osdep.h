@@ -127,6 +127,10 @@ static inline int xavs_pthread_create( xavs_pthread_t *t, void *a, void *(*f)(vo
 #define xavs_pthread_cond_destroy    pthread_cond_destroy
 #define xavs_pthread_cond_broadcast  pthread_cond_broadcast
 #define xavs_pthread_cond_wait       pthread_cond_wait
+#define x264_pthread_attr_t          pthread_attr_t
+#define x264_pthread_attr_init       pthread_attr_init
+#define x264_pthread_attr_destroy    pthread_attr_destroy
+#define XAVS_PTHREAD_MUTEX_INITIALIZER PTHREAD_MUTEX_INITIALIZER
 #else
 #define xavs_pthread_mutex_t         int
 #define xavs_pthread_mutex_init(m,f) 0
@@ -138,6 +142,10 @@ static inline int xavs_pthread_create( xavs_pthread_t *t, void *a, void *(*f)(vo
 #define xavs_pthread_cond_destroy(c)
 #define xavs_pthread_cond_broadcast(c)
 #define xavs_pthread_cond_wait(c,m)
+#define xavs_pthread_attr_t          int
+#define xavs_pthread_attr_init(a)    0
+#define xavs_pthread_attr_destroy(a)
+#define XAVS_PTHREAD_MUTEX_INITIALIZER 0
 #endif
 
 #define WORD_SIZE sizeof(void*)

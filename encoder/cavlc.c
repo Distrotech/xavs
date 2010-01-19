@@ -846,7 +846,7 @@ void xavs_macroblock_write_cavlc( xavs_t *h, bs_t *s )
 
 #ifndef RDO_SKIP_BS
     i_mb_pos_tex = bs_pos( s );
-    h->stat.frame.i_hdr_bits += i_mb_pos_tex - i_mb_pos_start;
+    h->stat.frame.i_mv_bits += i_mb_pos_tex - i_mb_pos_start;
 #endif
 
     /* Coded block patern */
@@ -875,10 +875,7 @@ void xavs_macroblock_write_cavlc( xavs_t *h, bs_t *s )
     
 
 #ifndef RDO_SKIP_BS
-    if( IS_INTRA( i_mb_type ) )
-        h->stat.frame.i_itex_bits += bs_pos(s) - i_mb_pos_tex;
-    else
-        h->stat.frame.i_ptex_bits += bs_pos(s) - i_mb_pos_tex;
+      h->stat.frame.i_tex_bits += bs_pos(s) - i_mb_pos_tex;
 #endif
 }
 

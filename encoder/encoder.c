@@ -168,19 +168,25 @@ static int xavs_validate_parameters( xavs_t *h )
         xavs_log( h, XAVS_LOG_WARNING, "multislicing anyway, but you won't see any speed gain.\n" );
     }
 #endif
-
-    if( h->param.rc.b_cbr )
-        h->param.rc.i_rf_constant = 0;
-    if( h->param.rc.i_rf_constant > 0 )
-        h->param.rc.i_qp_constant = h->param.rc.i_rf_constant;
-    h->param.rc.i_rf_constant = xavs_clip3( h->param.rc.i_rf_constant, 0, 51 );
-    h->param.rc.i_qp_constant = xavs_clip3( h->param.rc.i_qp_constant, 0, 51 );
-    if( !h->param.rc.b_cbr && h->param.rc.i_qp_constant == 0 )
+	if( h->param.rc.i_rc_method < 0 || h->param.rc.i_rc_method > 2 )
+	{
+		xavs_log( h, XAVS_LOG_ERROR, "no ratecontrol method specified\n" );
+		return -1;
+	}
+	h->param.rc.f_rf_constant = xavs_clip3f( h->param.rc.f_rf_constant, 0, 63 );
+	h->param.rc.i_qp_constant = xavs_clip3( h->param.rc.i_qp_constant, 0, 63 );
+	if( h->param.rc.i_rc_method == XAVS_RC_CRF )
+	{
+		h->param.rc.i_qp_constant = h->param.rc.f_rf_constant;
+		h->param.rc.i_bitrate = 0;
+	}
+	if( (h->param.rc.i_rc_method == XAVS_RC_CQP || h->param.rc.i_rc_method == XAVS_RC_CRF)
+		&& h->param.rc.i_qp_constant == 0 )
     {
         h->mb.b_lossless = 1;
-        h->param.analyse.b_transform_8x8 = 0;
         h->param.i_cqm_preset = XAVS_CQM_FLAT;
         h->param.psz_cqm_file = NULL;
+		h->param.rc.i_rc_method = XAVS_RC_CQP;
         h->param.rc.f_ip_factor = 1;
         h->param.rc.f_pb_factor = 1;
         h->param.analyse.b_psnr = 0;
@@ -188,17 +194,34 @@ static int xavs_validate_parameters( xavs_t *h )
         h->param.analyse.i_trellis = 0;
         h->param.analyse.b_fast_pskip = 0;
         h->param.analyse.i_noise_reduction = 0;
-        h->param.analyse.i_subpel_refine = xavs_clip3( h->param.analyse.i_subpel_refine, 1, 6 );
+		h->param.analyse.f_psy_rd = 0;
+		h->param.i_bframe = 0;
     }
+	if( h->param.rc.i_rc_method == XAVS_RC_CQP )
+	{
+		float qp_p = h->param.rc.i_qp_constant;
+		float qp_i = qp_p - 6*log(h->param.rc.f_ip_factor)/log(2);
+		float qp_b = qp_p + 6*log(h->param.rc.f_pb_factor)/log(2);
+		h->param.rc.i_qp_min = xavs_clip3( (int)(XAVS_MIN3( qp_p, qp_i, qp_b )), 0, 63 );
+		h->param.rc.i_qp_max = xavs_clip3( (int)(XAVS_MAX3( qp_p, qp_i, qp_b ) + .999), 0, 63 );
+		h->param.rc.i_aq_mode = 0;
+		h->param.rc.b_mb_tree = 0;
+	}
+	h->param.rc.i_qp_max = xavs_clip3( h->param.rc.i_qp_max, 0, 63 );
+	h->param.rc.i_qp_min = xavs_clip3( h->param.rc.i_qp_min, 0, h->param.rc.i_qp_max );
 
-    if( ( h->param.i_width % 16 || h->param.i_height % 16 ) && !h->mb.b_lossless )
+	if( ( h->param.i_width % 16 || h->param.i_height % 16 )
+		&& h->param.i_height != 1080 && !h->mb.b_lossless )
     {
+		// There's nothing special about 1080 in that the warning still applies to it,
+		// but chances are the user can't help it if his content is already 1080p,
+		// so there's no point in warning in that case.
         xavs_log( h, XAVS_LOG_WARNING, 
                   "width or height not divisible by 16 (%dx%d), compression will suffer.\n",
                   h->param.i_width, h->param.i_height );
     }
 
-    h->param.i_frame_reference = xavs_clip3( h->param.i_frame_reference, 1, 16 );
+    h->param.i_frame_reference = xavs_clip3( h->param.i_frame_reference, 1, 2 );
     if( h->param.i_keyint_max <= 0 )
         h->param.i_keyint_max = 1;
     h->param.i_keyint_min = xavs_clip3( h->param.i_keyint_min, 1, h->param.i_keyint_max/2+1 );
@@ -206,7 +229,7 @@ static int xavs_validate_parameters( xavs_t *h )
     h->param.i_bframe = xavs_clip3( h->param.i_bframe, 0, XAVS_BFRAME_MAX );
     h->param.i_bframe_bias = xavs_clip3( h->param.i_bframe_bias, -90, 100 );
     h->param.b_bframe_pyramid = h->param.b_bframe_pyramid && h->param.i_bframe > 1;
-    h->param.b_bframe_adaptive = h->param.b_bframe_adaptive && h->param.i_bframe > 0;
+    h->param.i_bframe_adaptive = h->param.i_bframe_adaptive && h->param.i_bframe > 0;
     h->mb.b_direct_auto_write = h->param.analyse.i_direct_mv_pred == XAVS_DIRECT_PRED_AUTO
                                 && h->param.i_bframe
                                 && ( h->param.rc.b_stat_write || !h->param.rc.b_stat_read );
@@ -277,7 +300,6 @@ static int xavs_validate_parameters( xavs_t *h )
     BOOLIFY( analyse.b_bidir_me );
     BOOLIFY( analyse.b_chroma_me );
     BOOLIFY( analyse.b_fast_pskip );
-    BOOLIFY( rc.b_cbr );
     BOOLIFY( rc.b_stat_write );
     BOOLIFY( rc.b_stat_read );
 #undef BOOLIFY
@@ -315,8 +337,6 @@ xavs_t *xavs_encoder_open   ( xavs_param_t *param )
         h->param.rc.psz_stat_out = strdup( h->param.rc.psz_stat_out );
     if( h->param.rc.psz_stat_in )
         h->param.rc.psz_stat_in = strdup( h->param.rc.psz_stat_in );
-    if( h->param.rc.psz_rc_eq )
-        h->param.rc.psz_rc_eq = strdup( h->param.rc.psz_rc_eq );
 
     /* VUI */
     if( h->param.vui.i_sar_width > 0 && h->param.vui.i_sar_height > 0 )
@@ -355,7 +375,7 @@ xavs_t *xavs_encoder_open   ( xavs_param_t *param )
     /* Init xavs_t */
     h->out.i_nal = 0;
     h->out.i_bitstream =(int) XAVS_MAX( 1000000, h->param.i_width * h->param.i_height * 1.7
-        * ( h->param.rc.b_cbr ? pow( 0.5, h->param.rc.i_qp_min )
+		* ( h->param.rc.i_rc_method ? pow( 0.5, h->param.rc.i_qp_min )
           : pow( 0.5, h->param.rc.i_qp_constant ) * XAVS_MAX( 1, h->param.rc.f_ip_factor )));
     h->out.p_bitstream = xavs_malloc( h->out.i_bitstream );
 
@@ -384,7 +404,11 @@ xavs_t *xavs_encoder_open   ( xavs_param_t *param )
     h->frames.i_max_ref1 = h->sps->vui.i_num_reorder_frames;
     h->frames.i_max_dpb  = h->sps->vui.i_max_dec_frame_buffering + 1;
     h->frames.b_have_lowres = !h->param.rc.b_stat_read
-        && ( h->param.rc.b_cbr || h->param.rc.i_rf_constant || h->param.b_bframe_adaptive );
+		&& ( h->param.rc.i_rc_method == XAVS_RC_ABR
+		|| h->param.rc.i_rc_method == XAVS_RC_CRF
+		|| h->param.i_bframe_adaptive
+		|| h->param.i_scenecut_threshold );
+	h->frames.b_have_lowres |= (h->param.rc.b_stat_read && h->param.rc.i_vbv_buffer_size > 0);
 
     for( i = 0; i < XAVS_BFRAME_MAX + 3; i++ )
     {
@@ -427,6 +451,7 @@ xavs_t *xavs_encoder_open   ( xavs_param_t *param )
             ( h->mb.b_lossless || h->param.analyse.i_subpel_refine <= 1 ) ? h->pixf.sad : h->pixf.satd,
             sizeof(h->pixf.mbcmp) );
 
+	h->thread[0] = h;
     /* rate control */
     if( xavs_ratecontrol_new( h ) < 0 )
         return NULL;
@@ -452,7 +477,7 @@ xavs_t *xavs_encoder_open   ( xavs_param_t *param )
              param->cpu&XAVS_CPU_3DNOW ? "3DNow! " : "",
              param->cpu&XAVS_CPU_ALTIVEC ? "Altivec " : "" );
 
-    h->thread[0] = h;
+    //h->thread[0] = h;
     h->i_thread_num = 0;
     for( i = 1; i < param->i_threads; i++ )
         h->thread[i] = xavs_malloc( sizeof(xavs_t) );
@@ -710,19 +735,17 @@ static void xavs_i_pic_header_init(xavs_t *h, xavs_i_pic_header_t *ih, int i_qp)
 	ih->i_i_picture_start_code = 0xB3;
 	ih->i_bbv_delay = 0xFFFF;//
 	ih->b_time_code_flag = 0;// if there's time code in this picture header
-	//if (ih->b_time_code_flag)
-	//{//time_code
 	ih->i_time_code = 0;//need to change
-	//}
 	
 	ih->i_picture_distance  = (h->fenc->i_poc/2)%256; //h->fenc->i_frame % 256;
 
 	ih->i_bbv_check_times = 0;
 	ih->b_progressive_frame = 1;
-	//if(!ih->b_progressive_frame)
-	ih->b_picture_structure = 1;
-	//else
-        //ih->b_picture_structure = 0;
+	if(!ih->b_progressive_frame)
+	 ih->b_picture_structure = 1;
+	else
+     ih->b_picture_structure = 0;
+
 	ih->b_top_field_first = 1;
 	ih->b_repeat_first_field = 0;
 	ih->b_fixed_picture_qp = 1;
@@ -882,7 +905,6 @@ static int xavs_slice_write( xavs_t *h )
             h->stat.frame.i_mb_count_8x8dct[1] ++;//= h->mb.b_transform_8x8;
         }
 
-        if( h->mb.b_variable_qp )
             xavs_ratecontrol_mb(h, bs_pos(&h->out.bs) - mb_spos);
     }
 
@@ -899,9 +921,8 @@ static int xavs_slice_write( xavs_t *h )
     /* Compute misc bits */
     h->stat.frame.i_misc_bits = bs_pos( &h->out.bs )
                               + NALU_OVERHEAD * 8
-                              - h->stat.frame.i_itex_bits
-                              - h->stat.frame.i_ptex_bits
-                              - h->stat.frame.i_hdr_bits;
+                              - h->stat.frame.i_tex_bits
+                              - h->stat.frame.i_mv_bits;
 
     return 0;
 }
@@ -917,7 +938,7 @@ static inline int xavs_slices_write( xavs_t *h )
 
     if( h->param.i_threads == 1 )
     {
-        xavs_ratecontrol_threads_start( h );
+        //xavs_ratecontrol_threads_start( h );
         xavs_slice_write( h );
         i_frame_size = h->out.nal[h->out.i_nal-1].i_payload;
     }
@@ -941,7 +962,7 @@ static inline int xavs_slices_write( xavs_t *h )
             t->sh.i_last_mb = ((i+1) * h->sps->i_mb_height / h->param.i_threads) * h->sps->i_mb_width;
             t->out.i_nal = i_nal + i;
         }
-        xavs_ratecontrol_threads_start( h );
+        //xavs_ratecontrol_threads_start( h );
 
         /* dispatch */
 #ifdef HAVE_PTHREAD
@@ -1130,8 +1151,12 @@ do_encode:
     h->fenc->i_poc = 2 * (h->fenc->i_frame - h->frames.i_last_idr);
     h->fdec->i_type = h->fenc->i_type;
     h->fdec->i_frame = h->fenc->i_frame;
-    h->fenc->b_kept_as_ref =
-    h->fdec->b_kept_as_ref = i_nal_ref_idc != NAL_PRIORITY_DISPOSABLE;
+	if( i_slice_type != SLICE_TYPE_B)
+		h->fenc->b_kept_as_ref =
+		h->fdec->b_kept_as_ref = 1;
+	else
+		h->fenc->b_kept_as_ref =
+		h->fdec->b_kept_as_ref = 0;
 
     /* ------------------- Init                ----------------------------- */
     /* build ref list 0/1 */
@@ -1266,7 +1291,7 @@ do_encode:
                  * we can't assign an I-frame. Instead, change the previous
                  * B-frame to P, and rearrange coding order. */
 
-                if( h->param.b_bframe_adaptive || b > 1 )
+                if( h->param.i_bframe_adaptive || b > 1 )
                     h->fenc->i_type = XAVS_TYPE_AUTO;
                 xavs_frame_sort_pts( h->frames.current );
                 xavs_frame_push( h->frames.next, h->fenc );
@@ -1314,7 +1339,7 @@ do_encode:
     pic_out->i_pts = h->fenc->i_pts;
 
     pic_out->img.i_plane = h->fdec->i_plane;
-    for(i = 0; i < 4; i++){
+    for(i = 0; i < 3; i++){
         pic_out->img.i_stride[i] = h->fdec->i_stride[i];
         pic_out->img.plane[i] = h->fdec->plane[i];
     }
@@ -1632,8 +1657,6 @@ void    xavs_encoder_close  ( xavs_t *h )
         free( h->param.rc.psz_stat_out );
     if( h->param.rc.psz_stat_in )
         free( h->param.rc.psz_stat_in );
-    if( h->param.rc.psz_rc_eq )
-        free( h->param.rc.psz_rc_eq );
 
     xavs_macroblock_cache_end( h );
     xavs_free( h->out.p_bitstream );
@@ -1642,3 +1665,24 @@ void    xavs_encoder_close  ( xavs_t *h )
     xavs_free( h );
 }
 
+/****************************************************************************
+ * xavs_encoder_delayed_frames:
+ ****************************************************************************/
+int xavs_encoder_delayed_frames( xavs_t *h )
+{
+    int delayed_frames = 0;
+    int i;
+    for( i=0; i<h->param.i_threads; i++ )
+        delayed_frames += h->thread[i]->b_thread_active;
+    h = h->thread[ h->i_thread_phase % h->param.i_threads ];
+    for( i=0; h->frames.current[i]; i++ )
+        delayed_frames++;
+    xavs_pthread_mutex_lock( &h->lookahead->ofbuf.mutex );
+    xavs_pthread_mutex_lock( &h->lookahead->ifbuf.mutex );
+    xavs_pthread_mutex_lock( &h->lookahead->next.mutex );
+    delayed_frames += h->lookahead->ifbuf.i_size + h->lookahead->next.i_size + h->lookahead->ofbuf.i_size;
+    xavs_pthread_mutex_unlock( &h->lookahead->next.mutex );
+    xavs_pthread_mutex_unlock( &h->lookahead->ifbuf.mutex );
+    xavs_pthread_mutex_unlock( &h->lookahead->ofbuf.mutex );
+    return delayed_frames;
+}

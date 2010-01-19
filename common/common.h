@@ -70,12 +70,24 @@
 #define XCHG(type,a,b) { type t = a; a = b; b = t; }
 #define FIX8(f) ((int)(f*(1<<8)+.5))
 
+#define CHECKED_MALLOC( var, size )\
+	do {\
+	var = xavs_malloc( size );\
+	if( !var )\
+	goto fail;\
+	} while( 0 )
+#define CHECKED_MALLOCZERO( var, size )\
+	do {\
+	CHECKED_MALLOC( var, size );\
+	memset( var, 0, size );\
+	} while( 0 )
 #if defined(__GNUC__) && (__GNUC__ > 3 || __GNUC__ == 3 && __GNUC_MINOR__ > 0)
 #define UNUSED __attribute__((unused))
 #else
 #define UNUSED
 #endif
 
+#define XAVS_THREAD_MAX 4
 #define XAVS_BFRAME_MAX 16
 #define XAVS_SLICE_MAX 4
 #define XAVS_NAL_MAX (4 + XAVS_SLICE_MAX)
@@ -243,6 +255,19 @@ typedef struct
 
 } xavs_slice_header_t;
 
+typedef struct xavs_lookahead_t
+{
+    volatile uint8_t              b_exit_thread;
+    uint8_t                       b_thread_active;
+    uint8_t                       b_analyse_keyframe;
+    int                           i_last_idr;
+    int                           i_slicetype_length;
+    xavs_frame_t                  *last_nonb;
+    xavs_synch_frame_list_t       ifbuf;
+    xavs_synch_frame_list_t       next;
+    xavs_synch_frame_list_t       ofbuf;
+} xavs_lookahead_t;
+
 /* From ffmpeg
  */
 #define XAVS_SCAN8_SIZE (6*8)
@@ -282,7 +307,10 @@ struct xavs_t
     /* encoder parameters */
     xavs_param_t    param;
 
-    xavs_t *thread[XAVS_SLICE_MAX];
+    xavs_t          *thread[XAVS_THREAD_MAX+1];
+    xavs_pthread_t  thread_handle;
+    int             b_thread_active;
+    int             i_thread_phase; /* which thread to use for the next frame */
 
     /* bitstream output */
     struct
@@ -543,10 +571,9 @@ struct xavs_t
         struct
         {
             /* Headers bits (MV+Ref+MB Block Type */
-            int i_hdr_bits;
+            int i_mv_bits;
             /* Texture bits (Intra/Predicted) */
-            int i_itex_bits;
-            int i_ptex_bits;
+            int i_tex_bits;
             /* ? */
             int i_misc_bits;
             /* MB type counts */
@@ -610,6 +637,8 @@ struct xavs_t
 #if VISUALIZE
     struct visualize_t *visualize;
 #endif
+
+	xavs_lookahead_t *lookahead;
 };
 
 // included at the end because it needs xavs_t

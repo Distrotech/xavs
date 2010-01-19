@@ -370,7 +370,7 @@ void xavs_slicetype_decide( xavs_t *h )
             h->frames.next[i]->i_type =
                 xavs_ratecontrol_slice_type( h, h->frames.next[i]->i_frame );
     }
-    else if( h->param.i_bframe && h->param.b_bframe_adaptive )
+    else if( h->param.i_bframe && h->param.i_bframe_adaptive )
         xavs_slicetype_analyse( h );
 
     for( bframes = 0;; bframes++ )
