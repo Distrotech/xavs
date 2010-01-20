@@ -73,7 +73,7 @@ static float xavs_psnr( int64_t i_sqe, int64_t i_size )
     return (float)(-10.0 * log( f_mse ) / log( 10.0 ));
 }
 
-static void xavs_frame_dump( xavs_t *h)
+static void xavs_frame_dump( xavs_t *h )
 {
     FILE * f = fopen( h->param.psz_dump_yuv, "r+b" );
     int i, y;
@@ -91,14 +91,14 @@ static void xavs_frame_dump( xavs_t *h)
 
 
 /* Fill "default" values */
-static void xavs_slice_header_init(  xavs_slice_header_t *sh, int i_qp )
+static void xavs_slice_header_init( xavs_t *h, xavs_slice_header_t *sh, int i_qp )
 {
 	int i;
 
     sh->i_slice_start_code = 0x1;
 	sh->i_slice_vertical_position = 0;//one slice per frame now.
 	sh->i_slice_vertical_position_extension = 0;
-	sh->b_fixed_slice_qp = 0;
+    sh->b_fixed_slice_qp = (h->param.rc.i_rc_method == XAVS_RC_CQP)?1:0;
 	sh->i_slice_qp = i_qp;
 	sh->b_slice_weighting_flag = 0;
 	for(i = 0; i < 4; i++)
@@ -117,17 +117,25 @@ static void xavs_slice_header_write( bs_t *s, xavs_slice_header_t *sh,
 									 xavs_seq_header_t *sqh, 
 									 xavs_i_pic_header_t *ih, 
 									 xavs_pb_pic_header_t *pbh) 
-									 //int i_slice_type)
 {
+	int fixed_picture_qp;
+
 	bs_write( s, 8, sh->i_slice_vertical_position);
 	if(sqh->i_vertical_size > 2800)
 		bs_write( s, 3, sh->i_slice_vertical_position_extension);
 		
+	fixed_picture_qp= ( sh->i_type == SLICE_TYPE_I )? ih->b_fixed_picture_qp: pbh->b_fixed_picture_qp;
+    
+	if (fixed_picture_qp==0)
+		{
+            bs_write1( s, sh->b_fixed_slice_qp);
+            bs_write( s, 6, sh->i_slice_qp);
+		}		
+
 	if(!( sh->i_type == SLICE_TYPE_I ))
 	{
 		bs_write1( s, 0);//sh->b_slice_weighting_flag);	
 	}
-
 }
 
 /****************************************************************************
@@ -748,7 +756,7 @@ static void xavs_i_pic_header_init(xavs_t *h, xavs_i_pic_header_t *ih, int i_qp)
 
 	ih->b_top_field_first = 1;
 	ih->b_repeat_first_field = 0;
-	ih->b_fixed_picture_qp = 1;
+	ih->b_fixed_picture_qp = (h->param.rc.i_rc_method == XAVS_RC_CQP)? 1: 0;
 	ih->i_picture_qp = i_qp;
 	
 	ih->b_skip_mode_flag = h->param.analyse.b_skip_mode;
@@ -776,7 +784,7 @@ static void xavs_pb_pic_header_init(xavs_t *h, xavs_pb_pic_header_t *pbh, int i_
 	pbh->b_advanced_pred_mode_disable = 1;
 	pbh->b_top_field_first = 1;
 	pbh->b_repeat_first_field = 0;
-	pbh->b_fixed_picture_qp = 1;
+	pbh->b_fixed_picture_qp = (h->param.rc.i_rc_method == XAVS_RC_CQP)? 1: 0;;
 	pbh->i_picture_qp = i_qp;
 	pbh->b_picture_reference_flag = (h->i_ref0 > 1)?0:1;
 	pbh->b_no_forward_reference_flag = 0;
@@ -793,7 +801,7 @@ static void xavs_pb_pic_header_init(xavs_t *h, xavs_pb_pic_header_t *pbh, int i_
 
 static inline void xavs_slice_init( xavs_t *h,  int i_slice_type, int i_qp )
 {
-    xavs_slice_header_init( &h->sh, i_qp);
+    xavs_slice_header_init(h, &h->sh, i_qp);
     
     h->sh.i_type      = i_slice_type;
     h->sh.i_first_mb  = 0;
@@ -1179,7 +1187,7 @@ do_encode:
 	if( i_slice_type == SLICE_TYPE_I )
 	{
             xavs_i_pic_header_init( h,&h->ih,i_global_qp);
-	    h->sh.b_picture_fixed_qp = h->ih.b_fixed_picture_qp;
+            h->sh.b_picture_fixed_qp = h->ih.b_fixed_picture_qp;
 	}
 	else
 	{

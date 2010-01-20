@@ -1193,6 +1193,7 @@ static int  Parse( int argc, char **argv,
             }
             case 'q':
                 param->rc.i_qp_constant = atoi( optarg );
+                param->rc.i_rc_method = XAVS_RC_CQP;
                 break;
             case OPT_QPMIN:
                 param->rc.i_qp_min = atoi( optarg );

@@ -406,8 +406,6 @@ struct xavs_t
     xavs_frame_t    *fref1[16+3];     /* ref list 1 */
     int             b_ref_reorder[2];
 
-
-
     /* Current MB DCT coeffs */
     struct
     {
@@ -477,7 +475,7 @@ struct xavs_t
         int16_t (*mvd[2])[2];               /* mb mv difference with predict. set to 0 if intra. cabac only */
         int8_t   *ref[2];                   /* mb ref. set to -1 if non used (intra or Lx only) */
         int8_t   list[352*288*4];
-	int16_t (*mvr[2][16])[2];           /* 16x16 mv for each possible ref */
+        int16_t (*mvr[2][16])[2];           /* 16x16 mv for each possible ref */
         int8_t  *skipbp;                    /* block pattern for SKIP or DIRECT (sub)mbs. B-frames + cabac only */
         int8_t  *mb_transform_size;         /* transform_size_8x8_flag of each mb */
 
@@ -527,7 +525,7 @@ struct xavs_t
             /* -1 if unused, -2 if unavaible */
             int8_t  ref[2][XAVS_SCAN8_SIZE];
 
-	    int8_t  list[XAVS_SCAN8_SIZE];
+            int8_t  list[XAVS_SCAN8_SIZE];
 
             /* 0 if non avaible */
             int16_t mv[2][XAVS_SCAN8_SIZE][2];

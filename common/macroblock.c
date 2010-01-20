@@ -1259,6 +1259,7 @@ void xavs_macroblock_cache_save( xavs_t *h )
 
     if( h->mb.i_type != I_16x16 && h->mb.i_cbp_luma == 0 && h->mb.i_cbp_chroma == 0 )
         h->mb.i_qp = h->mb.i_last_qp;
+
     h->mb.qp[i_mb_xy] = h->mb.i_qp;
 
     h->mb.i_last_dqp = h->mb.i_qp - h->mb.i_last_qp;

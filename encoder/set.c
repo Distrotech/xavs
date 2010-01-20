@@ -174,7 +174,7 @@ void xavs_i_picture_write( bs_t *s, xavs_i_pic_header_t *ih, xavs_seq_header_t *
 
 	bs_write1( s, 1);//ih->b_top_field_first);
 	bs_write1( s, 0);//ih->b_repeat_first_field);
-	bs_write1( s, 1);//ih->b_fixed_picture_qp);
+	bs_write1( s, ih->b_fixed_picture_qp);
 	bs_write( s, 6, ih->i_picture_qp);
 	//if(!ih->b_progressive_frame && !ih->b_picture_structure)
 		//bs_write1( s, ih->b_skip_mode_flag);
@@ -206,7 +206,7 @@ void xavs_pb_picture_write( bs_t *s, xavs_pb_pic_header_t *pbh, xavs_seq_header_
 	}*/
 	bs_write1( s, 0);//pbh->b_top_field_first);
 	bs_write1( s, 0);//pbh->b_repeat_first_field);
-	bs_write1( s, 1);//pbh->b_fixed_picture_qp);
+	bs_write1( s, pbh->b_fixed_picture_qp);
 	bs_write( s, 6, pbh->i_picture_qp);
 	if(pbh->i_picture_coding_type ==1 )
 		bs_write1( s, pbh->b_picture_reference_flag);

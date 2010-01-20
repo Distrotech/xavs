@@ -261,6 +261,7 @@ int xavs_ratecontrol_new( xavs_t *h )
 	{
 		xavs_log(h, XAVS_LOG_WARNING, "VBV maxrate specified, but no bufsize.\n");
 		h->param.rc.i_vbv_max_bitrate = 0;
+		rc->b_vbv = 0;
 	}
 	if(rc->rate_tolerance < 0.01)
 	{

@@ -549,10 +549,10 @@ static void cavlc_qp_delta( xavs_t *h, bs_t *s )
     int i_dqp = h->mb.i_qp - h->mb.i_last_qp;
     if( i_dqp )
     {
-        if( i_dqp < -26 )
-            i_dqp += 52;
-        else if( i_dqp > 25 )
-            i_dqp -= 52;
+        if( i_dqp < -32 )
+            i_dqp += 63;
+        else if( i_dqp > 31 )
+            i_dqp -= 63;
     }
     bs_write_se( s, i_dqp );
 }
@@ -859,7 +859,11 @@ void xavs_macroblock_write_cavlc( xavs_t *h, bs_t *s )
         bs_write_ue( s, inter_cbp_to_golomb[( h->mb.i_cbp_chroma << 4 )|h->mb.i_cbp_luma] );
 	}
 
+	//write qp_delta 
+	if( (( h->mb.i_cbp_chroma << 4 )|h->mb.i_cbp_luma) && (h->mb.b_variable_qp==1))
+	   cavlc_qp_delta(h,s);
 
+	//write coeff  
     for(i=0;i<4;i++)
 		{
 			if(h->mb.i_cbp_luma&(1<<i))
@@ -873,7 +877,6 @@ void xavs_macroblock_write_cavlc( xavs_t *h, bs_t *s )
 				xavs_block_chroma_write_cavlc( h, s, 4 + i, h->dct.chroma8x8[i], 64 );
 		}
     
-
 #ifndef RDO_SKIP_BS
       h->stat.frame.i_tex_bits += bs_pos(s) - i_mb_pos_tex;
 #endif
