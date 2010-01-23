@@ -92,6 +92,7 @@ void xavs_sequence_init( xavs_seq_header_t *sqh , xavs_param_t *param )
 	{
 	  case 23:
 	    i_frame_rate_code = 1;
+		break;
 	  case 24:
 		i_frame_rate_code = 2;//0010
 		break;

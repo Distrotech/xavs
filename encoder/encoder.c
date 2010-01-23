@@ -784,7 +784,7 @@ static void xavs_pb_pic_header_init(xavs_t *h, xavs_pb_pic_header_t *pbh, int i_
 	pbh->b_advanced_pred_mode_disable = 1;
 	pbh->b_top_field_first = 1;
 	pbh->b_repeat_first_field = 0;
-	pbh->b_fixed_picture_qp = (h->param.rc.i_rc_method == XAVS_RC_CQP)? 1: 0;;
+	pbh->b_fixed_picture_qp = (h->param.rc.i_rc_method == XAVS_RC_CQP)? 1: 0;
 	pbh->i_picture_qp = i_qp;
 	pbh->b_picture_reference_flag = (h->i_ref0 > 1)?0:1;
 	pbh->b_no_forward_reference_flag = 0;
@@ -1087,7 +1087,7 @@ int     xavs_encoder_encode( xavs_t *h,
         while( IS_XAVS_TYPE_B( h->frames.next[bframes]->i_type ) )
             bframes++;
         xavs_frame_put( h->frames.current, xavs_frame_get( &h->frames.next[bframes] ) );
-        /* FIXME: when max B-frames > 3, BREF may no longer be centered after GOP closing */
+/*
         if( h->param.b_bframe_pyramid && bframes > 1 )
         {
             xavs_frame_t *mid = xavs_frame_get( &h->frames.next[bframes/2] );
@@ -1095,6 +1095,7 @@ int     xavs_encoder_encode( xavs_t *h,
             xavs_frame_put( h->frames.current, mid );
             bframes--;
         }
+*/
         while( bframes-- )
             xavs_frame_put( h->frames.current, xavs_frame_get( h->frames.next ) );
     }
