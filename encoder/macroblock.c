@@ -98,7 +98,7 @@ void xavs_mb_encode_i8x8( xavs_t *h, int idx, int i_qscale )
     h->dctf.add8x8_idct8( p_dst, dct8x8 );
 }
 
-static void xavs_mb_encode_8x8_chroma( xavs_t *h, int b_inter, int i_qscale )
+void xavs_mb_encode_8x8_chroma( xavs_t *h, int b_inter, int i_qscale )
 {
     int ch;
 
@@ -467,43 +467,40 @@ void xavs_macroblock_encode_p8x8( xavs_t *h, int i8 )
     int i_decimate_8x8 = 0;
     int nnz8x8 = 1;
     int ch;
-
-    xavs_mb_mc_8x8( h, i8 );
-
-    if( h->mb.b_transform_8x8 )
+ 	
+	DECLARE_ALIGNED( int16_t, dct8x8[8][8], 16 );
+	xavs_mb_mc_8x8( h, i8 );
+         
+    h->dctf.sub8x8_dct8( dct8x8, p_fenc, p_fdec );
+    h->quantf.quant_8x8( dct8x8, h->quant8_mf[CQM_8IY][i_qp], h->quant8_bias[CQM_8IY][i_qp], i_qp);
+    scan_zigzag_8x8full( h->dct.luma8x8[i8], dct8x8 );
+    i_decimate_8x8 = xavs_mb_decimate_score( h->dct.luma8x8[i8], 64 );
+        
+	if( i_decimate_8x8 < 4 )
     {
-        int16_t dct8x8[8][8];
-        h->dctf.sub8x8_dct8( dct8x8, p_fenc, p_fdec );
-	h->quantf.quant_8x8(dct8x8, h->quant8_mf[CQM_8PY][i_qp], h->quant8_bias[CQM_8PY][i_qp], i_qp);
-        scan_zigzag_8x8full( h->dct.luma8x8[i8], dct8x8 );
-        i_decimate_8x8 = xavs_mb_decimate_score( h->dct.luma8x8[i8], 64 );
-
-        if( i_decimate_8x8 < 4 )
-        {
-            memset( h->dct.luma8x8[i8], 0, sizeof(h->dct.luma8x8[i8]) );
-            nnz8x8 = 0;
-        }
-        if( nnz8x8 )
-        {
-            h->quantf.dequant_8x8( dct8x8, h->dequant8_mf[CQM_8PY], i_qp );
-            h->dctf.add8x8_idct8( p_fdec, dct8x8 );
-        }
+       memset( h->dct.luma8x8[i8], 0, sizeof(h->dct.luma8x8[i8]) );
+       nnz8x8 = 0;
     }
-
-    i_qp = i_chroma_qp_table[xavs_clip3( i_qp + h->pps->i_chroma_qp_index_offset, 0, 63 )];
+    if( nnz8x8 )
+    {
+        h->quantf.dequant_8x8( dct8x8, h->dequant8_mf[CQM_8IY], i_qp );
+        h->dctf.add8x8_idct8( p_fdec, dct8x8 );                 
+    }    
+	
+    i_qp = i_chroma_qp_table[ i_qp];
 
     for( ch = 0; ch < 2; ch++ )
     {
-        int16_t dct8x8[8][8];
-        p_fenc = h->mb.pic.p_fenc[1+ch] + (i8&1)*4 + (i8>>1)*4*FENC_STRIDE;
-        p_fdec = h->mb.pic.p_fdec[1+ch] + (i8&1)*4 + (i8>>1)*4*FDEC_STRIDE;
+        int16_t dct8x8[2][8][8];
+        uint8_t  *p_src = h->mb.pic.p_fenc[1+ch];
+        uint8_t  *p_dst = h->mb.pic.p_fdec[1+ch];
 
-        h->dctf.sub8x8_dct8( dct8x8, p_fenc, p_fdec );
-
-        h->quantf.quant_8x8( dct8x8, h->quant8_mf[CQM_8PC][i_qp], h->quant8_bias[CQM_8PC][i_qp], i_qp);
-        scan_zigzag_8x8full(h->dct.chroma8x8[ch],dct8x8);
-  	h->quantf.dequant_8x8(dct8x8,h->dequant8_mf[CQM_8PC], i_qp );
-        h->dctf.add8x8_idct8( p_fdec, dct8x8 );
+        h->dctf.sub8x8_dct8( dct8x8[ch], p_src, p_dst );
+        h->quantf.quant_8x8(dct8x8[ch],h->quant8_mf[CQM_8PC ][i_qp], h->quant8_bias[CQM_8PC][i_qp], i_qp);
+        scan_zigzag_8x8full(h->dct.chroma8x8[ch],dct8x8[ch]);
+		h->quantf.dequant_8x8(dct8x8[ch],h->dequant8_mf[CQM_8PC ], i_qp );
+		h->dctf.add8x8_idct8(p_dst, dct8x8[ch]);   
+ 
     }
 
     if( nnz8x8 )
@@ -512,3 +509,4 @@ void xavs_macroblock_encode_p8x8( xavs_t *h, int i8 )
         h->mb.i_cbp_luma &= ~(1 << i8);
     h->mb.i_cbp_chroma = 0x02;
 }
+

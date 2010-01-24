@@ -68,7 +68,7 @@ void    xavs_param_default( xavs_param_t *param )
     param->i_keyint_min = 25;
 	param->i_bframe = 3;
     param->i_scenecut_threshold = 40;
-	param->i_bframe_adaptive = 1;
+	param->i_bframe_adaptive = 0;
     param->i_bframe_bias = 0;
 	param->analyse.b_bframe_rdo = 1 ;
 
@@ -77,11 +77,11 @@ void    xavs_param_default( xavs_param_t *param )
     param->i_deblocking_filter_beta = 0;
 
 
-	param->rc.i_rc_method = 2;/* 0:XAVS_RC_CQP; 1:XAVS_RC_CRF; 2:XAVS_RC_ABR*/
-	param->rc.i_bitrate = 750; 
+	param->rc.i_rc_method = 0;/* 0:XAVS_RC_CQP; 1:XAVS_RC_CRF; 2:XAVS_RC_ABR*/
+	param->rc.i_bitrate = 0; 
 	param->rc.f_rate_tolerance = 1.0;
-	param->rc.i_vbv_max_bitrate = 1500;
-    param->rc.i_vbv_buffer_size = 1000;
+	param->rc.i_vbv_max_bitrate = 0;
+    param->rc.i_vbv_buffer_size = 0;
 	param->rc.f_vbv_buffer_init = 0.9;
 	param->rc.i_qp_constant = 28;
 	param->rc.f_rf_constant = 28;
@@ -111,7 +111,7 @@ void    xavs_param_default( xavs_param_t *param )
                          | XAVS_ANALYSE_PSUB16x16 | XAVS_ANALYSE_BSUB16x16;
     param->analyse.i_direct_mv_pred = XAVS_DIRECT_PRED_SPATIAL;
     param->analyse.i_me_method =XAVS_ME_UMH ;//xavs_ME_HEX;
-    param->analyse.i_me_range = 32;
+    param->analyse.i_me_range = 16;
     param->analyse.i_subpel_refine = 5;
     param->analyse.b_chroma_me = 1;
     param->analyse.i_mv_range = -1; 

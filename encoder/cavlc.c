@@ -893,7 +893,7 @@ int xavs_partition_size_cavlc( xavs_t *h, int i8, int i_pixel )
 {
     bs_t s;
     const int i_mb_type = h->mb.i_type;
-    int j;
+	int b_8x16 = h->mb.i_partition == D_8x16;
 
     s.i_bits_encoded = 0;
 
@@ -913,16 +913,17 @@ int xavs_partition_size_cavlc( xavs_t *h, int i8, int i_pixel )
         else //8x16
             cavlc_mb_mvd( h, &s, 0, 4*i8, 2 );
     }
+	else if( i_mb_type > B_DIRECT && i_mb_type < B_8x8 )
+    {
+        if( xavs_mb_type_list0_table_cavlc[ i_mb_type ][0]) cavlc_mb_mvd( h, &s, 0, 4*i8, 4>>b_8x16 ); 
+        if( xavs_mb_type_list0_table_cavlc[ i_mb_type ][1]) cavlc_mb_mvd( h, &s, 0, 4*i8, 4>>b_8x16 );
+        if( xavs_mb_type_list1_table_cavlc[ i_mb_type ][0]) cavlc_mb_mvd( h, &s, 1, 4*i8, 4>>b_8x16 );
+		if( xavs_mb_type_list1_table_cavlc[ i_mb_type ][1]) cavlc_mb_mvd( h, &s, 1, 4*i8, 4>>b_8x16 );
+    }
+
     else if( i_mb_type == B_8x8 )
     {
         bs_write_ue( &s, sub_mb_type_b_to_golomb[ h->mb.i_sub_partition[i8] ] );
-
-        if( h->sh.i_num_ref_idx_l0_active > 1
-            && xavs_mb_partition_listX_table[0][ h->mb.i_sub_partition[i8] ] )
-            bs_write_te( &s, h->sh.i_num_ref_idx_l0_active - 1, h->mb.cache.ref[0][xavs_scan8[4*i8]] );
-        if( h->sh.i_num_ref_idx_l1_active > 1
-            && xavs_mb_partition_listX_table[1][ h->mb.i_sub_partition[i8] ] )
-            bs_write_te( &s, h->sh.i_num_ref_idx_l1_active - 1, h->mb.cache.ref[1][xavs_scan8[4*i8]] );
 
         cavlc_mb8x8_mvd( h, &s, 0, i8 );
         cavlc_mb8x8_mvd( h, &s, 1, i8 );
@@ -932,25 +933,42 @@ int xavs_partition_size_cavlc( xavs_t *h, int i8, int i_pixel )
         xavs_log(h, XAVS_LOG_ERROR, "invalid/unhandled mb_type\n" );
         return 0;
     }
-
-    for( j = (i_pixel < PIXEL_8x8); j >= 0; j-- )
-    {
-        xavs_macroblock_luma_write_cavlc( h, &s, i8, i8 );
-
-        block_residual_write_cavlc( h, &s, i8,   h->dct.block[16+i8  ].residual_ac, 15 );
-        block_residual_write_cavlc( h, &s, i8+4, h->dct.block[16+i8+4].residual_ac, 15 );
-
-        i8 += xavs_pixel_size[i_pixel].h >> 3;
-    }
-
     return s.i_bits_encoded;
 }
-
+static int cavlc_intra8x8_pred_size( xavs_t *h, int i4, int i_mode )
+{
+    if( xavs_mb_predict_intra4x4_mode( h, i4 ) == xavs_mb_pred_mode8x8( i_mode ) )
+        return 1;
+    else
+        return 4;
+}
 static int xavs_partition_i8x8_size_cavlc( xavs_t *h, int i8, int i_mode )
 {
    	//TBD 
+    int i4, i ;
+    h->out.bs.i_bits_encoded = cavlc_intra8x8_pred_size( h, 4*i8, i_mode );
+    for( i4 = 0; i4 < 4; i4++ )
+    {
+	    for( i = 0; i < 16; i++ )
+            h->dct.block[i4+i8*4].luma4x4[i] = h->dct.luma8x8[i8][i4+i*4];
+        h->mb.cache.non_zero_count[xavs_scan8[i4+i8*4]] =
+        array_non_zero_count( h->dct.block[i4+i8*4].luma4x4, 16 );
 
+		xavs_block_luma_write_cavlc( h, &h->out.bs, i, h->dct.luma8x8[i8], 64 );
+    }
 
+    return h->out.bs.i_bits_encoded;
+}
+
+static int xavs_i8x8_chroma_size_cavlc( xavs_t *h )
+{
+    h->out.bs.i_bits_encoded = bs_size_ue( xavs_mb_pred_mode8x8c[ h->mb.i_chroma_pred_mode ] );
+    if( h->mb.i_cbp_chroma )
+    {
+        xavs_block_chroma_write_cavlc( h, &h->out.bs, 4 + 0, h->dct.chroma8x8[0], 64 );
+		xavs_block_chroma_write_cavlc( h, &h->out.bs, 4 + 1, h->dct.chroma8x8[1], 64 );
+	
+	}
     return h->out.bs.i_bits_encoded;
 }
 #endif

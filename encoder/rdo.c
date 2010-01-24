@@ -3,7 +3,7 @@
  *****************************************************************************
  * Copyright (C) 2005 xavs project
  *
- * Authors: Loren Merritt <lorenm@u.washington.edu>
+ * Authors: 
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -82,6 +82,7 @@ static int xavs_rd_cost_mb( xavs_t *h, int i_lambda2 )
 int xavs_rd_cost_part( xavs_t *h, int i_lambda2, int i8, int i_pixel )
 {
     int i_ssd, i_bits;
+    int chromassd;
 
     if( i_pixel == PIXEL_16x16 )
     {
@@ -91,18 +92,19 @@ int xavs_rd_cost_part( xavs_t *h, int i_lambda2, int i8, int i_pixel )
         return i_cost;
     }
 
+    h->mb.i_cbp_luma = 0;
+
     xavs_macroblock_encode_p8x8( h, i8 );
     if( i_pixel == PIXEL_16x8 )
         xavs_macroblock_encode_p8x8( h, i8+1 );
     if( i_pixel == PIXEL_8x16 )
         xavs_macroblock_encode_p8x8( h, i8+2 );
 
-    i_ssd = ssd_plane( h, i_pixel,   0, (i8&1)*8, (i8>>1)*8 )
-          + ssd_plane( h, i_pixel+3, 1, (i8&1)*4, (i8>>1)*4 )
-          + ssd_plane( h, i_pixel+3, 2, (i8&1)*4, (i8>>1)*4 );
+    chromassd = ssd_plane( h, i_pixel+3, 1, (i8&1)*4, (i8>>1)*4 )
+              + ssd_plane( h, i_pixel+3, 2, (i8&1)*4, (i8>>1)*4 );
+    i_ssd = ssd_plane( h, i_pixel,   0, (i8&1)*8, (i8>>1)*8 ) + chromassd;
 
-
-	i_bits = xavs_partition_size_cavlc( h, i8, i_pixel ) * i_lambda2;
+    i_bits = xavs_partition_size_cavlc( h, i8, i_pixel ) * i_lambda2;
 
     return i_ssd + i_bits;
 }
@@ -115,6 +117,22 @@ int xavs_rd_cost_i8x8( xavs_t *h, int i_lambda2, int i8, int i_mode )
     i_ssd = ssd_plane( h, PIXEL_8x8, 0, (i8&1)*8, (i8>>1)*8 );
 
     i_bits = xavs_partition_i8x8_size_cavlc( h, i8, i_mode ) * i_lambda2;
+
+    return i_ssd + i_bits;
+}
+
+static int xavs_rd_cost_i8x8_chroma( xavs_t *h, int i_lambda2, int i_mode, int b_dct )
+{
+    int i_ssd, i_bits;
+
+    if( b_dct )
+        xavs_mb_encode_8x8_chroma( h, 0, h->mb.i_chroma_qp );
+    i_ssd = ssd_plane( h, PIXEL_8x8, 1, 0, 0 ) +
+            ssd_plane( h, PIXEL_8x8, 2, 0, 0 );
+
+    h->mb.i_chroma_pred_mode = i_mode;
+
+    i_bits = xavs_i8x8_chroma_size_cavlc( h ) * i_lambda2;
 
     return i_ssd + i_bits;
 }

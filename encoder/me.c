@@ -40,22 +40,11 @@ static const int subpel_iterations[][4] =
     {0,0,2,2},
     {0,0,2,2}};
 
+static const int mod6m1[8] = {5,0,1,2,3,4,5,0};
+static const int hex2[8][2] = {{-1,-2}, {-2,0}, {-1,2}, {1,2}, {2,0}, {1,-2}, {-1,-2}, {-2,0}};
+static const int square1[9][2] = {{0,0}, {0,-1}, {0,1}, {-1,0}, {1,0}, {-1,-1}, {-1,1}, {1,-1}, {1,1}};
+
 static void refine_subpel( xavs_t *h, xavs_me_t *m, int hpel_iters, int qpel_iters, int *p_halfpel_thresh, int b_refine_qpel );
-
-#define COPY2_IF_LT(x,y,a,b)\
-if((y)<(x))\
-{\
-    (x)=(y);\
-    (a)=(b);\
-}
-
-#define COPY3_IF_LT(x,y,a,b,c,d)\
-if((y)<(x))\
-{\
-    (x)=(y);\
-    (a)=(b);\
-    (c)=(d);\
-}
 
 #define BITS_MVD( mx, my )\
     (p_cost_mvx[(mx)<<2] + p_cost_mvy[(my)<<2])
@@ -755,97 +744,122 @@ int xavs_me_refine_bidir( xavs_t *h, xavs_me_t *m0, xavs_me_t *m1, int i_weight 
     return bcost;
 }
 
-#define COST_MV_RD( mx, my, dir ) \
+#undef  COST_MV_SATD
+#define SATD_THRESH 17/16
+#define COST_MV_SATD( mx, my, dst, avoid_mvp ) \
 { \
-    if( (dir^1) != odir && (dir<0 || !p_visited[(mx)+(my)*16]) ) \
+    if( !avoid_mvp || !(mx == pmx && my == pmy) ) \
+    { \
+        int stride = 16; \
+        uint8_t *src = h->mc.get_ref( m->p_fref, m->i_stride[0], pix, &stride, mx, my, bw*4, bh*4 ); \
+        dst = h->pixf.mbcmp[i_pixel]( m->p_fenc[0], FENC_STRIDE, src, stride ) \
+            + p_cost_mvx[mx] + p_cost_mvy[my]; \
+        COPY1_IF_LT( bsatd, dst ); \
+    } \
+    else \
+        dst = COST_MAX; \
+}
+#define COST_MV_RD( mx, my, satd, do_dir, mdir ) \
+{ \
+    if( satd <= bsatd * SATD_THRESH ) \
     { \
         int cost; \
         cache_mv[0] = cache_mv2[0] = mx; \
         cache_mv[1] = cache_mv2[1] = my; \
-        cost = xavs_rd_cost_part( h, i_lambda2, i8, m->i_pixel ); \
-        if( cost < bcost ) \
-        {                  \
-            bcost = cost;  \
-            bmx = mx;      \
-            bmy = my;      \
-        } \
-        if(dir>=0) p_visited[(mx)+(my)*16] = 1; \
+        cost = xavs_rd_cost_part( h, i_lambda2, i4/4, m->i_pixel ); \
+        COPY4_IF_LT( bcost, cost, bmx, mx, bmy, my, dir, do_dir?mdir:dir ); \
     } \
-}
+} 
 
-void xavs_me_refine_qpel_rd( xavs_t *h, xavs_me_t *m, int i_lambda2, int i8 )
+void xavs_me_refine_qpel_rd( xavs_t *h, xavs_me_t *m, int i_lambda2, int i4, int i_list )
 {
     // don't have to fill the whole mv cache rectangle
-    static const int pixel_mv_offs[] = { 0, 4, 4*8, 0 };
-    int16_t *cache_mv = h->mb.cache.mv[0][xavs_scan8[i8*4]];
+    static const int pixel_mv_offs[] = { 0, 4, 4*8, 0, 2, 2*8, 0 };
+    int16_t *cache_mv = h->mb.cache.mv[i_list][xavs_scan8[i4]];
     int16_t *cache_mv2 = cache_mv + pixel_mv_offs[m->i_pixel];
-    const int bw = xavs_pixel_size[m->i_pixel].w>>2;
+    const int16_t *p_cost_mvx, *p_cost_mvy;
+	const int bw = xavs_pixel_size[m->i_pixel].w>>2;
     const int bh = xavs_pixel_size[m->i_pixel].h>>2;
 
+    const int i_pixel = m->i_pixel;
+
+    //DECLARE_ALIGNED_16( uint8_t pix[16*16] );
+	DECLARE_ALIGNED( uint8_t, pix[16*16], 16 );
     int bcost = m->i_pixel == PIXEL_16x16 ? m->cost : COST_MAX;
-    int bmx = m->mv[0]; 
+    int bmx = m->mv[0];
     int bmy = m->mv[1];
-    int omx, omy, i;
-    int odir = -1, bdir;
+    int omx, omy, pmx, pmy, i, j;
+    unsigned bsatd;
+    unsigned int satd = 0;
+    int dir = -2;
+    unsigned int satds[8];
 
-    int visited[16*13] = {0}; // only need 13x13, but 16 is more convenient
-    int *p_visited = &visited[6+6*16];
+    if( m->i_pixel != PIXEL_16x16 && i4 != 0 )
+        xavs_mb_predict_mv( h, i_list, i4, bw, m->mvp );
+    pmx = m->mvp[0];
+    pmy = m->mvp[1];
+    p_cost_mvx = m->p_cost_mv - pmx;
+    p_cost_mvy = m->p_cost_mv - pmy;
+    COST_MV_SATD( bmx, bmy, bsatd, 0 );
+    COST_MV_RD( bmx, bmy, 0, 0, 0 );
 
-    if( m->i_pixel != PIXEL_16x16 )
+    // check the predicted mv 
+    if( (bmx != pmx || bmy != pmy)
+        && pmx >= h->mb.mv_min_spel[0] && pmx <= h->mb.mv_max_spel[0]
+        && pmy >= h->mb.mv_min_spel[1] && pmy <= h->mb.mv_max_spel[1] )
     {
-        COST_MV_RD( bmx, bmy, -1 );
-        xavs_mb_predict_mv( h, 0, i8*4, bw, m->mvp );
+        COST_MV_SATD( pmx, pmy, satd, 0 );
+        COST_MV_RD( pmx, pmy, satd, 0,0 );
+        // The hex motion search is guaranteed to not repeat the center candidate,
+         //so if pmv is chosen, set the "MV to avoid checking" to bmv instead. 
+        if( bmx == pmx && bmy == pmy )
+        {
+            pmx = m->mv[0];
+            pmy = m->mv[1];
+        }
     }
 
-    /* check the predicted mv */
-    if( bmx != m->mvp[0] || bmy != m->mvp[1] )
-        COST_MV_RD( m->mvp[0], m->mvp[1], -1 );
+    if( bmy < h->mb.mv_min_spel[1] + 3 ||
+        bmy > h->mb.mv_max_spel[1] - 3 )
+        return;
 
-    /* mark mv and mvp as visited */
-    p_visited[0] = 1;
-    p_visited -= bmx + bmy*16;
+    // subpel hex search, same pattern as ME HEX.
+    dir = -2;
+    omx = bmx;
+    omy = bmy;
+    for( j=0; j<6; j++ ) COST_MV_SATD( omx + hex2[j+1][0], omy + hex2[j+1][1], satds[j], 1 );
+    for( j=0; j<6; j++ ) COST_MV_RD  ( omx + hex2[j+1][0], omy + hex2[j+1][1], satds[j], 1,j );
+
+    if( dir != -2 )
     {
-        int mx = bmx ^ m->mv[0] ^ m->mvp[0];
-        int my = bmy ^ m->mv[1] ^ m->mvp[1];
-        if( abs(mx-bmx) < 7 && abs(my-bmy) < 7 )
-            p_visited[mx + my*16] = 1;
+        // half hexagon, not overlapping the previous iteration 
+        for( i = 1; i < 10; i++ )
+        {
+            const int odir = mod6m1[dir+1];
+            if( bmy < h->mb.mv_min_spel[1] + 3 ||
+                bmy > h->mb.mv_max_spel[1] - 3 )
+                break;
+            dir = -2;
+            omx = bmx;
+            omy = bmy;
+            for( j=0; j<3; j++ ) COST_MV_SATD( omx + hex2[odir+j][0], omy + hex2[odir+j][1], satds[j], 1 );
+            for( j=0; j<3; j++ ) COST_MV_RD  ( omx + hex2[odir+j][0], omy + hex2[odir+j][1], satds[j], 1, odir-1+j );
+            if( dir == -2 )
+                break;
+        }
     }
 
-    /* hpel */  
-    bdir = -1;
-    for( i = 0; i < 2; i++ )
-    {
-         omx = bmx;
-         omy = bmy;
-         odir = bdir;
-         COST_MV_RD( omx, omy - 2, 0 );
-         COST_MV_RD( omx, omy + 2, 1 );
-         COST_MV_RD( omx - 2, omy, 2 );
-         COST_MV_RD( omx + 2, omy, 3 );
-         if( bmx == omx && bmy == omy )
-            break;
-    }
-    
-    /* qpel */
-    bdir = -1;
-    for( i = 0; i < 2; i++ )
-    {
-         omx = bmx;
-         omy = bmy;
-         odir = bdir;
-         COST_MV_RD( omx, omy - 1, 0 );
-         COST_MV_RD( omx, omy + 1, 1 );
-         COST_MV_RD( omx - 1, omy, 2 );
-         COST_MV_RD( omx + 1, omy, 3 );
-         if( bmx == omx && bmy == omy )
-            break;
-    }
+    //square refine, same as pattern as ME HEX. 
+    omx = bmx;
+    omy = bmy;
+    for( i=0; i<8; i++ ) COST_MV_SATD( omx + square1[i+1][0], omy + square1[i+1][1], satds[i], 1 );
+    for( i=0; i<8; i++ ) COST_MV_RD  ( omx + square1[i+1][0], omy + square1[i+1][1], satds[i], 0,0 );
 
     m->cost = bcost;
     m->mv[0] = bmx;
     m->mv[1] = bmy;
 
-    xavs_macroblock_cache_mv ( h, 2*(i8&1), i8&2, bw, bh, 0, bmx, bmy );
-    xavs_macroblock_cache_mvd( h, 2*(i8&1), i8&2, bw, bh, 0, bmx - m->mvp[0], bmy - m->mvp[1] );
+    xavs_macroblock_cache_mv ( h, block_idx_x[i4], block_idx_y[i4], bw, bh, i_list, bmx, bmy );
+    xavs_macroblock_cache_mvd( h, block_idx_x[i4], block_idx_y[i4], bw, bh, i_list, bmx - m->mvp[0], bmy - m->mvp[1] );
 }
 

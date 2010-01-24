@@ -25,6 +25,34 @@
 
 #define COST_MAX (1<<28)
 
+#define COPY1_IF_LT(x,y)\
+if((y)<(x))\
+    (x)=(y);
+
+#define COPY2_IF_LT(x,y,a,b)\
+if((y)<(x))\
+{\
+    (x)=(y);\
+    (a)=(b);\
+}
+
+#define COPY3_IF_LT(x,y,a,b,c,d)\
+if((y)<(x))\
+{\
+    (x)=(y);\
+    (a)=(b);\
+    (c)=(d);\
+}
+
+#define COPY4_IF_LT(x,y,a,b,c,d,f,e)\
+if((y)<(x))\
+{\
+    (x)=(y);\
+    (a)=(b);\
+    (c)=(d);\
+    (f)=(e);\
+}
+
 typedef struct
 {
     /* input */
@@ -51,7 +79,7 @@ static inline void xavs_me_search( xavs_t *h, xavs_me_t *m, int (*mvc)[2], int i
     { xavs_me_search_ref( h, m, mvc, i_mvc, NULL ); }
 
 void xavs_me_refine_qpel( xavs_t *h, xavs_me_t *m );
-void xavs_me_refine_qpel_rd( xavs_t *h, xavs_me_t *m, int i_lambda2, int i8 );
+void xavs_me_refine_qpel_rd( xavs_t *h, xavs_me_t *m, int i_lambda2, int i4,int i_list  );
 int xavs_me_refine_bidir( xavs_t *h, xavs_me_t *m0, xavs_me_t *m1, int i_weight );
 int xavs_rd_cost_part( xavs_t *h, int i_lambda2, int i8, int i_pixel );
 

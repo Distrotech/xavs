@@ -31,80 +31,6 @@
 #include "ratecontrol.h"
 #include "analyse.h"
 #include "rdo.c"
-uint8_t bbbest_mode[18][22];
-static const uint8_t qqbest_mode[36][44]=
-{
-{07, 05, 05, 05, 05, 01, 05, 01, 05, 05, 05, 05, 05, 05, 01, 05, 05, 05, 05, 05, 05, 05, 
-  01, 05, 05, 05, 05, 05, 05, 05, 05, 05, 05, 05, 05, 05, 01, 05, 05, 05, 05, 05, 05, 05},  
-  {06, 03, 01, 01, 01, 01, 03, 03, 03, 03, 03, 03, 03, 01, 03, 03, 03, 03, 03, 03, 03, 01,  
-  01, 01, 02, 02, 04, 04, 04, 04, 00, 02, 04, 04, 04, 03, 02, 04, 04, 02, 04, 04, 02, 04},  
-  {06, 01, 03, 03, 03, 03, 03, 03, 02, 01, 03, 03, 00, 03, 03, 04, 02, 03, 01, 01, 01, 00,
-  00, 00, 00, 03, 04, 04, 04, 04, 04, 04, 04, 04, 02, 04, 04, 04, 04, 04, 04, 04, 04, 04},  
-  {00, 01, 03, 02, 01, 03, 02, 03, 03, 03, 03, 03, 03, 03, 03, 03, 03, 03, 00, 00, 00, 00,  
-  00, 00, 00, 00, 02, 04, 04, 04, 04, 04, 04, 04, 02, 02, 04, 04, 04, 04, 04, 04, 04, 04}, 
-  {00, 02, 02, 02, 02, 01, 03, 03, 03, 03, 03, 01, 02, 02, 02, 03, 03, 03, 00, 00, 00, 00, 
-  00, 00, 00, 00, 00, 03, 04, 00, 04, 04, 04, 04, 02, 02, 02, 04, 04, 04, 04, 04, 04, 04},  
-  {00, 00, 01, 03, 03, 04, 03, 03, 02, 02, 02, 01, 01, 00, 00, 03, 00, 01, 00, 00, 00, 00,  
-  00, 00, 00, 00, 00, 00, 04, 02, 02, 04, 04, 04, 04, 02, 00, 04, 04, 04, 01, 04, 04, 00},  
-  {06, 03, 03, 00, 03, 03, 03, 03, 02, 01, 01, 01, 01, 03, 00, 00, 00, 00, 00, 00, 00, 00,  
-  00, 00, 00, 00, 00, 00, 00, 04, 00, 02, 04, 04, 04, 04, 00, 02, 04, 04, 04, 02, 04, 04},  
-  {06, 03, 03, 03, 02, 02, 02, 02, 02, 03, 03, 03, 03, 00, 00, 00, 00, 00, 00, 00, 00, 00,  
-  00, 00, 00, 00, 00, 00, 00, 02, 00, 02, 02, 04, 04, 04, 04, 02, 02, 04, 04, 04, 04, 04},  
-  {06, 02, 02, 02, 02, 02, 02, 01, 03, 01, 03, 03, 03, 03, 00, 00, 00, 00, 00, 00, 00, 00,  
-  00, 00, 00, 00, 00, 02, 04, 02, 04, 00, 00, 04, 02, 04, 04, 04, 02, 02, 04, 04, 00, 00},  
-  {06, 02, 02, 02, 02, 02, 02, 02, 02, 02, 02, 02, 02, 02, 02, 02, 02, 02, 02, 01, 02, 01,  
-  02, 01, 02, 01, 02, 01, 02, 02, 02, 02, 02, 02, 02, 02, 02, 02, 02, 02, 02, 02, 02, 02}, 
-  {00, 04, 01, 03, 03, 03, 03, 01, 03, 03, 03, 04, 04, 02, 00, 01, 01, 01, 01, 01, 01, 01,  
-  01, 01, 01, 01, 01, 01, 01, 02, 02, 01, 01, 04, 02, 02, 01, 04, 04, 04, 02, 00, 04, 04},  
-  {06, 01, 03, 03, 03, 01, 03, 03, 04, 01, 04, 01, 01, 03, 03, 03, 01, 03, 03, 01, 02, 01,  
-  01, 01, 01, 02, 03, 04, 04, 02, 04, 04, 00, 00, 01, 04, 01, 01, 04, 04, 04, 00, 02, 04},  
-  {06, 01, 03, 03, 03, 03, 03, 03, 03, 03, 01, 03, 02, 03, 03, 03, 03, 03, 03, 01, 01, 02,  
-  02, 02, 02, 01, 01, 01, 04, 02, 02, 02, 02, 01, 04, 04, 00, 04, 04, 04, 04, 04, 00, 02},  
-  {06, 00, 03, 03, 04, 03, 03, 03, 03, 02, 02, 03, 03, 03, 03, 00, 03, 04, 02, 01, 02, 02,  
-  02, 03, 02, 03, 00, 01, 04, 04, 03, 03, 04, 04, 04, 04, 04, 02, 02, 02, 04, 04, 04, 00},  
-  {00, 01, 01, 04, 03, 03, 02, 03, 03, 02, 01, 01, 00, 00, 00, 04, 02, 01, 03, 01, 01, 01,  
-  01, 00, 01, 02, 01, 01, 01, 03, 03, 03, 04, 01, 04, 04, 04, 01, 02, 02, 02, 04, 04, 04},  
-  {00, 02, 01, 04, 03, 02, 01, 01, 03, 01, 02, 01, 04, 04, 00, 00, 03, 03, 03, 01, 01, 01,  
-  04, 04, 01, 00, 03, 02, 01, 04, 00, 02, 03, 02, 01, 04, 04, 04, 00, 00, 02, 02, 04, 04},  
-  {00, 02, 01, 03, 00, 01, 01, 03, 03, 01, 03, 01, 04, 02, 00, 00, 03, 00, 02, 03, 01, 02, 
-  03, 00, 01, 00, 01, 04, 04, 00, 00, 03, 03, 01, 02, 00, 04, 04, 04, 04, 04, 04, 02, 04},  
-  {00, 01, 01, 03, 02, 01, 03, 01, 01, 02, 01, 03, 03, 02, 00, 00, 00, 04, 01, 01, 01, 03,  
-  03, 03, 02, 02, 02, 01, 01, 00, 00, 04, 01, 01, 02, 04, 02, 04, 04, 04, 04, 02, 02, 00},  
-  {06, 02, 02, 03, 01, 04, 04, 01, 02, 02, 02, 02, 02, 01, 04, 00, 04, 02, 04, 02, 01, 01,  
-  03, 03, 00, 02, 02, 01, 02, 03, 04, 04, 02, 02, 02, 00, 02, 03, 04, 04, 04, 04, 04, 00},  
-  {06, 02, 02, 02, 02, 02, 02, 02, 01, 02, 02, 02, 02, 02, 02, 02, 02, 02, 02, 02, 02, 02,  
-  02, 02, 02, 02, 02, 02, 02, 02, 02, 02, 02, 02, 02, 02, 02, 02, 02, 02, 02, 02, 02, 02},  
-  {06, 03, 02 ,00, 02, 03, 04, 04, 04, 04, 02, 02, 02, 04, 02, 00, 00, 01, 01, 03, 00, 01,  
-  00, 03, 02, 02, 00, 04, 00, 00, 00, 01, 04, 04, 04, 03, 02, 02, 02, 02, 01, 04, 04, 04},  
-  {00, 03, 03, 03, 04, 02, 04, 04, 04, 04, 04, 04, 04, 02, 02, 00, 00, 01, 03, 03, 03, 01,  
-  01, 02, 02, 01, 03, 04, 00, 02, 00, 00, 04, 04, 04, 04, 02, 04, 04, 03, 03, 04, 04, 04},  
-  {00, 03, 00, 03, 03, 03, 03, 00, 04, 04, 02, 04, 04, 04, 00, 02, 00, 01, 01, 01, 01, 01,  
-  04, 01, 03, 04, 02, 01, 04, 04, 00, 03, 02, 04, 04, 04, 04, 04, 04, 03, 02, 02, 02, 04},  
-  {00, 00, 03, 04, 03, 02, 02, 02, 04, 04, 04, 04, 04, 01, 04, 02, 04, 04, 02, 01, 03, 01,  
-  01, 04, 01, 03, 01, 01, 04, 02, 03, 03, 03, 04, 04, 01, 04, 04, 04, 02, 03, 02, 02, 00},  
-  {00, 00, 00, 03, 03, 04, 02, 02, 02, 02, 02, 04, 02, 04, 00, 01, 00, 03, 03, 03, 03, 01,  
-  01, 03, 01, 01, 01, 04, 00, 00, 00, 04, 04, 04, 02, 02, 02, 04, 04, 04, 02, 02, 03, 00},  
-  {00, 04, 00, 02, 04, 02, 02, 02, 02, 04, 04, 02, 02, 03, 00, 02, 00, 00, 00, 00, 04, 01,  
-  01, 02, 02, 01, 01, 01, 00, 00, 03, 03, 01, 01, 02, 02, 02, 04, 04, 04, 04, 04, 02, 00},  
-  {00, 02, 01, 01, 02, 02, 02, 02, 03, 02, 02, 04, 02, 02, 04, 01, 03, 04, 01, 03, 03, 03,  
-  01, 01, 02, 01, 03, 04, 04, 03, 02, 02, 04, 02, 03, 03, 01, 01, 04, 04, 04, 04, 04, 00},  
-  {00, 03, 03, 02, 04, 03, 02, 02, 02, 03, 02, 04, 02, 02, 02, 02, 02, 04, 02, 00, 02, 02,  
-  00, 00, 01, 03, 03, 02, 00, 03, 02, 01, 04, 03, 03, 01, 03, 03, 00, 00, 02, 04, 04, 04},  
-  {06, 02, 03, 00, 03, 03, 04, 03, 02, 03, 02, 04, 04, 00, 04, 02, 04, 04, 04, 04, 04, 04,  
-  04, 01, 01, 03, 03, 04, 00, 01, 02, 04, 04, 03, 02, 04, 01, 02, 04, 01, 02, 04, 04, 04},  
-  {06, 02, 02, 02, 02, 02, 02, 02, 02, 02, 02, 02, 02, 02, 02, 02, 02, 02, 01, 02, 02, 02, 
-  02, 02, 02, 02, 02, 02, 02, 02, 02, 02, 02, 02, 02, 02, 02, 02, 02, 02, 02, 02, 02, 02}, 
-  {00, 02, 04, 03, 02, 02, 03, 03, 03, 03, 02, 03, 04, 04, 02, 02, 00, 04, 04, 04, 04, 04, 
-  04, 01, 01, 01, 03, 03, 00, 00, 04, 02, 01, 01, 04, 02, 02, 02, 02, 02, 03, 03, 03, 03},  
-  {00, 02, 02, 02, 03, 02, 03, 03, 02, 02, 02, 02, 02, 02, 04, 03, 04, 00, 04, 04, 04, 04,  
-  01, 01, 01, 01, 03, 00, 00, 04, 04, 04, 02, 02, 04, 01, 02, 04, 02, 01, 04, 02, 02, 02},  
-  {00, 03, 01, 02, 03, 02, 04, 03, 02, 02, 04, 03, 02, 02, 04, 04, 02, 04, 04, 04, 04, 04,  
-  02, 02, 01, 03, 03, 03, 00, 02, 02, 04, 01, 04, 04, 00, 03, 02, 01, 02, 01, 03, 02, 03},  
-  {00, 02, 02, 02, 01, 03, 02, 02, 03, 02, 02, 01, 01, 03, 03, 03, 02, 02, 04, 04, 04, 04,  
-  02, 04, 00, 03, 00, 00, 00, 00, 00, 03, 03, 02, 01, 04, 02, 02, 01, 03, 01, 01, 03, 01},  
-  {00, 04, 02, 03, 01, 03, 02, 00, 03, 01, 03, 03, 03, 04, 04, 00, 04, 01, 01, 01, 01, 01,  
-  01, 02, 01, 01, 01, 01, 02, 01, 01, 01, 02, 01, 01, 01, 01, 02, 01, 01, 01, 01, 01, 01}
-};
 
 typedef struct
 {
@@ -143,8 +69,8 @@ typedef struct
 typedef struct
 {
     /* conduct the analysis using this lamda and QP */
-    int i_lambda;
-    int i_lambda2;
+    int  i_lambda;
+    int  i_lambda2;
     int i_qp;
     int16_t *p_cost_mv;
     int b_mbrd;
@@ -169,6 +95,8 @@ typedef struct
     /* Chroma part */
     int i_sad_i8x8chroma;
     int i_predict8x8chroma;
+	int i_satd_i8x8chroma;
+	int i_satd_i8x8chroma_dir[4];
 
     /* II: Inter part P/B frame */
     xavs_mb_analysis_list_t l0;
@@ -190,28 +118,27 @@ typedef struct
 
 } xavs_mb_analysis_t;
 
-/* lambda = pow(2,qp/6-2) */
-static const int i_qp0_cost_table[52] = {
-   1, 1, 1, 1, 1, 1, 1, 1,  /*  0-7 */
-   1, 1, 1, 1,              /*  8-11 */
-   1, 1, 1, 1, 2, 2, 2, 2,  /* 12-19 */
-   3, 3, 3, 4, 4, 4, 5, 6,  /* 20-27 */
-   6, 7, 8, 9,10,11,13,14,  /* 28-35 */
-  16,18,20,23,25,29,32,36,  /* 36-43 */
-  40,45,51,57,64,72,81,91   /* 44-51 */
+/* lambda = pow(2,(qp-16)/8) */
+static const int i_qp0_cost_table[64] = {
+ 1, 1, 1, 1, 1, 1, 1, 1, 
+ 1, 1, 1, 1, 1, 1, 1, 1, 
+ 1, 1, 1, 1, 1, 2, 2, 2, 
+ 2, 2, 2, 3, 3, 3, 3, 4, 
+ 4, 4, 5, 5, 6, 6, 7, 7, 
+ 8, 9, 10, 10, 11, 12, 13, 15, 
+ 16, 17, 17, 21, 23, 25, 27, 29, 
+ 32, 35, 38, 42, 45, 49, 54, 59
 };
-
 /* pow(lambda,2) * .9 */
-static const int i_qp0_cost2_table[52] = {
-   1,   1,   1,   1,   1,   1, /*  0-5  */
-   1,   1,   1,   1,   1,   1, /*  6-11 */
-   1,   1,   1,   2,   2,   3, /* 12-17 */
-   4,   5,   6,   7,   9,  11, /* 18-23 */
-  14,  18,  23,  29,  36,  46, /* 24-29 */
-  58,  73,  91, 115, 145, 183, /* 30-35 */
- 230, 290, 366, 461, 581, 731, /* 36-41 */
- 922,1161,1463,1843,2322,2926, /* 42-47 */
-3686,4645,5852,7373
+static const int i_qp0_cost2_table[64] = {
+ 1, 1, 1, 1, 1, 1, 1, 1, 
+ 1, 1, 1, 1, 1, 1, 1, 1, 
+ 1, 1, 1, 2, 2, 2, 3, 3, 
+ 4, 4, 5, 6, 7, 9, 10, 12, 
+ 14, 17, 20, 24, 29, 34, 41, 48, 
+ 58, 69, 81, 97, 115, 137, 163, 194, 
+ 230, 274, 326, 387, 461, 548, 652, 775, 
+ 922, 1096, 1303, 1550, 1843, 2192, 2607, 3100
 };
 
 /* TODO: calculate CABAC costs */
@@ -258,8 +185,9 @@ static void xavs_mb_analyse_init( xavs_t *h, xavs_mb_analysis_t *a, int i_qp )
 
     /* conduct the analysis using this lamda and QP */
     a->i_qp = h->mb.i_qp = i_qp;
+	h->mb.i_chroma_qp = i_chroma_qp_table[ h->mb.i_qp ];
     a->i_lambda = i_qp0_cost_table[i_qp];
-    a->i_lambda2 = i_qp0_cost2_table[i_qp];
+    a->i_lambda2 = i_qp0_cost2_table[i_qp] * (h->sh.i_type == SLICE_TYPE_B ? 4 : 1 ); 
     a->b_mbrd = h->param.analyse.i_subpel_refine >= 6 &&
                 ( h->sh.i_type != SLICE_TYPE_B || h->param.analyse.b_bframe_rdo );
 
@@ -455,8 +383,8 @@ static void xavs_mb_analyse_intra_chroma( xavs_t *h, xavs_mb_analysis_t *a )
         i_mode = predict_mode[i];
 
         /* we do the prediction */
-        h->predict_8x8c[i_mode]( p_dstc[0],h->mb.i_neighbour );
-        h->predict_8x8c[i_mode]( p_dstc[1] ,h->mb.i_neighbour);
+        h->predict_8x8c[i_mode]( p_dstc[0], h->mb.i_neighbour );
+        h->predict_8x8c[i_mode]( p_dstc[1], h->mb.i_neighbour);
 
         /* we calculate the cost */
         i_sad = h->pixf.mbcmp[PIXEL_8x8]( p_dstc[0], FDEC_STRIDE,
@@ -464,7 +392,7 @@ static void xavs_mb_analyse_intra_chroma( xavs_t *h, xavs_mb_analysis_t *a )
                 h->pixf.mbcmp[PIXEL_8x8]( p_dstc[1], FDEC_STRIDE,
                                           p_srcc[1], FENC_STRIDE ) +
                 a->i_lambda * bs_size_ue( xavs_mb_pred_mode8x8c[i_mode] );
-
+        a->i_satd_i8x8chroma_dir[i] = i_sad;
         /* if i_score is lower it is better */
         if( a->i_sad_i8x8chroma > i_sad )
         {
@@ -568,18 +496,106 @@ static void xavs_mb_analyse_intra( xavs_t *h, xavs_mb_analysis_t *a, int i_cost_
 
 static void xavs_intra_rd_refine( xavs_t *h, xavs_mb_analysis_t *a )
 {
-    int idx;
-    int i_pred_mode;
-    //uint8_t  *p_src = h->mb.pic.p_fenc[0];
-    //uint8_t  *p_dst = h->mb.pic.p_fdec[0];
+	uint8_t  *p_src = h->mb.pic.p_fenc[0];
+    uint8_t  *p_dst = h->mb.pic.p_fdec[0];
 
-   if( h->mb.i_type == I_8x8 )
+    int i, j, idx, x, y, i_max;
+    int i_sad, i_best, i_thresh ,i_satd;
+    int i_pred_mode, i_mode ;
+    int predict_mode[9];
+
+    if( h->mb.i_type == I_8x8 )
     {
-        for( idx = 0; idx < 4; idx++ )
+       predict_8x8chroma_mode_available( h->mb.i_neighbour, predict_mode, &i_max );
+       if( i_max > 1 )
+       {
+          i_thresh = a->i_satd_i8x8chroma * 5/4;
+
+          for( i = j = 0; i < i_max; i++ )
+              if( a->i_satd_i8x8chroma_dir[i] < i_thresh &&
+                 predict_mode[i] != a->i_predict8x8chroma )
+              {
+                 predict_mode[j++] = predict_mode[i];
+              }
+          i_max = j;
+
+          if( i_max > 0 )
+          {
+             int i_cbp_chroma_best = h->mb.i_cbp_chroma;            
+             int i_chroma_lambda =i_qp0_cost2_table[h->mb.i_chroma_qp]*(h->sh.i_type == SLICE_TYPE_B?4:1);
+            /* the previous thing encoded was x264_intra_rd(), so the pixels and
+             * coefs for the current chroma mode are still around, so we only
+             * have to recount the bits. */
+             i_best = xavs_rd_cost_i8x8_chroma( h, i_chroma_lambda, a->i_predict8x8chroma, 0 );
+             for( i = 0; i < i_max; i++ )
+             {
+                 i_mode = predict_mode[i];
+                 if( h->mb.b_lossless )
+				 {
+					 //x264_predict_lossless_8x8_chroma( h, i_mode );
+				 }
+                 else
+				 {
+                    h->predict_8x8c[i_mode]( h->mb.pic.p_fdec[1] ,h->mb.i_neighbour);
+                    h->predict_8x8c[i_mode]( h->mb.pic.p_fdec[2] ,h->mb.i_neighbour);
+                 }
+                /* if we've already found a mode that needs no residual, then
+                 * probably any mode with a residual will be worse.
+                 * so avoid dct on the remaining modes to improve speed. */
+                 i_satd = xavs_rd_cost_i8x8_chroma( h, i_chroma_lambda, i_mode, h->mb.i_cbp_chroma != 0x00 );
+                 COPY3_IF_LT( i_best, i_satd, a->i_predict8x8chroma, i_mode, i_cbp_chroma_best, h->mb.i_cbp_chroma );
+             }
+             h->mb.i_chroma_pred_mode = a->i_predict8x8chroma;
+             h->mb.i_cbp_chroma = i_cbp_chroma_best;
+          }
+        }     
+		
+		for( idx = 0; idx < 4; idx++ )
         {
+            uint64_t pels_h = 0;
+            uint8_t pels_v[7];
+            int i_nnz[3];
+            uint8_t *p_src_by;
+            uint8_t *p_dst_by;
+            int j;
+            i_best = COST_MAX;
+
             i_pred_mode= xavs_mb_predict_intra4x4_mode( h, 4*idx );
-            
-			//TBD
+            x = idx&1;
+            y = idx>>1;
+
+            p_src_by = p_src + 8*x + 8*y*FENC_STRIDE;
+            p_dst_by = p_dst + 8*x + 8*y*FDEC_STRIDE;
+            predict_8x8_mode_available( h->mb.i_neighbour8[idx], predict_mode, &i_max );
+			for( i = 0; i < i_max; i++ )
+            {
+                i_mode = predict_mode[i];
+                h->predict_8x8[i_mode]( p_dst_by, h->mb.i_neighbour8[idx] );
+
+                i_sad = xavs_rd_cost_i8x8( h, a->i_lambda2, idx, i_mode );
+
+                if( i_best > i_sad )
+                {
+                    a->i_predict8x8[x][y] = i_mode;
+                    i_best = i_sad;
+
+                    pels_h = *(uint64_t*)(p_dst_by+7*FDEC_STRIDE);
+                    if( !(idx&1) )
+                        for( j=0; j<7; j++ )
+                            pels_v[j] = p_dst_by[7+j*FDEC_STRIDE];
+                    for( j=0; j<3; j++ )
+                        i_nnz[j] = h->mb.cache.non_zero_count[xavs_scan8[4*idx+j+1]];
+                }
+            }
+
+            *(uint64_t*)(p_dst_by+7*FDEC_STRIDE) = pels_h;
+            if( !(idx&1) )
+                for( j=0; j<7; j++ )
+                    p_dst_by[7+j*FDEC_STRIDE] = pels_v[j];
+            for( j=0; j<3; j++ )
+                h->mb.cache.non_zero_count[xavs_scan8[4*idx+j+1]] = i_nnz[j];
+
+            xavs_macroblock_cache_intra8x8_pred( h, 2*x, 2*y, a->i_predict8x8[x][y] );
         }
     }
 }
@@ -1105,26 +1121,8 @@ static void xavs_mb_analyse_inter_b16x16( xavs_t *h, xavs_mb_analysis_t *a )
 	mvBw[0]=-((a->l0.me16x16.mv[0]*BlockDistanceBw*(512/BlockDistanceFw)+256)>>9);
 	mvBw[1]=-((a->l0.me16x16.mv[1]*BlockDistanceBw*(512/BlockDistanceFw)+256)>>9);
     
-	/*if( h->mb.i_mb_y == 0 )
-		mvBw[1] = mvBw[1] < -63 ? -63 : mvBw[1];
-    if( h->mb.i_mb_x == 0 )
-        mvBw[0] = mvBw[0] < -63 ? -63 : mvBw[0];
-	if( h->mb.i_mb_y == h->sps->i_mb_height - 1 )
-		mvBw[1] = mvBw[1] > 63 ? 63 : mvBw[1];
-	if( h->mb.i_mb_x == h->sps->i_mb_width - 1 )
-		mvBw[0] = mvBw[0] > 63 ? 63 : mvBw[0];
-
-	if( h->mb.i_mb_y == 1 )
-		mvBw[1] = mvBw[1] < -128 ? -128 : mvBw[1];
-    if( h->mb.i_mb_x == 0 )
-        mvBw[0] = mvBw[0] < -128 ? -128 : mvBw[0];
-	if( h->mb.i_mb_y == h->sps->i_mb_height - 2 )
-		mvBw[1] = mvBw[1] > 128 ? 128 : mvBw[1];
-	if( h->mb.i_mb_x == h->sps->i_mb_width - 2 )
-		mvBw[0] = mvBw[0] > 128 ? 128 : mvBw[0];*/
-
-	 mvBw[0] = xavs_clip3( mvBw[0], h->mb.mv_min[0], h->mb.mv_max[0] );
-     mvBw[1] = xavs_clip3( mvBw[1], h->mb.mv_min[1], h->mb.mv_max[1] );
+	mvBw[0] = xavs_clip3( mvBw[0], h->mb.mv_min[0], h->mb.mv_max[0] );
+    mvBw[1] = xavs_clip3( mvBw[1], h->mb.mv_min[1], h->mb.mv_max[1] );
  
     if ( ((a->l0.me16x16.mv[0] | a->l0.me16x16.mv[1]) & 1) == 0 )
     {
@@ -1216,171 +1214,7 @@ static void xavs_mb_analyse_inter_b16x16( xavs_t *h, xavs_mb_analysis_t *a )
     }
 }
 
-/*static void xavs_mb_analyse_inter_b16x16( xavs_t *h, xavs_mb_analysis_t *a )
-{
-    uint8_t pix1[16*16], pix2[16*16];
-    uint8_t *src2;
-    int stride2 = 16;
-    int weight;
 
-    xavs_me_t m;
-    int i_ref;
-    int mvc[8][2], i_mvc;
-    int i_halfpel_thresh = INT_MAX;
-    int *p_halfpel_thresh = h->i_ref0>1 ? &i_halfpel_thresh : NULL;
-
-    // 16x16 Search on all ref frame 
-    m.i_pixel = PIXEL_16x16;
-    m.p_cost_mv = a->p_cost_mv;
-    LOAD_FENC( &m, h->mb.pic.p_fenc, 0, 0 );
-
-    // ME for List 0 
-    a->l0.me16x16.cost = INT_MAX;
-    for( i_ref = 0; i_ref < h->i_ref0; i_ref++ )
-    {
-        // search with ref 
-        LOAD_HPELS( &m, h->mb.pic.p_fref[0][i_ref], 0, i_ref, 0, 0 );
-        xavs_mb_predict_mv_16x16( h, 0, i_ref, m.mvp );
-        xavs_mb_predict_mv_ref16x16( h, 0, i_ref, mvc, &i_mvc );
-        xavs_me_search_ref( h, &m, mvc, i_mvc, p_halfpel_thresh );
-
-        // add ref cost 
-        m.cost += REF_COST( 0, i_ref );
-
-        if( m.cost < a->l0.me16x16.cost )
-        {
-            a->l0.i_ref = i_ref;
-            a->l0.me16x16 = m;
-        }
-
-        // save mv for predicting neighbors 
-        h->mb.mvr[0][i_ref][h->mb.i_mb_xy][0] = m.mv[0];
-        h->mb.mvr[0][i_ref][h->mb.i_mb_xy][1] = m.mv[1];
-    }
-    // subtract ref cost, so we don't have to add it for the other MB types 
-    a->l0.me16x16.cost -= REF_COST( 0, a->l0.i_ref );
-
-    // ME for list 1 
-    i_halfpel_thresh = INT_MAX;
-    p_halfpel_thresh = h->i_ref1>1 ? &i_halfpel_thresh : NULL;
-    a->l1.me16x16.cost = INT_MAX;
-    for( i_ref = 0; i_ref < h->i_ref1; i_ref++ )
-    {
-        // search with ref 
-        LOAD_HPELS( &m, h->mb.pic.p_fref[1][i_ref], 1, i_ref, 0, 0 );
-        xavs_mb_predict_mv_16x16( h, 1, i_ref, m.mvp );
-        xavs_mb_predict_mv_ref16x16( h, 1, i_ref, mvc, &i_mvc );
-        xavs_me_search_ref( h, &m, mvc, i_mvc, p_halfpel_thresh );
-
-        // add ref cost 
-        m.cost += REF_COST( 1, i_ref );
-
-        if( m.cost < a->l1.me16x16.cost )
-        {
-            a->l1.i_ref = i_ref;
-            a->l1.me16x16 = m;
-        }
-
-        // save mv for predicting neighbors 
-        h->mb.mvr[1][i_ref][h->mb.i_mb_xy][0] = m.mv[0];
-        h->mb.mvr[1][i_ref][h->mb.i_mb_xy][1] = m.mv[1];
-    }
-    // subtract ref cost, so we don't have to add it for the other MB types 
-    a->l1.me16x16.cost -= REF_COST( 1, a->l1.i_ref );
-
-    // Set global ref, needed for other modes? 
-    xavs_macroblock_cache_ref( h, 0, 0, 4, 4, 0, a->l0.i_ref );
-    xavs_macroblock_cache_ref( h, 0, 0, 4, 4, 1, a->l1.i_ref );
-
-    // get cost of BI mode 
-    weight = h->mb.bipred_weight[a->l0.i_ref][a->l1.i_ref];
-    if ( ((a->l0.me16x16.mv[0] | a->l0.me16x16.mv[1]) & 1) == 0 )
-    {
-        // l0 reference is halfpel, so get_ref on it will make it faster 
-        src2 = h->mc.get_ref( h->mb.pic.p_fref[0][a->l0.i_ref], h->mb.pic.i_stride[0],
-                        pix2, &stride2,
-                        a->l0.me16x16.mv[0], a->l0.me16x16.mv[1],
-                        16, 16 );
-        h->mc.mc_luma( h->mb.pic.p_fref[1][a->l1.i_ref], h->mb.pic.i_stride[0],
-                        pix1, 16,
-                        a->l1.me16x16.mv[0], a->l1.me16x16.mv[1],
-                        16, 16 );
-        weight = 64 - weight;
-    } 
-    else
-    {
-        // if l0 was qpel, we'll use get_ref on l1 instead 
-        h->mc.mc_luma( h->mb.pic.p_fref[0][a->l0.i_ref], h->mb.pic.i_stride[0],
-                        pix1, 16,
-                        a->l0.me16x16.mv[0], a->l0.me16x16.mv[1],
-                        16, 16 );
-        src2 = h->mc.get_ref( h->mb.pic.p_fref[1][a->l1.i_ref], h->mb.pic.i_stride[0],
-                        pix2, &stride2,
-                        a->l1.me16x16.mv[0], a->l1.me16x16.mv[1],
-                        16, 16 );
-    }
-
-    if( h->param.analyse.b_weighted_bipred )
-        h->mc.avg_weight[PIXEL_16x16]( pix1, 16, src2, stride2, weight );
-    else
-        h->mc.avg[PIXEL_16x16]( pix1, 16, src2, stride2 );
-
-    a->i_cost16x16bi = h->pixf.mbcmp[PIXEL_16x16]( h->mb.pic.p_fenc[0], FENC_STRIDE, pix1, 16 )
-                     + REF_COST( 0, a->l0.i_ref )
-                     + REF_COST( 1, a->l1.i_ref )
-                     + a->l0.me16x16.cost_mv
-                     + a->l1.me16x16.cost_mv;
-
-    // mb type cost 
-    a->i_cost16x16bi   += a->i_lambda * i_mb_b_cost_table[B_BI_BI];
-    a->l0.me16x16.cost += a->i_lambda * i_mb_b_cost_table[B_L0_L0];
-    a->l1.me16x16.cost += a->i_lambda * i_mb_b_cost_table[B_L1_L1];
-
-    if( a->b_mbrd )
-    {
-        int i_satd_thresh;
-
-        if( a->l0.me16x16.cost < a->i_best_satd )
-            a->i_best_satd = a->l0.me16x16.cost;
-        if( a->l1.me16x16.cost < a->i_best_satd )
-            a->i_best_satd = a->l1.me16x16.cost;
-        if( a->i_cost16x16bi < a->i_best_satd )
-            a->i_best_satd = a->i_cost16x16bi;
-
-        i_satd_thresh = a->i_best_satd * 3/2;
-
-        h->mb.i_partition = D_16x16;
-        // L0 
-        if( a->l0.me16x16.cost < i_satd_thresh )
-        {
-            h->mb.i_type = B_L0_L0;
-            xavs_macroblock_cache_mv( h, 0, 0, 4, 4, 0, a->l0.me16x16.mv[0], a->l0.me16x16.mv[1] );
-            a->l0.me16x16.cost = xavs_rd_cost_mb( h, a->i_lambda2 );
-        }
-        else
-            a->l0.me16x16.cost = COST_MAX;
-
-        // L1 
-        if( a->l1.me16x16.cost < i_satd_thresh )
-        {
-            h->mb.i_type = B_L1_L1;
-            xavs_macroblock_cache_mv( h, 0, 0, 4, 4, 1, a->l1.me16x16.mv[0], a->l1.me16x16.mv[1] );
-            a->l1.me16x16.cost = xavs_rd_cost_mb( h, a->i_lambda2 );
-        }
-        else
-            a->l1.me16x16.cost = COST_MAX;
-
-        // BI 
-        if( a->i_cost16x16bi < i_satd_thresh )
-        {
-            h->mb.i_type = B_BI_BI;
-            a->i_cost16x16bi = xavs_rd_cost_mb( h, a->i_lambda2 );
-        }
-        else
-            a->i_cost16x16bi = COST_MAX;
-    }
-}
-*/
 static inline void xavs_mb_cache_mv_p8x8( xavs_t *h, xavs_mb_analysis_t *a, int i )
 {
     const int x = 2*(i%2);
@@ -1514,24 +1348,6 @@ static void xavs_mb_analyse_inter_b8x8( xavs_t *h, xavs_mb_analysis_t *a )
         	mvBw[0]=-((a->l0.me8x8[i].mv[0]*BlockDistanceBw*(512/BlockDistanceFw)+256)>>9);
         	mvBw[1]=-((a->l0.me8x8[i].mv[1]*BlockDistanceBw*(512/BlockDistanceFw)+256)>>9);
 
-			/*if( h->mb.i_mb_y == 0 )//&& ( i == 0 || i == 1 ) )
-				mvBw[1] = mvBw[1] < -63 ? -63 : mvBw[1];
-			if( h->mb.i_mb_x == 0 )//&& ( i == 0 || i == 2 ) )
-				mvBw[0] = mvBw[0] < -63 ? -63 : mvBw[0];
-			if( h->mb.i_mb_y == h->sps->i_mb_height - 1 )//&& ( i == 2 || i == 3 ) )
-                mvBw[1] = mvBw[1] > 63 ? 63 : mvBw[1];
-			if( h->mb.i_mb_x == h->sps->i_mb_width - 1 )//&& ( i == 1 || i == 3 ) )
-				mvBw[0] = mvBw[0] > 63 ? 63 : mvBw[0]; 
-
-			if( h->mb.i_mb_y == 1 && ( i == 0 || i == 1 ) )
-				mvBw[1] = mvBw[1] < -128 ? -128 : mvBw[1];
-			if( h->mb.i_mb_x == 1 && ( i == 0 || i == 2 ) )
-				mvBw[0] = mvBw[0] < -128 ? -128 : mvBw[0];
-			if( h->mb.i_mb_y == h->sps->i_mb_height - 2 && ( i == 2 || i == 3 ) )
-                mvBw[1] = mvBw[1] > 128 ? 128 : mvBw[1];
-			if( h->mb.i_mb_x == h->sps->i_mb_width - 2 && ( i == 1 || i == 3 ) )
-				mvBw[0] = mvBw[0] > 128 ? 128 : mvBw[0];*/ 
-
 			mvBw[0] = xavs_clip3( mvBw[0], h->mb.mv_min[0], h->mb.mv_max[0] );
             mvBw[1] = xavs_clip3( mvBw[1], h->mb.mv_min[1], h->mb.mv_max[1] );
  
@@ -1604,8 +1420,6 @@ static void xavs_mb_analyse_inter_b8x8( xavs_t *h, xavs_mb_analysis_t *a )
            xavs_mb_load_mv_direct8x8( h, i );
 		}
 
-        // XXX Needed for xavs_mb_predict_mv 
-        //xavs_mb_cache_mv_b8x8( h, a, i, 0 );
     }
 
     // mb type cost 
@@ -1675,24 +1489,6 @@ static void xavs_mb_analyse_inter_b16x8( xavs_t *h, xavs_mb_analysis_t *a )
         	mvBw[0]=-((a->l0.me16x8[i].mv[0]*BlockDistanceBw*(512/BlockDistanceFw)+256)>>9);
         	mvBw[1]=-((a->l0.me16x8[i].mv[1]*BlockDistanceBw*(512/BlockDistanceFw)+256)>>9);
 
-			/*if( h->mb.i_mb_y == 0 )//&&  i == 0  )
-				mvBw[1] = mvBw[1] < -63 ? -63 : mvBw[1];
-			if( h->mb.i_mb_x == 0  )
-				mvBw[0] = mvBw[0] < -63 ? -63 : mvBw[0];
-			if( h->mb.i_mb_y == h->sps->i_mb_height - 1 )//&&  i == 1  )
-                mvBw[1] = mvBw[1] > 63 ? 63 : mvBw[1];
-			if( h->mb.i_mb_x == h->sps->i_mb_width - 1  )
-				mvBw[0] = mvBw[0] > 63 ? 63 : mvBw[0]; 
-
-			if( h->mb.i_mb_y == 1 &&  i == 0  )
-				mvBw[1] = mvBw[1] < -128 ? -128 : mvBw[1];
-			if( h->mb.i_mb_x == 1  )
-				mvBw[0] = mvBw[0] < -128 ? -128 : mvBw[0];
-			if( h->mb.i_mb_y == h->sps->i_mb_height - 2 &&  i == 1  )
-                mvBw[1] = mvBw[1] > 128 ? 128 : mvBw[1];
-			if( h->mb.i_mb_x == h->sps->i_mb_width - 2  )
-				mvBw[0] = mvBw[0] > 128 ? 128 : mvBw[0]; */
-
 			mvBw[0] = xavs_clip3( mvBw[0], h->mb.mv_min[0], h->mb.mv_max[0] );
             mvBw[1] = xavs_clip3( mvBw[1], h->mb.mv_min[1], h->mb.mv_max[1] );
  
@@ -1749,9 +1545,6 @@ static void xavs_mb_analyse_inter_b16x8( xavs_t *h, xavs_mb_analysis_t *a )
 			xavs_macroblock_cache_mv(h, 0, 2*i, 4, 2, 1, mvBw[0], mvBw[1]);
 				                                        
 		}
-
-
-        //xavs_mb_cache_mv_b16x8( h, a, i, 0 );
     }
 
     // mb type cost 
@@ -1822,24 +1615,6 @@ static void xavs_mb_analyse_inter_b8x16( xavs_t *h, xavs_mb_analysis_t *a )
 
         	mvBw[0]=-((a->l0.me8x16[i].mv[0]*BlockDistanceBw*(512/BlockDistanceFw)+256)>>9);
         	mvBw[1]=-((a->l0.me8x16[i].mv[1]*BlockDistanceBw*(512/BlockDistanceFw)+256)>>9);
-
-			/*if( h->mb.i_mb_y == 0  )
-				mvBw[1] = mvBw[1] < -63 ? -63 : mvBw[1];
-			if( h->mb.i_mb_x == 0 )//&&  i == 0  )
-				mvBw[0] = mvBw[0] < -63 ? -63 : mvBw[0];
-			if( h->mb.i_mb_y == h->sps->i_mb_height - 1  )
-                mvBw[1] = mvBw[1] > 63 ? 63 : mvBw[1];
-			if( h->mb.i_mb_x == h->sps->i_mb_width - 1 )//&&  i == 1  )
-				mvBw[0] = mvBw[0] > 63 ? 63 : mvBw[0]; 
-			
-			if( h->mb.i_mb_y == 1  )
-				mvBw[1] = mvBw[1] < -128 ? -128 : mvBw[1];
-			if( h->mb.i_mb_x == 1 &&  i == 0  )
-				mvBw[0] = mvBw[0] < -128 ? -128 : mvBw[0];
-			if( h->mb.i_mb_y == h->sps->i_mb_height - 2  )
-                mvBw[1] = mvBw[1] > 128 ? 128 : mvBw[1];
-			if( h->mb.i_mb_x == h->sps->i_mb_width - 2 &&  i == 1  )
-				mvBw[0] = mvBw[0] > 128 ? 128 : mvBw[0]; */
 
             mvBw[0] = xavs_clip3( mvBw[0], h->mb.mv_min[0], h->mb.mv_max[0] );
             mvBw[1] = xavs_clip3( mvBw[1], h->mb.mv_min[1], h->mb.mv_max[1] );
@@ -2190,19 +1965,9 @@ void xavs_macroblock_analyse( xavs_t *h )
                 analysis.i_sad_i4x4 += analysis.i_sad_i8x8chroma;
             }
 
-            //i_intra_type = I_16x16;
-            //i_intra_cost = analysis.i_sad_i16x16;
+            i_intra_type = I_8x8;
+            i_intra_cost = analysis.i_sad_i8x8;
 
-            //if( analysis.i_sad_i8x8 < i_intra_cost )
-            //{
-                i_intra_type = I_8x8;
-                i_intra_cost = analysis.i_sad_i8x8;
-            //}
-            //if( analysis.i_sad_i4x4 < i_intra_cost )
-            //{
-               // i_intra_type = I_4x4;
-                //i_intra_cost = analysis.i_sad_i4x4;
-           // }
             if( i_intra_cost < i_cost )
             {
                 i_type = i_intra_type;
@@ -2222,21 +1987,21 @@ void xavs_macroblock_analyse( xavs_t *h )
                 else if( i_partition == D_16x16 )
                 {
                     xavs_macroblock_cache_ref( h, 0, 0, 4, 4, 0, analysis.l0.me16x16.i_ref );
-                    xavs_me_refine_qpel_rd( h, &analysis.l0.me16x16, analysis.i_lambda2, 0 );
+                    xavs_me_refine_qpel_rd( h, &analysis.l0.me16x16, analysis.i_lambda2, 0*4, 0 );
                 }
                 else if( i_partition == D_16x8 )
                 {
                     xavs_macroblock_cache_ref( h, 0, 0, 4, 2, 0, analysis.l0.me16x8[0].i_ref );
                     xavs_macroblock_cache_ref( h, 0, 2, 4, 2, 0, analysis.l0.me16x8[1].i_ref );
-                    xavs_me_refine_qpel_rd( h, &analysis.l0.me16x8[0], analysis.i_lambda2, 0 );
-                    xavs_me_refine_qpel_rd( h, &analysis.l0.me16x8[1], analysis.i_lambda2, 2 );
+                    xavs_me_refine_qpel_rd( h, &analysis.l0.me16x8[0], analysis.i_lambda2, 0*4, 0 );
+                    xavs_me_refine_qpel_rd( h, &analysis.l0.me16x8[1], analysis.i_lambda2, 2*4, 0 );
                 }
                 else if( i_partition == D_8x16 )
                 {
                     xavs_macroblock_cache_ref( h, 0, 0, 2, 4, 0, analysis.l0.me8x16[0].i_ref );
                     xavs_macroblock_cache_ref( h, 2, 0, 2, 4, 0, analysis.l0.me8x16[1].i_ref );
-                    xavs_me_refine_qpel_rd( h, &analysis.l0.me8x16[0], analysis.i_lambda2, 0 );
-                    xavs_me_refine_qpel_rd( h, &analysis.l0.me8x16[1], analysis.i_lambda2, 1 );
+                    xavs_me_refine_qpel_rd( h, &analysis.l0.me8x16[0], analysis.i_lambda2, 0*4, 0 );
+                    xavs_me_refine_qpel_rd( h, &analysis.l0.me8x16[1], analysis.i_lambda2, 1*4, 0 );
                 }
                 else if( i_partition == D_8x8 )
                 {
@@ -2244,7 +2009,7 @@ void xavs_macroblock_analyse( xavs_t *h )
                     xavs_analyse_update_cache( h, &analysis );
                     for( i8x8 = 0; i8x8 < 4; i8x8++ )
                          if( h->mb.i_sub_partition[i8x8] == D_L0_8x8 )
-                             xavs_me_refine_qpel_rd( h, &analysis.l0.me8x8[i8x8], analysis.i_lambda2, i8x8 );
+                             xavs_me_refine_qpel_rd( h, &analysis.l0.me8x8[i8x8], analysis.i_lambda2, i8x8*4, 0 );
                 }
             }
         }
@@ -2471,26 +2236,61 @@ void xavs_macroblock_analyse( xavs_t *h )
             /* best intra mode */
             xavs_mb_analyse_intra( h, &analysis, i_cost );
 
-            /*if( analysis.i_sad_i16x16 < i_cost )
-            {
-                i_type = I_16x16;
-                i_cost = analysis.i_sad_i16x16;
-            }*/
             if( analysis.i_sad_i8x8 < i_cost )
             {
                 i_type = I_8x8;
                 i_cost = analysis.i_sad_i8x8;
             }
-           /* if( analysis.i_sad_i4x4 < i_cost )
-            {
-                i_type = I_4x4;
-                i_cost = analysis.i_sad_i4x4;
-            }*/
 
             h->mb.i_type = i_type;
 
             if( h->param.analyse.b_bidir_me )
                 refine_bidir( h, &analysis );
+			if( h->mb.i_subpel_refine >= 7  && i_type > B_DIRECT && i_type < B_SKIP )
+            {
+                const int i_biweight = h->mb.bipred_weight[analysis.l0.i_ref][analysis.l1.i_ref];
+                xavs_analyse_update_cache( h, &analysis );
+
+                if( i_partition == D_16x16 )
+                {
+                    if( i_type == B_L0_L0 )
+                          xavs_me_refine_qpel_rd( h, &analysis.l0.me16x16, analysis.i_lambda2, 0, 0 );
+					if( i_type == B_L1_L1 )
+                          xavs_me_refine_qpel_rd( h, &analysis.l1.me16x16, analysis.i_lambda2, 0, 1 );
+                }
+                else if( i_partition == D_16x8 )
+                {
+                    for( i = 0; i < 2; i++ )
+                    {
+                        h->mb.i_sub_partition[i*2] = h->mb.i_sub_partition[i*2+1] = analysis.i_mb_partition16x8[i];
+                        if( analysis.i_mb_partition16x8[i] == D_L0_8x8 )
+                            xavs_me_refine_qpel_rd( h, &analysis.l0.me16x8[i], analysis.i_lambda2, i*8, 0 );
+						if( analysis.i_mb_partition16x8[i] == D_L1_8x8 )
+                            xavs_me_refine_qpel_rd( h, &analysis.l1.me16x8[i], analysis.i_lambda2, i*8, 1 );                                             
+                    }
+                }
+                else if( i_partition == D_8x16 )
+                {
+                    for( i = 0; i < 2; i++ )
+                    {
+                        h->mb.i_sub_partition[i] = h->mb.i_sub_partition[i+2] = analysis.i_mb_partition8x16[i];
+                        if( analysis.i_mb_partition8x16[i] == D_L0_8x8 )
+                            xavs_me_refine_qpel_rd( h, &analysis.l0.me8x16[i], analysis.i_lambda2, i*4, 0 );
+						if( analysis.i_mb_partition8x16[i] == D_L1_8x8 )
+                            xavs_me_refine_qpel_rd( h, &analysis.l1.me8x16[i], analysis.i_lambda2, i*4, 1 );
+                    }
+                }
+                else if( i_partition == D_8x8 )
+                {
+                    for( i = 0; i < 4; i++ )
+                    {
+                        if( h->mb.i_sub_partition[i] == D_L0_8x8 )
+                            xavs_me_refine_qpel_rd( h, &analysis.l0.me8x8[i], analysis.i_lambda2, i*4, 0 );
+						if( h->mb.i_sub_partition[i] == D_L1_8x8 )
+                            xavs_me_refine_qpel_rd( h, &analysis.l1.me8x8[i], analysis.i_lambda2, i*4, 1 );
+                    }
+                }
+            }    	 
         }
     }
 
