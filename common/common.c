@@ -77,19 +77,22 @@ void    xavs_param_default( xavs_param_t *param )
     param->i_deblocking_filter_beta = 0;
 
 
-	param->rc.i_rc_method = 0;/* 0:XAVS_RC_CQP; 1:XAVS_RC_CRF; 2:XAVS_RC_ABR*/
+	param->rc.i_rc_method = 2;/* 0:XAVS_RC_CQP; 1:XAVS_RC_CRF; 2:XAVS_RC_ABR */
 	param->rc.i_bitrate = 0; 
 	param->rc.f_rate_tolerance = 1.0;
 	param->rc.i_vbv_max_bitrate = 0;
     param->rc.i_vbv_buffer_size = 0;
 	param->rc.f_vbv_buffer_init = 0.9;
-	param->rc.i_qp_constant = 28;
-	param->rc.f_rf_constant = 28;
-	param->rc.i_qp_min = 15;
+	param->rc.i_qp_constant = 26;
+	param->rc.f_rf_constant = 26;
+	param->rc.i_qp_min = 18;
 	param->rc.i_qp_max = 50;
     param->rc.i_qp_step = 4;
     param->rc.f_ip_factor = (float)1.4;
     param->rc.f_pb_factor = (float)1.3;
+    param->rc.i_aq_mode = XAVS_AQ_VARIANCE;
+    param->rc.f_aq_strength = 1.0;
+    param->rc.i_lookahead = 40;
 
     param->rc.b_stat_write = 0;
     param->rc.psz_stat_out = "xavs_2pass.log";
@@ -110,13 +113,13 @@ void    xavs_param_default( xavs_param_t *param )
     param->analyse.inter =  XAVS_ANALYSE_I8x8
                          | XAVS_ANALYSE_PSUB16x16 | XAVS_ANALYSE_BSUB16x16;
     param->analyse.i_direct_mv_pred = XAVS_DIRECT_PRED_SPATIAL;
-    param->analyse.i_me_method =XAVS_ME_UMH ;//xavs_ME_HEX;
-    param->analyse.i_me_range = 16;
+    param->analyse.i_me_method = XAVS_ME_UMH;
+    param->analyse.i_me_range = 32;
     param->analyse.i_subpel_refine = 5;
     param->analyse.b_chroma_me = 1;
     param->analyse.i_mv_range = -1; 
     param->analyse.i_chroma_qp_offset = 0;
-    param->analyse.b_fast_pskip = 0;
+    param->analyse.b_fast_pskip = 1;
     param->analyse.b_transform_8x8 = 1;
     param->analyse.i_trellis = 1;
     param->analyse.i_luma_deadzone[0] = 21;  /*intra*/

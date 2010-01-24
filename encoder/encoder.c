@@ -272,6 +272,9 @@ static int xavs_validate_parameters( xavs_t *h )
     }
     h->param.analyse.i_chroma_qp_offset = xavs_clip3(h->param.analyse.i_chroma_qp_offset, -12, 12);
 
+	h->param.rc.i_aq_mode = xavs_clip3( h->param.rc.i_aq_mode, 0, 2 );
+    if( h->param.rc.f_aq_strength == 0 )
+        h->param.rc.i_aq_mode = 0;
 
     h->param.analyse.i_trellis = 0;
 
@@ -1143,12 +1146,6 @@ do_encode:
         i_nal_ref_idc = NAL_PRIORITY_HIGH; /* Not completely true but for now it is (as all I/P are kept as ref)*/
         i_slice_type = SLICE_TYPE_P;
     }
-    else if( h->fenc->i_type == XAVS_TYPE_BREF )
-    {
-        i_nal_type    = NAL_SLICE;
-        i_nal_ref_idc = NAL_PRIORITY_HIGH; /* maybe add MMCO to forget it? -> low */
-        i_slice_type = SLICE_TYPE_B;
-    }
     else    /* B frame */
     {
         i_nal_type    = NAL_SLICE;
@@ -1160,6 +1157,7 @@ do_encode:
     h->fenc->i_poc = 2 * (h->fenc->i_frame - h->frames.i_last_idr);
     h->fdec->i_type = h->fenc->i_type;
     h->fdec->i_frame = h->fenc->i_frame;
+
 	if( i_slice_type != SLICE_TYPE_B)
 		h->fenc->b_kept_as_ref =
 		h->fdec->b_kept_as_ref = 1;

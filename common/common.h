@@ -81,6 +81,8 @@
 	CHECKED_MALLOC( var, size );\
 	memset( var, 0, size );\
 	} while( 0 )
+
+
 #if defined(__GNUC__) && (__GNUC__ > 3 || __GNUC__ == 3 && __GNUC_MINOR__ > 0)
 #define UNUSED __attribute__((unused))
 #else
