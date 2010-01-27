@@ -493,8 +493,8 @@ void xavs_macroblock_encode_p8x8( xavs_t *h, int i8 )
 
     for( ch = 0; ch < 2; ch++ )
     {
-        p_fenc = h->mb.pic.p_fenc[1+ch] + (i8&1)*4 + (i8>>1)*4*FENC_STRIDE;
-        p_fdec = h->mb.pic.p_fdec[1+ch] + (i8&1)*4 + (i8>>1)*4*FDEC_STRIDE;
+        p_fenc = h->mb.pic.p_fenc[1+ch];
+        p_fdec = h->mb.pic.p_fdec[1+ch];
 
         h->dctf.sub8x8_dct8( dct8x8, p_fenc, p_fdec );
 

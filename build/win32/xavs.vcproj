@@ -16,7 +16,7 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="E:\xavs-100122\build\win32\bin"
+			OutputDirectory="E:\xavs-100126\build\win32\bin"
 			IntermediateDirectory=".\obj/xavs_Debug"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
