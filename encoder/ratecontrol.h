@@ -23,23 +23,22 @@
 #ifndef _XAVS_RATECONTROL_H_
 #define _XAVS_RATECONTROL_H_
 
-int  xavs_ratecontrol_new   ( xavs_t * );
-void xavs_ratecontrol_delete( xavs_t * );
+int xavs_ratecontrol_new (xavs_t *);
+void xavs_ratecontrol_delete (xavs_t *);
 
-void xavs_ratecontrol_start( xavs_t *, int i_slice_type, int i_force_qp );
-void xavs_ratecontrol_threads_start( xavs_t * );
-int  xavs_ratecontrol_slice_type( xavs_t *, int i_frame );
-void xavs_ratecontrol_mb( xavs_t *, int bits );
-int  xavs_ratecontrol_qp( xavs_t * );
-int xavs_ratecontrol_end( xavs_t *, int bits );
-void xavs_ratecontrol_summary( xavs_t * );
+void xavs_ratecontrol_start (xavs_t *, int i_slice_type, int i_force_qp);
+void xavs_ratecontrol_threads_start (xavs_t *);
+int xavs_ratecontrol_slice_type (xavs_t *, int i_frame);
+void xavs_ratecontrol_mb (xavs_t *, int bits);
+int xavs_ratecontrol_qp (xavs_t *);
+int xavs_ratecontrol_end (xavs_t *, int bits);
+void xavs_ratecontrol_summary (xavs_t *);
 
-void xavs_adaptive_quant_frame( xavs_t *h, xavs_frame_t *frame );
-void xavs_adaptive_quant( xavs_t * );
-int  xavs_macroblock_tree_read( xavs_t *h, xavs_frame_t *frame );
-void xavs_thread_sync_ratecontrol( xavs_t *cur, xavs_t *prev, xavs_t *next );
-void xavs_ratecontrol_set_estimated_size( xavs_t *, int bits );
-int  xavs_ratecontrol_get_estimated_size( xavs_t const *);
-int  xavs_rc_analyse_slice( xavs_t *h );
+void xavs_adaptive_quant_frame (xavs_t * h, xavs_frame_t * frame);
+void xavs_adaptive_quant (xavs_t *);
+int xavs_macroblock_tree_read (xavs_t * h, xavs_frame_t * frame);
+void xavs_thread_sync_ratecontrol (xavs_t * cur, xavs_t * prev, xavs_t * next);
+void xavs_ratecontrol_set_estimated_size (xavs_t *, int bits);
+int xavs_ratecontrol_get_estimated_size (xavs_t const *);
+int xavs_rc_analyse_slice (xavs_t * h);
 #endif
-

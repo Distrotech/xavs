@@ -32,26 +32,19 @@
 
 typedef struct
 {
-    void (*mc_luma)(uint8_t **, int, uint8_t *, int,
-                    int mvx, int mvy,
-                    int i_width, int i_height );
+  void (*mc_luma) (uint8_t **, int, uint8_t *, int, int mvx, int mvy, int i_width, int i_height);
 
-    uint8_t* (*get_ref)(uint8_t **, int, uint8_t *, int *,
-                        int mvx, int mvy,
-                        int i_width, int i_height );
+  uint8_t *(*get_ref) (uint8_t **, int, uint8_t *, int *, int mvx, int mvy, int i_width, int i_height);
 
-    void (*mc_chroma)(uint8_t *, int, uint8_t *, int,
-                      int mvx, int mvy,
-                      int i_width, int i_height );
+  void (*mc_chroma) (uint8_t *, int, uint8_t *, int, int mvx, int mvy, int i_width, int i_height);
 
-    void (*avg[10])( uint8_t *dst, int, uint8_t *src, int );
-    void (*avg_weight[10])( uint8_t *dst, int, uint8_t *src, int, int i_weight );
+  void (*avg[10]) (uint8_t * dst, int, uint8_t * src, int);
+  void (*avg_weight[10]) (uint8_t * dst, int, uint8_t * src, int, int i_weight);
 
-    /* only 16x16, 8x8, and 4x4 defined */
-    void (*copy[7])( uint8_t *dst, int, uint8_t *src, int, int i_height );
+  /* only 16x16, 8x8, and 4x4 defined */
+  void (*copy[7]) (uint8_t * dst, int, uint8_t * src, int, int i_height);
 } xavs_mc_functions_t;
 
-void xavs_mc_init( int cpu, xavs_mc_functions_t *pf );
+void xavs_mc_init (int cpu, xavs_mc_functions_t * pf);
 
 #endif
-

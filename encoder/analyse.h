@@ -23,7 +23,7 @@
 #ifndef _XAVS_ANALYSE_H_
 #define _XAVS_ANALYSE_H_
 
-void xavs_macroblock_analyse( xavs_t *h );
-void xavs_slicetype_decide( xavs_t *h );
+void xavs_macroblock_analyse (xavs_t * h);
+void xavs_slicetype_decide (xavs_t * h);
 
 #endif

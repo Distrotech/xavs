@@ -30,26 +30,25 @@
 
 /*Spec. 9.6.2 Table 23*/
 static const uint16_t dequant_shifttable[64] = {
-  14,14,14,14,14,14,14,14,
-  13,13,13,13,13,13,13,13,
-  13,12,12,12,12,12,12,12,
-  11,11,11,11,11,11,11,11,
-  11,10,10,10,10,10,10,10,
+  14, 14, 14, 14, 14, 14, 14, 14,
+  13, 13, 13, 13, 13, 13, 13, 13,
+  13, 12, 12, 12, 12, 12, 12, 12,
+  11, 11, 11, 11, 11, 11, 11, 11,
+  11, 10, 10, 10, 10, 10, 10, 10,
   10, 9, 9, 9, 9, 9, 9, 9,
-  9,  8, 8, 8, 8, 8, 8, 8,
-  7,  7, 7, 7, 7, 7, 7, 7
+  9, 8, 8, 8, 8, 8, 8, 8,
+  7, 7, 7, 7, 7, 7, 7, 7
 };
 
-static const int quant8_table[64] =
-{
-  32768,29775,27554,25268,23170,21247,19369,17770,
-  16302,15024,13777,12634,11626,10624, 9742, 8958,
-  8192,  7512, 6889, 6305, 5793, 5303, 4878, 4467,
-  4091,  3756, 3444, 3161, 2894, 2654, 2435, 2235,
-  2048,  1878, 1722, 1579, 1449, 1329, 1218, 1117,
-  1024,   939, 861,   790,  724,  664,  609,  558,
-  512,    470, 430,   395,  362,  332,  304,  279,
-  256,    235, 215,   197,  181,  166,  152,  140
+static const int quant8_table[64] = {
+  32768, 29775, 27554, 25268, 23170, 21247, 19369, 17770,
+  16302, 15024, 13777, 12634, 11626, 10624, 9742, 8958,
+  8192, 7512, 6889, 6305, 5793, 5303, 4878, 4467,
+  4091, 3756, 3444, 3161, 2894, 2654, 2435, 2235,
+  2048, 1878, 1722, 1579, 1449, 1329, 1218, 1117,
+  1024, 939, 861, 790, 724, 664, 609, 558,
+  512, 470, 430, 395, 362, 332, 304, 279,
+  256, 235, 215, 197, 181, 166, 152, 140
 };
 
 
@@ -75,15 +74,16 @@ static const int quant8_table[64] =
     nz |= (coef);\
 }
 
-int quant_8x8( int16_t dct[8][8], int mf[64], uint16_t bias[64], int qp)
+int
+quant_8x8 (int16_t dct[8][8], int mf[64], uint16_t bias[64], int qp)
 {
-    int i, nz = 0;
-    int qptable;
-    qptable = quant8_table[qp];
+  int i, nz = 0;
+  int qptable;
+  qptable = quant8_table[qp];
 
-    for( i = 0; i < 64; i++ )
-        QUANT_ONE( dct[0][i], mf[i], qptable, bias[i] );
-    return !!nz;
+  for (i = 0; i < 64; i++)
+    QUANT_ONE (dct[0][i], mf[i], qptable, bias[i]);
+  return !!nz;
 }
 
 /*
@@ -101,63 +101,58 @@ int quant_8x8( int16_t dct[8][8], int mf[64], uint16_t bias[64], int qp)
     dct[y][x] = ( dct[y][x] * dequant_mf[i_qp][y][x] + f ) >> (shift_bits);\
     dct[y][x] = ( dct[y][x] < (-32768))?(-32768):(dct[y][x]>32767)?32767:(dct[y][x]);
 
-void dequant_8x8( int16_t dct[8][8], int dequant_mf[64][8][8], int i_qp )
+void
+dequant_8x8 (int16_t dct[8][8], int dequant_mf[64][8][8], int i_qp)
 {
-    int y;
-    const int shift_bits = dequant_shifttable[i_qp]; 
-    const int f = 1 << (shift_bits-1);
-    for( y = 0; y < 8; y++ )
-        {
-	    DEQUANT_SHR( 0 )
-            DEQUANT_SHR( 1 )
-            DEQUANT_SHR( 2 )
-            DEQUANT_SHR( 3 )
-            DEQUANT_SHR( 4 )
-            DEQUANT_SHR( 5 )
-            DEQUANT_SHR( 6 )
-            DEQUANT_SHR( 7 )
-	}
+  int y;
+  const int shift_bits = dequant_shifttable[i_qp];
+  const int f = 1 << (shift_bits - 1);
+  for (y = 0; y < 8; y++)
+  {
+  DEQUANT_SHR (0) DEQUANT_SHR (1) DEQUANT_SHR (2) DEQUANT_SHR (3) DEQUANT_SHR (4) DEQUANT_SHR (5) DEQUANT_SHR (6) DEQUANT_SHR (7)}
 }
 
-void xavs_quant_init( xavs_t *h, int cpu, xavs_quant_function_t *pf )
+void
+xavs_quant_init (xavs_t * h, int cpu, xavs_quant_function_t * pf)
 {
-    pf->quant_8x8 = quant_8x8;
-    pf->dequant_8x8 = dequant_8x8;
- 
+  pf->quant_8x8 = quant_8x8;
+  pf->dequant_8x8 = dequant_8x8;
+
 #ifdef HAVE_MMX
-    if( cpu&XAVS_CPU_MMX )
-    {
+  if (cpu & XAVS_CPU_MMX)
+  {
 #ifdef ARCH_X86
-        pf->quant_8x8 = xavs_quant_8x8_mmx;
-        pf->dequant_8x8 = xavs_dequant_8x8_mmx;
-        if( h->param.i_cqm_preset == XAVS_CQM_FLAT )
-        {
-            pf->dequant_8x8 = xavs_dequant_8x8_flat16_mmx;
-        }
+    pf->quant_8x8 = xavs_quant_8x8_mmx;
+    pf->dequant_8x8 = xavs_dequant_8x8_mmx;
+    if (h->param.i_cqm_preset == XAVS_CQM_FLAT)
+    {
+      pf->dequant_8x8 = xavs_dequant_8x8_flat16_mmx;
+    }
 #endif
-    }
+  }
 
-    if( cpu&XAVS_CPU_SSE2 )
-    {
-        pf->quant_8x8 = xavs_quant_8x8_sse2;
-        pf->dequant_8x8 = xavs_dequant_8x8_sse2;
-    }
+  if (cpu & XAVS_CPU_SSE2)
+  {
+    pf->quant_8x8 = xavs_quant_8x8_sse2;
+    pf->dequant_8x8 = xavs_dequant_8x8_sse2;
+  }
 
-    if( cpu&XAVS_CPU_SSSE3 )
-    {
-        pf->quant_8x8 = xavs_quant_8x8_ssse3;
-    }
+  if (cpu & XAVS_CPU_SSSE3)
+  {
+    pf->quant_8x8 = xavs_quant_8x8_ssse3;
+  }
 
-    if( cpu&XAVS_CPU_SSE4 )
-    {
-        pf->quant_8x8 = xavs_quant_8x8_sse4;
-    }
+  if (cpu & XAVS_CPU_SSE4)
+  {
+    pf->quant_8x8 = xavs_quant_8x8_sse4;
+  }
 #endif // HAVE_MMX
 
 #ifdef ARCH_PPC
-    if( cpu&XAVS_CPU_ALTIVEC ) {
-        pf->quant_8x8 = xavs_quant_8x8_altivec;
-        pf->dequant_8x8 = xavs_dequant_8x8_altivec;
-    }
+  if (cpu & XAVS_CPU_ALTIVEC)
+  {
+    pf->quant_8x8 = xavs_quant_8x8_altivec;
+    pf->dequant_8x8 = xavs_dequant_8x8_altivec;
+  }
 #endif
 }

@@ -31,16 +31,17 @@
               i==4 ? FIX8(1.2651) :\
               i==5 ? FIX8(1.1910) :0)
 static const int xavs_dct8_weight_tab[64] = {
-    W(0), W(3), W(4), W(3),  W(0), W(3), W(4), W(3),
-    W(3), W(1), W(5), W(1),  W(3), W(1), W(5), W(1),
-    W(4), W(5), W(2), W(5),  W(4), W(5), W(2), W(5),
-    W(3), W(1), W(5), W(1),  W(3), W(1), W(5), W(1),
+  W (0), W (3), W (4), W (3), W (0), W (3), W (4), W (3),
+  W (3), W (1), W (5), W (1), W (3), W (1), W (5), W (1),
+  W (4), W (5), W (2), W (5), W (4), W (5), W (2), W (5),
+  W (3), W (1), W (5), W (1), W (3), W (1), W (5), W (1),
 
-    W(0), W(3), W(4), W(3),  W(0), W(3), W(4), W(3),
-    W(3), W(1), W(5), W(1),  W(3), W(1), W(5), W(1),
-    W(4), W(5), W(2), W(5),  W(4), W(5), W(2), W(5),
-    W(3), W(1), W(5), W(1),  W(3), W(1), W(5), W(1)
+  W (0), W (3), W (4), W (3), W (0), W (3), W (4), W (3),
+  W (3), W (1), W (5), W (1), W (3), W (1), W (5), W (1),
+  W (4), W (5), W (2), W (5), W (4), W (5), W (2), W (5),
+  W (3), W (1), W (5), W (1), W (3), W (1), W (5), W (1)
 };
+
 #undef W
 
 /* inverse squared */
@@ -48,15 +49,16 @@ static const int xavs_dct8_weight_tab[64] = {
               i==1 ? FIX8(1.25) :\
               i==2 ? FIX8(0.5) :0)
 static const int xavs_dct4_weight2_tab[16] = {
-    W(0), W(1), W(0), W(1),
-    W(1), W(2), W(1), W(2),
-    W(0), W(1), W(0), W(1),
-    W(1), W(2), W(1), W(2)
+  W (0), W (1), W (0), W (1),
+  W (1), W (2), W (1), W (2),
+  W (0), W (1), W (0), W (1),
+  W (1), W (2), W (1), W (2)
 };
 static const int xavs_dct4_weight2_zigzag[16] = {
-    W(0), W(1), W(1), W(0), W(2), W(0), W(1), W(1),
-    W(1), W(1), W(2), W(0), W(2), W(1), W(1), W(2)
+  W (0), W (1), W (1), W (0), W (2), W (0), W (1), W (1),
+  W (1), W (1), W (2), W (0), W (2), W (1), W (1), W (2)
 };
+
 #undef W
 
 #define W(i) (i==0 ? FIX8(1.00000) :\
@@ -67,56 +69,56 @@ static const int xavs_dct4_weight2_zigzag[16] = {
               i==5 ? FIX8(1.41850) :0)
 
 static const int xavs_dct8_weight2_tab[64] = {
-    W(0), W(3), W(4), W(3),  W(0), W(3), W(4), W(3),
-    W(3), W(1), W(5), W(1),  W(3), W(1), W(5), W(1),
-    W(4), W(5), W(2), W(5),  W(4), W(5), W(2), W(5),
-    W(3), W(1), W(5), W(1),  W(3), W(1), W(5), W(1),
+  W (0), W (3), W (4), W (3), W (0), W (3), W (4), W (3),
+  W (3), W (1), W (5), W (1), W (3), W (1), W (5), W (1),
+  W (4), W (5), W (2), W (5), W (4), W (5), W (2), W (5),
+  W (3), W (1), W (5), W (1), W (3), W (1), W (5), W (1),
 
-    W(0), W(3), W(4), W(3),  W(0), W(3), W(4), W(3),
-    W(3), W(1), W(5), W(1),  W(3), W(1), W(5), W(1),
-    W(4), W(5), W(2), W(5),  W(4), W(5), W(2), W(5),
-    W(3), W(1), W(5), W(1),  W(3), W(1), W(5), W(1)
+  W (0), W (3), W (4), W (3), W (0), W (3), W (4), W (3),
+  W (3), W (1), W (5), W (1), W (3), W (1), W (5), W (1),
+  W (4), W (5), W (2), W (5), W (4), W (5), W (2), W (5),
+  W (3), W (1), W (5), W (1), W (3), W (1), W (5), W (1)
 };
 static const int xavs_dct8_weight2_zigzag[64] = {
-    W(0), W(3), W(3), W(4), W(1), W(4), W(3), W(5),
-    W(5), W(3), W(0), W(1), W(2), W(1), W(0), W(3),
-    W(3), W(5), W(5), W(3), W(3), W(4), W(1), W(4),
-    W(1), W(4), W(1), W(4), W(3), W(5), W(5), W(3),
-    W(3), W(5), W(5), W(3), W(1), W(2), W(1), W(0),
-    W(1), W(2), W(1), W(5), W(5), W(3), W(3), W(5),
-    W(5), W(1), W(4), W(1), W(4), W(1), W(3), W(5),
-    W(5), W(3), W(1), W(2), W(1), W(5), W(5), W(1)
+  W (0), W (3), W (3), W (4), W (1), W (4), W (3), W (5),
+  W (5), W (3), W (0), W (1), W (2), W (1), W (0), W (3),
+  W (3), W (5), W (5), W (3), W (3), W (4), W (1), W (4),
+  W (1), W (4), W (1), W (4), W (3), W (5), W (5), W (3),
+  W (3), W (5), W (5), W (3), W (1), W (2), W (1), W (0),
+  W (1), W (2), W (1), W (5), W (5), W (3), W (3), W (5),
+  W (5), W (1), W (4), W (1), W (4), W (1), W (3), W (5),
+  W (5), W (3), W (1), W (2), W (1), W (5), W (5), W (1)
 };
+
 #undef W
 
 
 typedef struct
 {
-    // pix1  stride = FENC_STRIDE
-    // pix2  stride = FDEC_STRIDE
-    // p_dst stride = FDEC_STRIDE
-   
-    void (*sub8x8_dct8)  ( int16_t dct[8][8], uint8_t *pix1, uint8_t *pix2 );
-    void (*add8x8_idct8) ( uint8_t *p_dst, int16_t dct[8][8] );
+  // pix1  stride = FENC_STRIDE
+  // pix2  stride = FDEC_STRIDE
+  // p_dst stride = FDEC_STRIDE
 
-    void (*sub16x16_dct8) ( int16_t dct[4][8][8], uint8_t *pix1, uint8_t *pix2 );
-    void (*add16x16_idct8)( uint8_t *p_dst, int16_t dct[4][8][8] );
+  void (*sub8x8_dct8) (int16_t dct[8][8], uint8_t * pix1, uint8_t * pix2);
+  void (*add8x8_idct8) (uint8_t * p_dst, int16_t dct[8][8]);
+
+  void (*sub16x16_dct8) (int16_t dct[4][8][8], uint8_t * pix1, uint8_t * pix2);
+  void (*add16x16_idct8) (uint8_t * p_dst, int16_t dct[4][8][8]);
 
 } xavs_dct_function_t;
 
-void xavs_dct_init( int cpu, xavs_dct_function_t *dctf );
+void xavs_dct_init (int cpu, xavs_dct_function_t * dctf);
 
 typedef struct
 {
-    void (*scan_8x8)( int16_t level[64], int16_t dct[8][8] );
-    int  (*sub_8x8) ( int16_t level[64], const uint8_t *p_src, uint8_t *p_dst );
+  void (*scan_8x8) (int16_t level[64], int16_t dct[8][8]);
+  int (*sub_8x8) (int16_t level[64], const uint8_t * p_src, uint8_t * p_dst);
 } xavs_zigzag_function_t;
 
-void xavs_dct_init( int cpu, xavs_dct_function_t *dctf );
-void xavs_zigzag_init( int cpu, xavs_zigzag_function_t *pf, int b_interlaced );
+void xavs_dct_init (int cpu, xavs_dct_function_t * dctf);
+void xavs_zigzag_init (int cpu, xavs_zigzag_function_t * pf, int b_interlaced);
 
-void scan_zigzag_8x8full( int level[64], int16_t dct[8][8] );
-void sub_zigzag_8x8full( int level[64], const uint8_t *p_src, uint8_t *p_dst );
+void scan_zigzag_8x8full (int level[64], int16_t dct[8][8]);
+void sub_zigzag_8x8full (int level[64], const uint8_t * p_src, uint8_t * p_dst);
 
 #endif
-

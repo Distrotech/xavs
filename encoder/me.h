@@ -55,32 +55,35 @@ if((y)<(x))\
 
 typedef struct
 {
-    /* input */
-    int      i_pixel;   /* PIXEL_WxH */
-    int16_t *p_cost_mv; /* lambda * nbits for each possible mv */
-    int      i_ref_cost;
-    int      i_ref;
+  /* input */
+  int i_pixel;                  /* PIXEL_WxH */
+  int16_t *p_cost_mv;           /* lambda * nbits for each possible mv */
+  int i_ref_cost;
+  int i_ref;
 
-    uint8_t *p_fref[6];
-    uint8_t *p_fenc[3];
-    uint16_t *integral;
-    int      i_stride[2];
+  uint8_t *p_fref[6];
+  uint8_t *p_fenc[3];
+  uint16_t *integral;
+  int i_stride[2];
 
-    int mvp[2];
+  int mvp[2];
 
-    /* output */
-    int cost_mv;        /* lambda * nbits for the chosen mv */
-    int cost;           /* satd + lambda * nbits */
-    int mv[2];
+  /* output */
+  int cost_mv;                  /* lambda * nbits for the chosen mv */
+  int cost;                     /* satd + lambda * nbits */
+  int mv[2];
 } xavs_me_t;
 
-void xavs_me_search_ref( xavs_t *h, xavs_me_t *m, int (*mvc)[2], int i_mvc, int *p_fullpel_thresh );
-static inline void xavs_me_search( xavs_t *h, xavs_me_t *m, int (*mvc)[2], int i_mvc )
-    { xavs_me_search_ref( h, m, mvc, i_mvc, NULL ); }
+void xavs_me_search_ref (xavs_t * h, xavs_me_t * m, int (*mvc)[2], int i_mvc, int *p_fullpel_thresh);
+static inline void
+xavs_me_search (xavs_t * h, xavs_me_t * m, int (*mvc)[2], int i_mvc)
+{
+  xavs_me_search_ref (h, m, mvc, i_mvc, NULL);
+}
 
-void xavs_me_refine_qpel( xavs_t *h, xavs_me_t *m );
-void xavs_me_refine_qpel_rd( xavs_t *h, xavs_me_t *m, int i_lambda2, int i4,int i_list  );
-int xavs_me_refine_bidir( xavs_t *h, xavs_me_t *m0, xavs_me_t *m1, int i_weight );
-int xavs_rd_cost_part( xavs_t *h, int i_lambda2, int i8, int i_pixel );
+void xavs_me_refine_qpel (xavs_t * h, xavs_me_t * m);
+void xavs_me_refine_qpel_rd (xavs_t * h, xavs_me_t * m, int i_lambda2, int i4, int i_list);
+int xavs_me_refine_bidir (xavs_t * h, xavs_me_t * m0, xavs_me_t * m1, int i_weight);
+int xavs_rd_cost_part (xavs_t * h, int i_lambda2, int i8, int i_pixel);
 
 #endif

@@ -23,10 +23,10 @@
 #ifndef _XAVS_CPU_H_
 #define _XAVS_CPU_H_
 
-uint32_t xavs_cpu_detect( void );
-int      xavs_cpu_num_processors( void );
-void     xavs_emms( void );
-void     xavs_cpu_mask_misalign_sse( void );
+uint32_t xavs_cpu_detect (void);
+int xavs_cpu_num_processors (void);
+void xavs_emms (void);
+void xavs_cpu_mask_misalign_sse (void);
 
 /* kluge:
  * gcc can't give variables any greater alignment than the stack frame has.
@@ -37,18 +37,19 @@ void     xavs_cpu_mask_misalign_sse( void );
  * This applies only to x86_32, since other architectures that need alignment
  * also have ABIs that ensure aligned stack. */
 #if defined(ARCH_X86) && defined(HAVE_MMX)
-int xavs_stack_align( void (*func)(xavs_t*), xavs_t *arg );
+int xavs_stack_align (void (*func) (xavs_t *), xavs_t * arg);
 #define xavs_stack_align(func,arg) xavs_stack_align((void (*)(xavs_t*))func,arg)
 #else
 #define xavs_stack_align(func,arg) func(arg)
 #endif
 
-typedef struct {
-    const char name[16];
-    int flags;
+typedef struct
+{
+  const char name[16];
+  int flags;
 } xavs_cpu_name_t;
 extern const xavs_cpu_name_t xavs_cpu_names[];
 
-void xavs_cpu_restore( uint32_t cpu );
+void xavs_cpu_restore (uint32_t cpu);
 
 #endif

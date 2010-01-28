@@ -32,8 +32,8 @@
 #endif
 
 #ifdef _WIN32
-#include <io.h>    // _setmode()
-#include <fcntl.h> // _O_BINARY
+#include <io.h>                 // _setmode()
+#include <fcntl.h>              // _O_BINARY
 #endif
 
 #ifdef _MSC_VER
@@ -45,7 +45,7 @@
 #define ftell _ftelli64
 #define isfinite _finite
 #define strtok_r strtok_s
-#define XAVS_VERSION "" // no configure script for msvc
+#define XAVS_VERSION ""         // no configure script for msvc
 #endif
 
 #if (defined(SYS_OPENBSD) && !defined(isfinite)) || defined(SYS_SunOS)
@@ -55,7 +55,7 @@
 #define sqrtf sqrt
 #endif
 #ifdef _WIN32
-#define rename(src,dst) (unlink(dst), rename(src,dst)) // POSIX says that rename() removes the destination, but win32 doesn't.
+#define rename(src,dst) (unlink(dst), rename(src,dst))  // POSIX says that rename() removes the destination, but win32 doesn't.
 #ifndef strtok_r
 #define strtok_r(str,delim,save) strtok(str,delim)
 #endif
@@ -88,14 +88,16 @@
 #if defined(SYS_BEOS)
 #include <kernel/OS.h>
 #define xavs_pthread_t               thread_id
-static inline int xavs_pthread_create( xavs_pthread_t *t, void *a, void *(*f)(void *), void *d )
+static inline int
+xavs_pthread_create (xavs_pthread_t * t, void *a, void *(*f) (void *), void *d)
 {
-     *t = spawn_thread( f, "", 10, d );
-     if( *t < B_NO_ERROR )
-         return -1;
-     resume_thread( *t );
-     return 0;
+  *t = spawn_thread (f, "", 10, d);
+  if (*t < B_NO_ERROR)
+    return -1;
+  resume_thread (*t);
+  return 0;
 }
+
 #define xavs_pthread_join(t,s)       { long tmp; \
                                        wait_for_thread(t,(s)?(long*)(*(s)):&tmp); }
 #ifndef usleep
@@ -152,7 +154,7 @@ static inline int xavs_pthread_create( xavs_pthread_t *t, void *a, void *(*f)(vo
 
 #if !defined(_WIN64) && !defined(__LP64__)
 #if defined(_MSC_VER) || defined(__INTEL_COMPILER)
-#define BROKEN_STACK_ALIGNMENT /* define it if stack is not mod16 */
+#define BROKEN_STACK_ALIGNMENT  /* define it if stack is not mod16 */
 #endif
 #endif
 
@@ -164,48 +166,54 @@ static inline int xavs_pthread_create( xavs_pthread_t *t, void *a, void *(*f)(vo
 #define endian_fix16(x) (x)
 #else
 #if defined(__GNUC__) && defined(HAVE_MMX)
-static ALWAYS_INLINE uint32_t endian_fix32( uint32_t x )
+static ALWAYS_INLINE uint32_t
+endian_fix32 (uint32_t x)
 {
-    asm("bswap %0":"+r"(x));
-    return x;
+asm ("bswap %0":"+r" (x));
+  return x;
 }
-static ALWAYS_INLINE intptr_t endian_fix( intptr_t x )
+static ALWAYS_INLINE intptr_t
+endian_fix (intptr_t x)
 {
-    asm("bswap %0":"+r"(x));
-    return x;
+asm ("bswap %0":"+r" (x));
+  return x;
 }
 #else
-static ALWAYS_INLINE uint32_t endian_fix32( uint32_t x )
+static ALWAYS_INLINE uint32_t
+endian_fix32 (uint32_t x)
 {
-    return (x<<24) + ((x<<8)&0xff0000) + ((x>>8)&0xff00) + (x>>24);
+  return (x << 24) + ((x << 8) & 0xff0000) + ((x >> 8) & 0xff00) + (x >> 24);
 }
-static ALWAYS_INLINE intptr_t endian_fix( intptr_t x )
+static ALWAYS_INLINE intptr_t
+endian_fix (intptr_t x)
 {
-    if( WORD_SIZE == 8 )
-        return endian_fix32(x>>32) + ((uint64_t)endian_fix32(x)<<32);
-    else
-        return endian_fix32(x);
+  if (WORD_SIZE == 8)
+    return endian_fix32 (x >> 32) + ((uint64_t) endian_fix32 (x) << 32);
+  else
+    return endian_fix32 (x);
 }
 #endif
-static ALWAYS_INLINE uint16_t endian_fix16( uint16_t x )
+static ALWAYS_INLINE uint16_t
+endian_fix16 (uint16_t x)
 {
-    return (x<<8)|(x>>8);
+  return (x << 8) | (x >> 8);
 }
 #endif
 
 #if defined(__GNUC__) && (__GNUC__ > 3 || __GNUC__ == 3 && __GNUC_MINOR__ > 3)
 #define xavs_clz(x) __builtin_clz(x)
 #else
-static int ALWAYS_INLINE xavs_clz( uint32_t x )
+static int ALWAYS_INLINE
+xavs_clz (uint32_t x)
 {
-    static uint8_t lut[16] = {4,3,2,2,1,1,1,1,0,0,0,0,0,0,0,0};
-    int y, z = ((x - 0x10000) >> 27) & 16;
-    x >>= z^16;
-    z += y = ((x - 0x100) >> 28) & 8;
-    x >>= y^8;
-    z += y = ((x - 0x10) >> 29) & 4;
-    x >>= y^4;
-    return z + lut[x];
+  static uint8_t lut[16] = { 4, 3, 2, 2, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0 };
+  int y, z = ((x - 0x10000) >> 27) & 16;
+  x >>= z ^ 16;
+  z += y = ((x - 0x100) >> 28) & 8;
+  x >>= y ^ 8;
+  z += y = ((x - 0x10) >> 29) & 4;
+  x >>= y ^ 4;
+  return z + lut[x];
 }
 #endif
 

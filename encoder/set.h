@@ -23,16 +23,16 @@
 #ifndef _XAVS_ENC_SET_H_
 #define _XAVS_ENC_SET_H_
 
-void xavs_sps_init( xavs_sps_t *sps, int i_id, xavs_param_t *param );
-void xavs_sps_write( bs_t *s, xavs_sps_t *sps );
-void xavs_pps_init( xavs_pps_t *pps, int i_id, xavs_param_t *param, xavs_sps_t *sps );
-void xavs_pps_write( bs_t *s, xavs_pps_t *pps );
-void xavs_sei_version_write( xavs_t *h, bs_t *s );
-void xavs_validate_levels( xavs_t *h );
+void xavs_sps_init (xavs_sps_t * sps, int i_id, xavs_param_t * param);
+void xavs_sps_write (bs_t * s, xavs_sps_t * sps);
+void xavs_pps_init (xavs_pps_t * pps, int i_id, xavs_param_t * param, xavs_sps_t * sps);
+void xavs_pps_write (bs_t * s, xavs_pps_t * pps);
+void xavs_sei_version_write (xavs_t * h, bs_t * s);
+void xavs_validate_levels (xavs_t * h);
 
-void xavs_sequence_init( xavs_seq_header_t *sqh , xavs_param_t *param );
-void xavs_sequence_write( bs_t *s, xavs_seq_header_t *sqh );
-void xavs_i_picture_write( bs_t *s, xavs_i_pic_header_t *ih, xavs_seq_header_t *sqh );
-void xavs_pb_picture_write( bs_t *s, xavs_pb_pic_header_t *pbh, xavs_seq_header_t *sqh );
+void xavs_sequence_init (xavs_seq_header_t * sqh, xavs_param_t * param);
+void xavs_sequence_write (bs_t * s, xavs_seq_header_t * sqh);
+void xavs_i_picture_write (bs_t * s, xavs_i_pic_header_t * ih, xavs_seq_header_t * sqh);
+void xavs_pb_picture_write (bs_t * s, xavs_pb_pic_header_t * pbh, xavs_seq_header_t * sqh);
 
 #endif

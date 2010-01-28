@@ -25,44 +25,51 @@
 
 #include "common/macroblock.h"
 
-int xavs_macroblock_probe_skip( xavs_t *h, int b_bidir );
+int xavs_macroblock_probe_skip (xavs_t * h, int b_bidir);
 
-static inline int xavs_macroblock_probe_pskip( xavs_t *h )
-    { return xavs_macroblock_probe_skip( h, 0 ); }
-static inline int xavs_macroblock_probe_bskip( xavs_t *h )
-    { return xavs_macroblock_probe_skip( h, 1 ); }
-
-void xavs_macroblock_encode      ( xavs_t *h );
-void xavs_macroblock_write_cavlc ( xavs_t *h, bs_t *s );
-
-void xavs_macroblock_encode_p8x8( xavs_t *h, int i8 );
-
-void xavs_quant_8x8_trellis( xavs_t *h, int16_t dct[8][8], int i_quant_cat,
-                             int i_qp, int b_intra );
-
-void xavs_noise_reduction_update( xavs_t *h );
-void xavs_denoise_dct( xavs_t *h, int16_t *dct );
-
-static inline int array_non_zero( int *v, int i_count )
+static inline int
+xavs_macroblock_probe_pskip (xavs_t * h)
 {
-    int i;
-    for( i = 0; i < i_count; i++ )
-        if( v[i] ) return 1;
-    return 0;
+  return xavs_macroblock_probe_skip (h, 0);
+}
+static inline int
+xavs_macroblock_probe_bskip (xavs_t * h)
+{
+  return xavs_macroblock_probe_skip (h, 1);
 }
 
-static inline int array_non_zero_count( int *v, int i_count )
+void xavs_macroblock_encode (xavs_t * h);
+void xavs_macroblock_write_cavlc (xavs_t * h, bs_t * s);
+
+void xavs_macroblock_encode_p8x8 (xavs_t * h, int i8);
+
+void xavs_quant_8x8_trellis (xavs_t * h, int16_t dct[8][8], int i_quant_cat, int i_qp, int b_intra);
+
+void xavs_noise_reduction_update (xavs_t * h);
+void xavs_denoise_dct (xavs_t * h, int16_t * dct);
+
+static inline int
+array_non_zero (int *v, int i_count)
 {
-    int i;
-    int i_nz;
+  int i;
+  for (i = 0; i < i_count; i++)
+    if (v[i])
+      return 1;
+  return 0;
+}
 
-    for( i = 0, i_nz = 0; i < i_count; i++ )
-        if( v[i] )
-            i_nz++;
+static inline int
+array_non_zero_count (int *v, int i_count)
+{
+  int i;
+  int i_nz;
 
-    return i_nz;
+  for (i = 0, i_nz = 0; i < i_count; i++)
+    if (v[i])
+      i_nz++;
+
+  return i_nz;
 }
 
 
 #endif
-

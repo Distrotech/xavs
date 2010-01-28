@@ -25,12 +25,12 @@
 
 typedef struct
 {
-    int (*quant_8x8)(int16_t dct[8][8], int mf[64], uint16_t bias[64], int qp);
+  int (*quant_8x8) (int16_t dct[8][8], int mf[64], uint16_t bias[64], int qp);
 
-    void (*dequant_8x8)( int16_t dct[8][8], int dequant_mf[64][8][8], int i_qp );
+  void (*dequant_8x8) (int16_t dct[8][8], int dequant_mf[64][8][8], int i_qp);
 
 } xavs_quant_function_t;
 
-void xavs_quant_init( xavs_t *h, int cpu, xavs_quant_function_t *pf );
+void xavs_quant_init (xavs_t * h, int cpu, xavs_quant_function_t * pf);
 
 #endif

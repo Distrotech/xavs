@@ -25,239 +25,191 @@
 
 #include "common.h"
 
-static inline void plane_copy( uint8_t *dst, int i_dst,
-                               uint8_t *src, int i_src, int w, int h)
+static inline void
+plane_copy (uint8_t * dst, int i_dst, uint8_t * src, int i_src, int w, int h)
 {
-    for( ; h > 0; h-- )
-    {
-        memcpy( dst, src, w );
-        dst += i_dst;
-        src += i_src;
-    }
+  for (; h > 0; h--)
+  {
+    memcpy (dst, src, w);
+    dst += i_dst;
+    src += i_src;
+  }
 }
-static inline void plane_copy_vflip( uint8_t *dst, int i_dst,
-                                     uint8_t *src, int i_src, int w, int h)
+static inline void
+plane_copy_vflip (uint8_t * dst, int i_dst, uint8_t * src, int i_src, int w, int h)
 {
-    plane_copy( dst, i_dst, src + (h -1)*i_src, -i_src, w, h );
-}
-
-static inline void plane_subsamplev2( uint8_t *dst, int i_dst,
-                                      uint8_t *src, int i_src, int w, int h)
-{
-    for( ; h > 0; h-- )
-    {
-        uint8_t *d = dst;
-        uint8_t *s = src;
-        int     i;
-        for( i = 0; i < w; i++ )
-        {
-            *d++ = ( s[0] + s[i_src] + 1 ) >> 1;
-            s++;
-        }
-        dst += i_dst;
-        src += 2 * i_src;
-    }
+  plane_copy (dst, i_dst, src + (h - 1) * i_src, -i_src, w, h);
 }
 
-static inline void plane_subsamplev2_vlip( uint8_t *dst, int i_dst,
-                                           uint8_t *src, int i_src, int w, int h)
+static inline void
+plane_subsamplev2 (uint8_t * dst, int i_dst, uint8_t * src, int i_src, int w, int h)
 {
-    plane_subsamplev2( dst, i_dst, src + (2*h-1)*i_src, -i_src, w, h );
+  for (; h > 0; h--)
+  {
+    uint8_t *d = dst;
+    uint8_t *s = src;
+    int i;
+    for (i = 0; i < w; i++)
+    {
+      *d++ = (s[0] + s[i_src] + 1) >> 1;
+      s++;
+    }
+    dst += i_dst;
+    src += 2 * i_src;
+  }
 }
 
-static inline void plane_subsamplehv2( uint8_t *dst, int i_dst,
-                                       uint8_t *src, int i_src, int w, int h)
+static inline void
+plane_subsamplev2_vlip (uint8_t * dst, int i_dst, uint8_t * src, int i_src, int w, int h)
 {
-    for( ; h > 0; h-- )
-    {
-        uint8_t *d = dst;
-        uint8_t *s = src;
-        int     i;
-        for( i = 0; i < w; i++ )
-        {
-            *d++ = ( s[0] + s[1] + s[i_src] + s[i_src+1] + 1 ) >> 2;
-            s += 2;
-        }
-        dst += i_dst;
-        src += 2 * i_src;
-    }
+  plane_subsamplev2 (dst, i_dst, src + (2 * h - 1) * i_src, -i_src, w, h);
 }
 
-static inline void plane_subsamplehv2_vlip( uint8_t *dst, int i_dst,
-                                            uint8_t *src, int i_src, int w, int h)
+static inline void
+plane_subsamplehv2 (uint8_t * dst, int i_dst, uint8_t * src, int i_src, int w, int h)
 {
-    plane_subsamplehv2( dst, i_dst, src + (2*h-1)*i_src, -i_src, w, h );
+  for (; h > 0; h--)
+  {
+    uint8_t *d = dst;
+    uint8_t *s = src;
+    int i;
+    for (i = 0; i < w; i++)
+    {
+      *d++ = (s[0] + s[1] + s[i_src] + s[i_src + 1] + 1) >> 2;
+      s += 2;
+    }
+    dst += i_dst;
+    src += 2 * i_src;
+  }
 }
 
-static void i420_to_i420( xavs_frame_t *frm, xavs_image_t *img,
-                          int i_width, int i_height )
+static inline void
+plane_subsamplehv2_vlip (uint8_t * dst, int i_dst, uint8_t * src, int i_src, int w, int h)
 {
-    if( img->i_csp & XAVS_CSP_VFLIP )
-    {
-        plane_copy_vflip( frm->plane[0], frm->i_stride[0],
-                          img->plane[0], img->i_stride[0],
-                          i_width, i_height );
-        plane_copy_vflip( frm->plane[1], frm->i_stride[1],
-                          img->plane[1], img->i_stride[1],
-                          i_width / 2, i_height / 2 );
-        plane_copy_vflip( frm->plane[2], frm->i_stride[2],
-                          img->plane[2], img->i_stride[2],
-                          i_width / 2, i_height / 2 );
-    }
-    else
-    {
-        plane_copy( frm->plane[0], frm->i_stride[0],
-                    img->plane[0], img->i_stride[0],
-                    i_width, i_height );
-        plane_copy( frm->plane[1], frm->i_stride[1],
-                    img->plane[1], img->i_stride[1],
-                    i_width / 2, i_height / 2 );
-        plane_copy( frm->plane[2], frm->i_stride[2],
-                    img->plane[2], img->i_stride[2],
-                    i_width / 2, i_height / 2 );
-    }
+  plane_subsamplehv2 (dst, i_dst, src + (2 * h - 1) * i_src, -i_src, w, h);
 }
 
-static void yv12_to_i420( xavs_frame_t *frm, xavs_image_t *img,
-                          int i_width, int i_height )
+static void
+i420_to_i420 (xavs_frame_t * frm, xavs_image_t * img, int i_width, int i_height)
 {
-    if( img->i_csp & XAVS_CSP_VFLIP )
-    {
-        plane_copy_vflip( frm->plane[0], frm->i_stride[0],
-                          img->plane[0], img->i_stride[0],
-                          i_width, i_height );
-        plane_copy_vflip( frm->plane[2], frm->i_stride[2],
-                          img->plane[1], img->i_stride[1],
-                          i_width / 2, i_height / 2 );
-        plane_copy_vflip( frm->plane[1], frm->i_stride[1],
-                          img->plane[2], img->i_stride[2],
-                          i_width / 2, i_height / 2 );
-    }
-    else
-    {
-        plane_copy( frm->plane[0], frm->i_stride[0],
-                    img->plane[0], img->i_stride[0],
-                    i_width, i_height );
-        plane_copy( frm->plane[2], frm->i_stride[2],
-                    img->plane[1], img->i_stride[1],
-                    i_width / 2, i_height / 2 );
-        plane_copy( frm->plane[1], frm->i_stride[1],
-                    img->plane[2], img->i_stride[2],
-                    i_width / 2, i_height / 2 );
-    }
+  if (img->i_csp & XAVS_CSP_VFLIP)
+  {
+    plane_copy_vflip (frm->plane[0], frm->i_stride[0], img->plane[0], img->i_stride[0], i_width, i_height);
+    plane_copy_vflip (frm->plane[1], frm->i_stride[1], img->plane[1], img->i_stride[1], i_width / 2, i_height / 2);
+    plane_copy_vflip (frm->plane[2], frm->i_stride[2], img->plane[2], img->i_stride[2], i_width / 2, i_height / 2);
+  }
+  else
+  {
+    plane_copy (frm->plane[0], frm->i_stride[0], img->plane[0], img->i_stride[0], i_width, i_height);
+    plane_copy (frm->plane[1], frm->i_stride[1], img->plane[1], img->i_stride[1], i_width / 2, i_height / 2);
+    plane_copy (frm->plane[2], frm->i_stride[2], img->plane[2], img->i_stride[2], i_width / 2, i_height / 2);
+  }
 }
 
-static void i422_to_i420( xavs_frame_t *frm, xavs_image_t *img,
-                          int i_width, int i_height )
+static void
+yv12_to_i420 (xavs_frame_t * frm, xavs_image_t * img, int i_width, int i_height)
 {
-    if( img->i_csp & XAVS_CSP_VFLIP )
-    {
-        plane_copy_vflip( frm->plane[0], frm->i_stride[0],
-                          img->plane[0], img->i_stride[0],
-                          i_width, i_height );
-
-        plane_subsamplev2_vlip( frm->plane[1], frm->i_stride[1],
-                                img->plane[1], img->i_stride[1],
-                                i_width / 2, i_height / 2 );
-        plane_subsamplev2_vlip( frm->plane[2], frm->i_stride[2],
-                                img->plane[2], img->i_stride[2],
-                                i_width / 2, i_height / 2 );
-    }
-    else
-    {
-        plane_copy( frm->plane[0], frm->i_stride[0],
-                    img->plane[0], img->i_stride[0],
-                    i_width, i_height );
-
-        plane_subsamplev2( frm->plane[1], frm->i_stride[1],
-                           img->plane[1], img->i_stride[1],
-                           i_width / 2, i_height / 2 );
-        plane_subsamplev2( frm->plane[2], frm->i_stride[2],
-                           img->plane[2], img->i_stride[2],
-                           i_width / 2, i_height / 2 );
-    }
+  if (img->i_csp & XAVS_CSP_VFLIP)
+  {
+    plane_copy_vflip (frm->plane[0], frm->i_stride[0], img->plane[0], img->i_stride[0], i_width, i_height);
+    plane_copy_vflip (frm->plane[2], frm->i_stride[2], img->plane[1], img->i_stride[1], i_width / 2, i_height / 2);
+    plane_copy_vflip (frm->plane[1], frm->i_stride[1], img->plane[2], img->i_stride[2], i_width / 2, i_height / 2);
+  }
+  else
+  {
+    plane_copy (frm->plane[0], frm->i_stride[0], img->plane[0], img->i_stride[0], i_width, i_height);
+    plane_copy (frm->plane[2], frm->i_stride[2], img->plane[1], img->i_stride[1], i_width / 2, i_height / 2);
+    plane_copy (frm->plane[1], frm->i_stride[1], img->plane[2], img->i_stride[2], i_width / 2, i_height / 2);
+  }
 }
 
-static void i444_to_i420( xavs_frame_t *frm, xavs_image_t *img,
-                          int i_width, int i_height )
+static void
+i422_to_i420 (xavs_frame_t * frm, xavs_image_t * img, int i_width, int i_height)
 {
-    if( img->i_csp & XAVS_CSP_VFLIP )
-    {
-        plane_copy_vflip( frm->plane[0], frm->i_stride[0],
-                          img->plane[0], img->i_stride[0],
-                          i_width, i_height );
+  if (img->i_csp & XAVS_CSP_VFLIP)
+  {
+    plane_copy_vflip (frm->plane[0], frm->i_stride[0], img->plane[0], img->i_stride[0], i_width, i_height);
 
-        plane_subsamplehv2_vlip( frm->plane[1], frm->i_stride[1],
-                                 img->plane[1], img->i_stride[1],
-                                 i_width / 2, i_height / 2 );
-        plane_subsamplehv2_vlip( frm->plane[2], frm->i_stride[2],
-                                 img->plane[2], img->i_stride[2],
-                                 i_width / 2, i_height / 2 );
-    }
-    else
-    {
-        plane_copy( frm->plane[0], frm->i_stride[0],
-                    img->plane[0], img->i_stride[0],
-                    i_width, i_height );
+    plane_subsamplev2_vlip (frm->plane[1], frm->i_stride[1], img->plane[1], img->i_stride[1], i_width / 2, i_height / 2);
+    plane_subsamplev2_vlip (frm->plane[2], frm->i_stride[2], img->plane[2], img->i_stride[2], i_width / 2, i_height / 2);
+  }
+  else
+  {
+    plane_copy (frm->plane[0], frm->i_stride[0], img->plane[0], img->i_stride[0], i_width, i_height);
 
-        plane_subsamplehv2( frm->plane[1], frm->i_stride[1],
-                            img->plane[1], img->i_stride[1],
-                            i_width / 2, i_height / 2 );
-        plane_subsamplehv2( frm->plane[2], frm->i_stride[2],
-                            img->plane[2], img->i_stride[2],
-                            i_width / 2, i_height / 2 );
-    }
+    plane_subsamplev2 (frm->plane[1], frm->i_stride[1], img->plane[1], img->i_stride[1], i_width / 2, i_height / 2);
+    plane_subsamplev2 (frm->plane[2], frm->i_stride[2], img->plane[2], img->i_stride[2], i_width / 2, i_height / 2);
+  }
 }
-static void yuyv_to_i420( xavs_frame_t *frm, xavs_image_t *img,
-                          int i_width, int i_height )
+
+static void
+i444_to_i420 (xavs_frame_t * frm, xavs_image_t * img, int i_width, int i_height)
 {
-    uint8_t *src = img->plane[0];
-    int     i_src= img->i_stride[0];
+  if (img->i_csp & XAVS_CSP_VFLIP)
+  {
+    plane_copy_vflip (frm->plane[0], frm->i_stride[0], img->plane[0], img->i_stride[0], i_width, i_height);
 
-    uint8_t *y   = frm->plane[0];
-    uint8_t *u   = frm->plane[1];
-    uint8_t *v   = frm->plane[2];
+    plane_subsamplehv2_vlip (frm->plane[1], frm->i_stride[1], img->plane[1], img->i_stride[1], i_width / 2, i_height / 2);
+    plane_subsamplehv2_vlip (frm->plane[2], frm->i_stride[2], img->plane[2], img->i_stride[2], i_width / 2, i_height / 2);
+  }
+  else
+  {
+    plane_copy (frm->plane[0], frm->i_stride[0], img->plane[0], img->i_stride[0], i_width, i_height);
 
-    if( img->i_csp & XAVS_CSP_VFLIP )
+    plane_subsamplehv2 (frm->plane[1], frm->i_stride[1], img->plane[1], img->i_stride[1], i_width / 2, i_height / 2);
+    plane_subsamplehv2 (frm->plane[2], frm->i_stride[2], img->plane[2], img->i_stride[2], i_width / 2, i_height / 2);
+  }
+}
+static void
+yuyv_to_i420 (xavs_frame_t * frm, xavs_image_t * img, int i_width, int i_height)
+{
+  uint8_t *src = img->plane[0];
+  int i_src = img->i_stride[0];
+
+  uint8_t *y = frm->plane[0];
+  uint8_t *u = frm->plane[1];
+  uint8_t *v = frm->plane[2];
+
+  if (img->i_csp & XAVS_CSP_VFLIP)
+  {
+    src += (i_height - 1) * i_src;
+    i_src = -i_src;
+  }
+
+  for (; i_height > 0; i_height -= 2)
+  {
+    uint8_t *ss = src;
+    uint8_t *yy = y;
+    uint8_t *uu = u;
+    uint8_t *vv = v;
+    int w;
+
+    for (w = i_width; w > 0; w -= 2)
     {
-        src += ( i_height - 1 ) * i_src;
-        i_src = -i_src;
-    }
+      *yy++ = ss[0];
+      *yy++ = ss[2];
 
-    for( ; i_height > 0; i_height -= 2 )
+      *uu++ = (ss[1] + ss[1 + i_src] + 1) >> 1;
+      *vv++ = (ss[3] + ss[3 + i_src] + 1) >> 1;
+
+      ss += 4;
+    }
+    src += i_src;
+    y += frm->i_stride[0];
+    u += frm->i_stride[1];
+    v += frm->i_stride[2];
+
+    ss = src;
+    yy = y;
+    for (w = i_width; w > 0; w -= 2)
     {
-        uint8_t *ss = src;
-        uint8_t *yy = y;
-        uint8_t *uu = u;
-        uint8_t *vv = v;
-        int w;
-
-        for( w = i_width; w > 0; w -= 2 )
-        {
-            *yy++ = ss[0];
-            *yy++ = ss[2];
-
-            *uu++ = ( ss[1] + ss[1+i_src] + 1 ) >> 1;
-            *vv++ = ( ss[3] + ss[3+i_src] + 1 ) >> 1;
-
-            ss += 4;
-        }
-        src += i_src;
-        y += frm->i_stride[0];
-        u += frm->i_stride[1];
-        v += frm->i_stride[2];
-
-        ss = src;
-        yy = y;
-        for( w = i_width; w > 0; w -= 2 )
-        {
-            *yy++ = ss[0];
-            *yy++ = ss[2];
-            ss += 4;
-        }
-        src += i_src;
-        y += frm->i_stride[0];
+      *yy++ = ss[0];
+      *yy++ = ss[2];
+      ss += 4;
     }
+    src += i_src;
+    y += frm->i_stride[0];
+  }
 }
 
 /* Same value than in XviD */
@@ -347,30 +299,30 @@ static void name( xavs_frame_t *frm, xavs_image_t *img, \
     }                                                   \
 }
 
-RGB_TO_I420( rgb_to_i420,  0, 1, 2, 3 );
-RGB_TO_I420( bgr_to_i420,  2, 1, 0, 3 );
-RGB_TO_I420( bgra_to_i420, 2, 1, 0, 4 );
+RGB_TO_I420 (rgb_to_i420, 0, 1, 2, 3);
+RGB_TO_I420 (bgr_to_i420, 2, 1, 0, 3);
+RGB_TO_I420 (bgra_to_i420, 2, 1, 0, 4);
 
-void xavs_csp_init( int cpu, int i_csp, xavs_csp_function_t *pf )
+void
+xavs_csp_init (int cpu, int i_csp, xavs_csp_function_t * pf)
 {
-    switch( i_csp )
-    {
-        case XAVS_CSP_I420:
-            pf->i420 = i420_to_i420;
-            pf->i422 = i422_to_i420;
-            pf->i444 = i444_to_i420;
-            pf->yv12 = yv12_to_i420;
-            pf->yuyv = yuyv_to_i420;
-            pf->rgb  = rgb_to_i420;
-            pf->bgr  = bgr_to_i420;
-            pf->bgra = bgra_to_i420;
-            break;
+  switch (i_csp)
+  {
+  case XAVS_CSP_I420:
+    pf->i420 = i420_to_i420;
+    pf->i422 = i422_to_i420;
+    pf->i444 = i444_to_i420;
+    pf->yv12 = yv12_to_i420;
+    pf->yuyv = yuyv_to_i420;
+    pf->rgb = rgb_to_i420;
+    pf->bgr = bgr_to_i420;
+    pf->bgra = bgra_to_i420;
+    break;
 
-        default:
-            /* For now, can't happen */
-            fprintf( stderr, "arg in xavs_csp_init\n" );
-            exit( -1 );
-            break;
-    }
+  default:
+    /* For now, can't happen */
+    fprintf (stderr, "arg in xavs_csp_init\n");
+    exit (-1);
+    break;
+  }
 }
-

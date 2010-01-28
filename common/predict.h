@@ -23,46 +23,44 @@
 #ifndef _XAVS_PREDICT_H_
 #define _XAVS_PREDICT_H_
 
-typedef void (*xavs_predict_t)( uint8_t *src, int i_neighbor);
+typedef void (*xavs_predict_t) (uint8_t * src, int i_neighbor);
 
 enum intra_chroma_pred_e
 {
-    I_PRED_CHROMA_DC = 0,
-    I_PRED_CHROMA_H  = 1,
-    I_PRED_CHROMA_V  = 2,
-    I_PRED_CHROMA_P  = 3,
+  I_PRED_CHROMA_DC = 0,
+  I_PRED_CHROMA_H = 1,
+  I_PRED_CHROMA_V = 2,
+  I_PRED_CHROMA_P = 3,
 
-    I_PRED_CHROMA_DC_LEFT = 4,
-    I_PRED_CHROMA_DC_TOP  = 5,
-    I_PRED_CHROMA_DC_128  = 6
+  I_PRED_CHROMA_DC_LEFT = 4,
+  I_PRED_CHROMA_DC_TOP = 5,
+  I_PRED_CHROMA_DC_128 = 6
 };
-static const int xavs_mb_pred_mode8x8c[7] =
-{
-    I_PRED_CHROMA_DC, I_PRED_CHROMA_H,I_PRED_CHROMA_V,  I_PRED_CHROMA_P,
-    I_PRED_CHROMA_DC, I_PRED_CHROMA_DC,I_PRED_CHROMA_DC
+static const int xavs_mb_pred_mode8x8c[7] = {
+  I_PRED_CHROMA_DC, I_PRED_CHROMA_H, I_PRED_CHROMA_V, I_PRED_CHROMA_P,
+  I_PRED_CHROMA_DC, I_PRED_CHROMA_DC, I_PRED_CHROMA_DC
 };
 
 /* must use the same numbering as intra4x4_pred_e */
 enum intra8x8_pred_e
 {
-    I_PRED_8x8_V  = 0,
-    I_PRED_8x8_H  = 1,
-    I_PRED_8x8_DC = 2,
-    I_PRED_8x8_DDL= 3,
-    I_PRED_8x8_DDR= 4,
+  I_PRED_8x8_V = 0,
+  I_PRED_8x8_H = 1,
+  I_PRED_8x8_DC = 2,
+  I_PRED_8x8_DDL = 3,
+  I_PRED_8x8_DDR = 4,
 
-    I_PRED_8x8_DC_LEFT = 5,
-    I_PRED_8x8_DC_TOP  = 6,
-    I_PRED_8x8_DC_128  = 7,
+  I_PRED_8x8_DC_LEFT = 5,
+  I_PRED_8x8_DC_TOP = 6,
+  I_PRED_8x8_DC_128 = 7,
 };
 #define xavs_mb_pred_mode8x8(t) xavs_mb_pred_mode8x8[(t)+1]
-static const int xavs_mb_pred_mode8x8[9] =
-{
-    -1,I_PRED_8x8_V,   I_PRED_8x8_H,   I_PRED_8x8_DC,
-    I_PRED_8x8_DDL, I_PRED_8x8_DDR, I_PRED_8x8_DC,  
-	I_PRED_8x8_DC,  I_PRED_8x8_DC
+static const int xavs_mb_pred_mode8x8[9] = {
+  -1, I_PRED_8x8_V, I_PRED_8x8_H, I_PRED_8x8_DC,
+  I_PRED_8x8_DDL, I_PRED_8x8_DDR, I_PRED_8x8_DC,
+  I_PRED_8x8_DC, I_PRED_8x8_DC
 };
-void xavs_predict_8x8c_init  ( int cpu, xavs_predict_t pf[7] );
-void xavs_predict_8x8_init   ( int cpu, xavs_predict_t pf[12] );
+void xavs_predict_8x8c_init (int cpu, xavs_predict_t pf[7]);
+void xavs_predict_8x8_init (int cpu, xavs_predict_t pf[12]);
 
 #endif

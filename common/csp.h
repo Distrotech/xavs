@@ -25,18 +25,17 @@
 
 typedef struct
 {
-    void (*i420)( xavs_frame_t *, xavs_image_t *, int i_width, int i_height );
-    void (*i422)( xavs_frame_t *, xavs_image_t *, int i_width, int i_height );
-    void (*i444)( xavs_frame_t *, xavs_image_t *, int i_width, int i_height );
-    void (*yv12)( xavs_frame_t *, xavs_image_t *, int i_width, int i_height );
-    void (*yuyv)( xavs_frame_t *, xavs_image_t *, int i_width, int i_height );
-    void (*rgb )( xavs_frame_t *, xavs_image_t *, int i_width, int i_height );
-    void (*bgr )( xavs_frame_t *, xavs_image_t *, int i_width, int i_height );
-    void (*bgra)( xavs_frame_t *, xavs_image_t *, int i_width, int i_height );
+  void (*i420) (xavs_frame_t *, xavs_image_t *, int i_width, int i_height);
+  void (*i422) (xavs_frame_t *, xavs_image_t *, int i_width, int i_height);
+  void (*i444) (xavs_frame_t *, xavs_image_t *, int i_width, int i_height);
+  void (*yv12) (xavs_frame_t *, xavs_image_t *, int i_width, int i_height);
+  void (*yuyv) (xavs_frame_t *, xavs_image_t *, int i_width, int i_height);
+  void (*rgb) (xavs_frame_t *, xavs_image_t *, int i_width, int i_height);
+  void (*bgr) (xavs_frame_t *, xavs_image_t *, int i_width, int i_height);
+  void (*bgra) (xavs_frame_t *, xavs_image_t *, int i_width, int i_height);
 } xavs_csp_function_t;
 
 
-void xavs_csp_init( int cpu, int i_csp, xavs_csp_function_t *pf );
+void xavs_csp_init (int cpu, int i_csp, xavs_csp_function_t * pf);
 
 #endif
-
