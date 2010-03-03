@@ -1719,6 +1719,7 @@ Encode (xavs_param_t * param, cli_opt_t * opt)
   }
 
   i_start = xavs_mdate ();
+  remove("test.dat"); //delete timestamp file
 
   /* Encode frames */
   for (i_frame = 0, i_file = 0, i_frame_output = 0; b_ctrl_c == 0 && (i_frame < i_frame_total || i_frame_total == 0);)
