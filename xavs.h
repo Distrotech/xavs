@@ -315,7 +315,6 @@ typedef struct
   int level_idc;
   int samples_per_row;
   int lines_per_frame;
-  int dpb;                      /* max decoded picture buffer (bytes) */
   int frames_per_second;
   int luma_samples_per_second;
   int bitrate;                  // max bitrate (kbit/sec) 
