@@ -151,12 +151,12 @@ static void update_predictor (predictor_t * p, double q, double var, double bits
 static inline double
 qp2qscale (double qp)
 {
-  return 0.85 * pow (2.0, (qp - 12.0) / 6.0);
+  return 0.85 * pow (2.0, (qp - 12.0) / 8.0);
 }
 static inline double
 qscale2qp (double qscale)
 {
-  return 12.0 + 6.0 * log (qscale / 0.85) / log (2.0);
+  return 12.0 + 8.0 * log (qscale / 0.85) / log (2.0);
 }
 
 /* Texture bitrate is not quite inversely proportional to qscale,

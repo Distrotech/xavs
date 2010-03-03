@@ -1683,6 +1683,9 @@ Encode (xavs_param_t * param, cli_opt_t * opt)
   int i_frame_size;
   int i_update_interval;
   int endcode = 0xb1010000;
+  double  f_timestamp = 0;
+  int     i_timestamp = 0;
+  FILE    *fp;
 
   opt->b_progress &= param->i_log_level < XAVS_LOG_DEBUG;
   i_frame_total = p_get_frame_total (opt->hin);
@@ -1742,6 +1745,12 @@ Encode (xavs_param_t * param, cli_opt_t * opt)
       i_frame_output++;
 
     i_frame++;
+	//timestamp output
+	fp = fopen("test.dat", "ab+");
+	f_timestamp += ((double)param->i_fps_den / (double) param->i_fps_num * 1000);
+	i_timestamp = (int)f_timestamp;
+	fwrite(&i_timestamp,sizeof(int),1,fp);		
+	fclose(fp);	
 
     /* update status line (up to 1000 times per input file) */
     if (opt->b_progress && i_frame_output % i_update_interval == 0 && i_frame_output)
