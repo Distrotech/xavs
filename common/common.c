@@ -59,7 +59,7 @@ xavs_param_default (xavs_param_t * param)
   param->vui.i_transfer = 2;    /* undef */
   param->vui.i_colmatrix = 2;   /* undef */
   param->vui.i_chroma_loc = 0;  /* left center */
-  param->i_fps_num = 30;
+  param->i_fps_num = 25;
   param->i_fps_den = 1;
   param->i_level_idc = 64;      /* as close to "unrestricted" as we can get */
 

@@ -732,7 +732,7 @@ static struct option long_options[] = {
   {"asm", required_argument, NULL, 0},
   {"no-asm", no_argument, NULL, 0},
   {"sar", required_argument, NULL, 0},
-  {"fps", required_argument, NULL, 0},
+  {"fps", required_argument, NULL, OPT_FPS},
   {"frames", required_argument, NULL, OPT_FRAMES},
   {"seek", required_argument, NULL, OPT_SEEK},
   {"output", required_argument, NULL, 'o'},
