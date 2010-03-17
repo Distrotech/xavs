@@ -69,7 +69,7 @@ xavs_param_default (xavs_param_t * param)
   param->i_keyint_min = 25;
   param->i_bframe = 4;
   param->i_scenecut_threshold = 40;
-  param->i_bframe_adaptive = 1;
+  param->i_bframe_adaptive = 1; //enable adaptive B frame
   param->i_bframe_bias = 0;
   param->analyse.b_bframe_rdo = 1;
 
@@ -87,7 +87,7 @@ xavs_param_default (xavs_param_t * param)
   param->rc.i_qp_constant = 26;
   param->rc.f_rf_constant = 26;
   param->rc.i_qp_min = 18;
-  param->rc.i_qp_max = 50;
+  param->rc.i_qp_max = 60;
   param->rc.i_qp_step = 4;
   param->rc.f_ip_factor = (float) 1.4;
   param->rc.f_pb_factor = (float) 1.3;

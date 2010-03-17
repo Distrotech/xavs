@@ -226,9 +226,9 @@ Help (xavs_param_t * defaults, int longhelp)
   H0 ("\n");
   H0 ("Ratecontrol:\n");
   H0 ("\n");
-  H1 ("  -q, --qp <integer>          Force constant QP (0-51, 0=lossless)\n");
+  H1 ("  -q, --qp <integer>          Force constant QP (0-63, 0=lossless)\n");
   H0 ("  -B, --bitrate <integer>     Set bitrate (kbit/s)\n");
-  H0 ("      --crf <float>           Quality-based VBR (0-51, 0=lossless) [%.1f]\n", defaults->rc.f_rf_constant);
+  H0 ("      --crf <float>           Quality-based VBR (0-63, 0=lossless) [%.1f]\n", defaults->rc.f_rf_constant);
   H1 ("      --rc-lookahead <integer> Number of frames for frametype lookahead [%d]\n", defaults->rc.i_lookahead);
   H0 ("      --vbv-maxrate <integer> Max local bitrate (kbit/s) [%d]\n", defaults->rc.i_vbv_max_bitrate);
   H0 ("      --vbv-bufsize <integer> Set size of the VBV buffer (kbit) [%d]\n", defaults->rc.i_vbv_buffer_size);
@@ -763,12 +763,12 @@ static struct option long_options[] = {
   {"deadzone-inter", required_argument, NULL, '0'},
   {"deadzone-intra", required_argument, NULL, '0'},
   {"level", required_argument, NULL, 0},
-  {"ratetol", required_argument, NULL, 0},
-  {"vbv-maxrate", required_argument, NULL, 0},
-  {"vbv-bufsize", required_argument, NULL, 0},
-  {"vbv-init", required_argument, NULL, 0},
-  {"ipratio", required_argument, NULL, 0},
-  {"pbratio", required_argument, NULL, 0},
+  {"ratetol", required_argument, NULL, OPT_RATETOL},
+  {"vbv-maxrate", required_argument, NULL, OPT_VBVMAXRATE},
+  {"vbv-bufsize", required_argument, NULL, OPT_VBVBUFSIZE},
+  {"vbv-init", required_argument, NULL, OPT_VBVINIT},
+  {"ipratio", required_argument, NULL, OPT_IPRATIO},
+  {"pbratio", required_argument, NULL, OPT_PBRATIO},
   {"chroma-qp-offset", required_argument, NULL, 0},
   {"pass", required_argument, NULL, 'p'},
   {"stats", required_argument, NULL, 0},
@@ -1590,7 +1590,7 @@ parse_qpfile (cli_opt_t * opt, xavs_picture_t * pic, int i_frame)
       pic->i_type = XAVS_TYPE_B;
     else
       ret = 0;
-    if (ret != 3 || qp < -1 || qp > 51)
+    if (ret != 3 || qp < -1 || qp > 63)
     {
       fprintf (stderr, "xavs [error]: can't parse qpfile for frame %d\n", i_frame);
       fclose (opt->qpfile);
