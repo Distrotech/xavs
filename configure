@@ -49,7 +49,7 @@ libdir='${exec_prefix}/lib'
 includedir='${prefix}/include'
 DEVNULL='/dev/null'
 
-pthread="no"
+pthread="auto"
 asm="no"
 debug="no"
 gprof="no"
