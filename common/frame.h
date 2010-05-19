@@ -72,6 +72,7 @@ typedef struct
   int *i_row_qp;
   float *f_qp_offset;
 
+  xavs_pthread_mutex_t mutex;
 } xavs_frame_t;
 
 /* synchronized frame list */

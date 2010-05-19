@@ -443,7 +443,7 @@ int
 open_file_thread (char *psz_filename, hnd_t * p_handle, xavs_param_t * p_param)
 {
   thread_input_t *h = malloc (sizeof (thread_input_t));
-  xavs_picture_alloc (&h->pic, xavs_CSP_I420, p_param->i_width, p_param->i_height);
+  xavs_picture_alloc (&h->pic, XAVS_CSP_I420, p_param->i_width, p_param->i_height);
   h->p_read_frame = p_read_frame;
   h->p_close_infile = p_close_infile;
   h->p_handle = *p_handle;
