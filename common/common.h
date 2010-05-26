@@ -43,6 +43,12 @@
 #define pthread_create(t,u,f,d) *(t)=CreateThread(NULL,0,f,d,0,NULL)
 #define pthread_join(t,s)       { WaitForSingleObject(t,INFINITE); \
                                   CloseHandle(t); }
+static int pthread_num_processors_np()
+{
+   SYSTEM_INFO si;
+   GetSystemInfo(&si);
+   return (int)(si.dwNumberOfProcessors);
+}
 #define HAVE_PTHREAD 1
 
 #elif defined(SYS_BEOS)

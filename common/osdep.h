@@ -68,6 +68,7 @@
 //#define DECLARE_ALIGNED( var, n ) var __attribute__((aligned(n)))
 #define DECLARE_ALIGNED( type, var, n ) type var __attribute__((aligned(n)))
 #endif
+
 #define DECLARE_ALIGNED_16( var ) DECLARE_ALIGNED( var, 16 )
 #define DECLARE_ALIGNED_8( var )  DECLARE_ALIGNED( var, 8 )
 #define DECLARE_ALIGNED_4( var )  DECLARE_ALIGNED( var, 4 )
@@ -102,6 +103,26 @@ xavs_pthread_create (xavs_pthread_t * t, void *a, void *(*f) (void *), void *d)
                                        wait_for_thread(t,(s)?(long*)(*(s)):&tmp); }
 #ifndef usleep
 #define usleep(t)                    snooze(t)
+#endif
+#define HAVE_PTHREAD 1
+
+#elif defined(__WIN32__)
+#include <windows.h>
+#define xavs_pthread_t   HANDLE
+static inline int
+xavs_pthread_create (xavs_pthread_t * t, void *a, LPVOID f, void *d)
+{
+	 *t = CreateThread(NULL,0,f,d,0,NULL);
+	  if (*t == NULL)
+		    return -1;
+	   ResumeThread (*t);
+	    return 0;
+}
+#define xavs_pthread_join(t,s)       {  WaitForSingleObject(t,INFINITE); \
+	                                CloseHandle(t); }
+
+#ifndef usleep
+#define usleep(t)                    Sleep(t)
 #endif
 #define HAVE_PTHREAD 1
 

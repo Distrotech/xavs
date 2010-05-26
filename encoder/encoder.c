@@ -447,6 +447,11 @@ xavs_encoder_open (xavs_param_t * param)
 
   memcpy (h->pixf.mbcmp, (h->mb.b_lossless || h->param.analyse.i_subpel_refine <= 1) ? h->pixf.sad : h->pixf.satd, sizeof (h->pixf.mbcmp));
 
+  /* allocate the memory for each thread in the rate_control */
+  h->i_thread_num = 0;
+  for (i = 1; i < param->i_threads; i++)
+  h->thread[i] = xavs_malloc (sizeof (xavs_t));
+
   h->thread[0] = h;
   /* rate control */
   if (xavs_ratecontrol_new (h) < 0)
@@ -468,10 +473,6 @@ xavs_encoder_open (xavs_param_t * param)
   xavs_log (h, XAVS_LOG_INFO, "using cpu capabilities %s%s%s%s%s%s\n",
             param->cpu & XAVS_CPU_MMX ? "MMX " : "", param->cpu & XAVS_CPU_MMXEXT ? "MMXEXT " : "", param->cpu & XAVS_CPU_SSE ? "SSE " : "", param->cpu & XAVS_CPU_SSE2 ? "SSE2 " : "", param->cpu & XAVS_CPU_3DNOW ? "3DNow! " : "", param->cpu & XAVS_CPU_ALTIVEC ? "Altivec " : "");
 
-  //h->thread[0] = h;
-  h->i_thread_num = 0;
-  for (i = 1; i < param->i_threads; i++)
-    h->thread[i] = xavs_malloc (sizeof (xavs_t));
 
   return h;
 

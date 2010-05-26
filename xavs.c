@@ -779,7 +779,7 @@ static struct option long_options[] = {
   {"cplxblur", required_argument, NULL, 0},
   {"zones", required_argument, NULL, 0},
   {"qpfile", required_argument, NULL, OPT_QPFILE},
-  {"threads", required_argument, NULL, 0},
+  {"threads", required_argument, NULL, OPT_THREADS},
   {"thread-input", no_argument, NULL, OPT_THREAD_INPUT},
   {"non-deterministic", no_argument, NULL, 0},
   {"psnr", no_argument, NULL, 0},
