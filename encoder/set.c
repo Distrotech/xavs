@@ -245,6 +245,8 @@ xavs_sps_init (xavs_sps_t * sps, int i_id, xavs_param_t * param)
   else
     sps->i_profile_idc = PROFILE_BASELINE;
 
+  sps->i_profile_idc = PROFILE_JIZHUN;
+
   sps->i_level_idc = param->i_level_idc;
 
   sps->b_constraint_set0 = 0;
