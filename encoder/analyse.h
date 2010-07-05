@@ -25,5 +25,12 @@
 
 void xavs_macroblock_analyse (xavs_t * h);
 void xavs_slicetype_decide (xavs_t * h);
+void xavs_slicetype_analyse (xavs_t * h);
+
+int  xavs_lookahead_init( xavs_t *h, int i_slicetype_length );
+int  xavs_lookahead_is_empty( xavs_t *h );
+void xavs_lookahead_put_frame( xavs_t *h, xavs_frame_t *frame );
+void xavs_lookahead_get_frames( xavs_t *h );
+void xavs_lookahead_delete( xavs_t *h );
 
 #endif

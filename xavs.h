@@ -159,6 +159,7 @@ typedef struct xavs_param_t
   /* CPU flags */
   unsigned int cpu;
   int i_threads;                /* encode multiple frames in parallel */
+  int b_sliced_threads;         /* Whether to use slice-based threading. */
   int b_deterministic;          /* whether to allow non-deterministic optimizations when threaded */
   int i_sync_lookahead;         /* threaded lookahead buffer */
 

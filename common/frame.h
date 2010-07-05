@@ -35,6 +35,9 @@ typedef struct
   int i_frame;                  /* Presentation frame number */
   int i_frame_num;              /* Coded frame number */
   int b_kept_as_ref;
+  int b_last_minigop_bframe;    /* the last b frame of a sequence of b frame */
+  int i_reference_count;        /* number of threads using this frame */
+  int i_bframes;                /* number of bframes following this nonb in coded order */
   float f_qp_avg_rc;            /* QPs as decided by ratecontrol */
   float f_qp_avg_aq;            /* QPs as decided by AQ in addition to ratecontrol */
 
@@ -72,7 +75,13 @@ typedef struct
   int *i_row_qp;
   float *f_qp_offset;
 
+  /* threading */
+  int i_lines_completed; /* in pixels */
+  int i_lines_weighted; /* FIXME: this only supports weighting of one reference frame */
+
   xavs_pthread_mutex_t mutex;
+  xavs_pthread_cond_t  cv;
+
 } xavs_frame_t;
 
 /* synchronized frame list */
@@ -104,6 +113,12 @@ typedef struct
 xavs_frame_t *xavs_frame_new (xavs_t * h);
 void xavs_frame_delete (xavs_frame_t * frame);
 
+void xavs_frame_put (xavs_frame_t ** list, xavs_frame_t * frame);
+void xavs_frame_push (xavs_frame_t ** list, xavs_frame_t * frame);
+xavs_frame_t * xavs_frame_get (xavs_frame_t ** list);
+xavs_frame_t * xavs_frame_get_unused (xavs_t *h);
+void xavs_frame_put_unused (xavs_t *h, xavs_frame_t *frame);
+
 void xavs_frame_copy_picture (xavs_t * h, xavs_frame_t * dst, xavs_picture_t * src);
 
 void xavs_frame_expand_border (xavs_frame_t * frame);
@@ -117,5 +132,9 @@ void xavs_frame_filter (int cpu, xavs_frame_t * frame);
 void xavs_frame_init_lowres (int cpu, xavs_frame_t * frame);
 
 void xavs_deblock_init (int cpu, xavs_deblock_function_t * pf);
+
+int  xavs_synch_frame_list_init( xavs_synch_frame_list_t *slist, int nelem );
+void xavs_synch_frame_list_delete( xavs_synch_frame_list_t *slist );
+void xavs_synch_frame_list_push( xavs_synch_frame_list_t *slist, xavs_frame_t *frame );
 
 #endif

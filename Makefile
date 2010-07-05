@@ -8,7 +8,8 @@ SRCS = common/mc.c common/predict.c common/pixel.c common/macroblock.c \
        common/quant.c \
        encoder/analyse.c encoder/me.c encoder/ratecontrol.c \
        encoder/set.c encoder/macroblock.c\
-       encoder/cavlc.c encoder/encoder.c encoder/eval.c
+       encoder/cavlc.c encoder/encoder.c encoder/eval.c \
+       encoder/lookahead.o
 
 SRCCLI = xavs.c matroska.c muxers.c
 
@@ -94,6 +95,7 @@ clean:
 	rm -f $(SRC2:%.c=%.gcda) $(SRC2:%.c=%.gcno)
 	- sed -e 's/ *-fprofile-\(generate\|use\)//g' config.mak > config.mak2 && mv config.mak2 config.mak
 	rm -f ./*~
+	rm -f ./tags
 	rm -f encoder/*~
 	rm -f common/*~
 	rm -rf test/

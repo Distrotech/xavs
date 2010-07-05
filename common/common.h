@@ -95,10 +95,10 @@ static int pthread_num_processors_np()
 #define UNUSED
 #endif
 
-#define XAVS_THREAD_MAX 4
+#define XAVS_THREAD_MAX 16
 #define XAVS_BFRAME_MAX 16
-#define XAVS_SLICE_MAX 4
-#define XAVS_NAL_MAX (4 + XAVS_SLICE_MAX)
+#define XAVS_LOOKAHEAD_MAX 100
+#define XAVS_NAL_MAX (4 + XAVS_THREAD_MAX)
 
 /****************************************************************************
  * Includes
@@ -140,6 +140,7 @@ int64_t xavs_mdate (void);
 /* xavs_param2string: return a (malloced) string containing most of
  * the encoding options */
 char *xavs_param2string (xavs_param_t * p, int b_res);
+void xavs_param_default (xavs_param_t * param);
 
 /* log */
 void xavs_log (xavs_t * h, int i_level, const char *psz_fmt, ...);
@@ -274,6 +275,7 @@ typedef struct xavs_lookahead_t
   volatile uint8_t b_exit_thread;
   uint8_t b_thread_active;
   uint8_t b_analyse_keyframe;
+  uint8_t b_input_pending;
   int i_last_idr;
   int i_slicetype_length;
   xavs_frame_t *last_nonb;
@@ -341,6 +343,9 @@ struct xavs_t
 
   int i_frame_offset;           /* decoding only */
   int i_frame_num;              /* decoding only */
+  int i_thread_frames;          /* Number of different frames being encoded by threads;
+                                 * 1 when sliced-threads is on. */
+
   int i_poc_msb;                /* decoding only */
   int i_poc_lsb;                /* decoding only */
   int i_poc;                    /* decoding only */
@@ -385,16 +390,16 @@ struct xavs_t
   struct
   {
     /* Frames to be encoded (whose types have been decided) */
-    xavs_frame_t *current[XAVS_BFRAME_MAX + 3];
+    xavs_frame_t *current[XAVS_BFRAME_MAX + XAVS_LOOKAHEAD_MAX + XAVS_THREAD_MAX + 3];
     /* Temporary buffer (frames types not yet decided) */
-    xavs_frame_t *next[XAVS_BFRAME_MAX + 3];
+    xavs_frame_t *next[XAVS_BFRAME_MAX + XAVS_LOOKAHEAD_MAX + XAVS_THREAD_MAX + 3];
     /* Unused frames */
-    xavs_frame_t *unused[XAVS_BFRAME_MAX + 3];
+    xavs_frame_t *unused[XAVS_BFRAME_MAX + XAVS_LOOKAHEAD_MAX + XAVS_THREAD_MAX + 3];
     /* For adaptive B decision */
     xavs_frame_t *last_nonb;
 
     /* frames used for reference +1 for decoding + sentinels */
-    xavs_frame_t *reference[16 + 2 + 1 + 2];
+    xavs_frame_t *reference[XAVS_BFRAME_MAX + XAVS_THREAD_MAX + 2 + 3];
 
     int i_last_idr;             /* Frame number of the last IDR */
 

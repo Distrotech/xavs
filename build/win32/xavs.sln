@@ -1,6 +1,6 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 9.00
-# Visual Studio 2005
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xavs", "xavs.vcproj", "{DE913862-4BEE-4A29-99A2-8F8FE97A6A98}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libxavs", "libxavs.vcproj", "{C5A97D11-9A8B-4158-8240-65277021EE0D}"

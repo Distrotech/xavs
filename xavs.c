@@ -698,6 +698,9 @@ xavs_param_parse (xavs_param_t * p, const char *name, const char *value)
 #define OPT_SLOWFIRSTPASS 325
 #define OPT_QPFILE 326
 #define OPT_DUMP_YUV 327
+#define OPT_SYNC_LOOKAHEAD 328
+#define OPT_RC_LOOKAHEAD 329
+#define OPT_SLICED_THREAD 330
 
 
 static char short_options[] = "8A:B:b:f:hI:i:m:o:p:q:r:t:Vvw";
@@ -727,7 +730,7 @@ static struct option long_options[] = {
   {"qpmax", required_argument, NULL, 0},
   {"qpstep", required_argument, NULL, 0},
   {"crf", required_argument, NULL, 0},
-  {"rc-lookahead", required_argument, NULL, 0},
+  {"rc-lookahead", required_argument, NULL, OPT_RC_LOOKAHEAD},
   {"ref", required_argument, NULL, 'r'},
   {"asm", required_argument, NULL, 0},
   {"no-asm", no_argument, NULL, 0},
@@ -780,7 +783,10 @@ static struct option long_options[] = {
   {"zones", required_argument, NULL, 0},
   {"qpfile", required_argument, NULL, OPT_QPFILE},
   {"threads", required_argument, NULL, OPT_THREADS},
+  {"sliced-thread", required_argument, NULL, OPT_SLICED_THREAD},
+  {"no-sliced-threads", no_argument, NULL, 0 },
   {"thread-input", no_argument, NULL, OPT_THREAD_INPUT},
+  {"sync-lookahead", required_argument, NULL, OPT_SYNC_LOOKAHEAD},
   {"non-deterministic", no_argument, NULL, 0},
   {"psnr", no_argument, NULL, 0},
   {"ssim", no_argument, NULL, 0},
@@ -1302,10 +1308,19 @@ Parse (int argc, char **argv, xavs_param_t * param, cli_opt_t * opt)
       param->rc.psz_zones = optarg;
       break;
     case OPT_THREADS:
-      param->i_threads = atoi (optarg);
+      param->i_threads = XAVS_MIN(atoi(optarg), XAVS_THREAD_MAX);
+      break;
+    case OPT_SLICED_THREAD:
+      param->b_sliced_threads = atoi (optarg);
       break;
     case OPT_THREAD_INPUT:
       b_thread_input = 1;
+      break;
+    case OPT_SYNC_LOOKAHEAD:
+      param->i_sync_lookahead = XAVS_MIN(atoi(optarg), XAVS_LOOKAHEAD_MAX);
+      break;
+    case OPT_RC_LOOKAHEAD:
+      param->rc.i_lookahead = atoi(optarg); 
       break;
     case OPT_NOPSNR:
       param->analyse.b_psnr = 0;
@@ -1611,7 +1626,7 @@ Encode_frame (xavs_t * h, hnd_t hout, xavs_picture_t * pic)
 {
   xavs_picture_t pic_out;
   xavs_nal_t *nal;
-  int i_nal, i;
+  int i_nal = 0, i;
   int i_file = 0;
 
   /* Do not force any parameters */
@@ -1622,7 +1637,7 @@ Encode_frame (xavs_t * h, hnd_t hout, xavs_picture_t * pic)
   }
   if (xavs_encoder_encode (h, &nal, &i_nal, pic, &pic_out) < 0)
   {
-    fprintf (stderr, "xavs_encoder_encode failed\n");
+    fprintf (stderr, "xavs_encoder_encode failed, h->frames.i_input: %d\n", h->frames.i_input);
   }
 
   for (i = 0; i < i_nal; i++)

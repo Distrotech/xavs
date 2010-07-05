@@ -300,13 +300,14 @@ xavs_slicetype_analyse (xavs_t * h)
   int j;
   int i_mb_count = (h->sps->i_mb_width - 2) * (h->sps->i_mb_height - 2);
   int cost1p0, cost2p0, cost1b1, cost2p1;
+  int i_max_search = XAVS_MIN( h->lookahead->next.i_size, XAVS_LOOKAHEAD_MAX );
 
-  if (!h->frames.last_nonb)
+  if (!h->lookahead->last_nonb)
     return;
-  frames[0] = h->frames.last_nonb;
-  for (j = 0; h->frames.next[j]; j++)
-    frames[j + 1] = h->frames.next[j];
-  keyint_limit = h->param.i_keyint_max - frames[0]->i_frame + h->frames.i_last_idr - 1;
+  frames[0] = h->lookahead->last_nonb;
+  for (j = 0; j < i_max_search && h->lookahead->next.list[j]; j++)
+    frames[j + 1] = h->lookahead->next.list[j];
+  keyint_limit = h->param.i_keyint_max - frames[0]->i_frame + h->lookahead->i_last_idr - 1;
   num_frames = XAVS_MIN (j, keyint_limit);
   if (num_frames == 0)
     return;
@@ -356,28 +357,32 @@ xavs_slicetype_analyse (xavs_t * h)
 void
 xavs_slicetype_decide (xavs_t * h)
 {
+  xavs_frame_t *frames[XAVS_BFRAME_MAX+2];
   xavs_frame_t *frm;
   int bframes;
   int i;
+  int i_coded;
 
-  if (h->frames.next[0] == NULL)
+  if (h->lookahead->next.list[0] == NULL)
     return;
 
   if (h->param.rc.b_stat_read)
   {
     /* Use the frame types from the first pass */
-    for (i = 0; h->frames.next[i] != NULL; i++)
-      h->frames.next[i]->i_type = xavs_ratecontrol_slice_type (h, h->frames.next[i]->i_frame);
+    for (i = 0; i < h->lookahead->next.i_size; i++)
+        h->lookahead->next.list[i]->i_type = 
+                    xavs_ratecontrol_slice_type (h, h->lookahead->next.list[i]->i_frame);
   }
-  else if (h->param.i_bframe && h->param.i_bframe_adaptive)
+  else if ((h->param.i_bframe && h->param.i_bframe_adaptive) || 
+           (h->param.rc.i_vbv_buffer_size && h->param.rc.i_lookahead) )
     xavs_slicetype_analyse (h);
 
   for (bframes = 0;; bframes++)
   {
-    frm = h->frames.next[bframes];
+    frm = h->lookahead->next.list[bframes];
 
     /* Limit GOP size */
-    if (frm->i_frame - h->frames.i_last_idr >= h->param.i_keyint_max)
+    if (frm->i_frame - h->lookahead->i_last_idr >= h->param.i_keyint_max)
     {
       if (frm->i_type == XAVS_TYPE_AUTO)
         frm->i_type = XAVS_TYPE_IDR;
@@ -387,18 +392,15 @@ xavs_slicetype_decide (xavs_t * h)
     if (frm->i_type == XAVS_TYPE_IDR)
     {
       /* Close GOP */
+      h->lookahead->i_last_idr = frm->i_frame;
       if (bframes > 0)
       {
         bframes--;
-        h->frames.next[bframes]->i_type = XAVS_TYPE_P;
-      }
-      else
-      {
-        h->i_frame_num = 0;
+        h->lookahead->next.list[bframes]->i_type = XAVS_TYPE_P;
       }
     }
 
-    if (bframes == h->param.i_bframe || h->frames.next[bframes + 1] == NULL)
+    if (bframes == h->param.i_bframe || h->lookahead->next.list[bframes + 1] == NULL)
     {
       if (IS_XAVS_TYPE_B (frm->i_type))
         xavs_log (h, XAVS_LOG_ERROR, "specified frame type is not compatible with max B-frames\n");
@@ -411,6 +413,25 @@ xavs_slicetype_decide (xavs_t * h)
 
     frm->i_type = XAVS_TYPE_B;
   }
+
+  if (bframes)
+    h->lookahead->next.list[bframes-1]->b_last_minigop_bframe = 1;
+  h->lookahead->next.list[bframes]->i_bframes = bframes;
+  
+  /* shift sequence to coded order.
+     use a small temporary list to avoid shifting the entire next buffer around */
+  /*int*/
+  i_coded = h->lookahead->next.list[0]->i_frame;
+  if( bframes )
+  {
+      for( i = 0; i < bframes; i++ )
+      {
+          frames[i+1] = h->lookahead->next.list[i];
+      }
+      frames[0] = h->lookahead->next.list[bframes];
+      memcpy( h->lookahead->next.list, frames, (bframes+1) * sizeof(xavs_frame_t*) );
+  }
+
 }
 
 int

@@ -186,7 +186,8 @@ int
 xavs_ratecontrol_new (xavs_t * h)
 {
   xavs_ratecontrol_t *rc;
-  int i;
+  int i, j;
+  int num_pred;
 
   xavs_emms ();
 
@@ -297,7 +298,9 @@ xavs_ratecontrol_new (xavs_t * h)
 
   rc->lstep = pow (2, h->param.rc.i_qp_step / 6.0);     /* lstep : max change (multiply) in qscale per frame */
   rc->last_qscale = qp2qscale (26);     /*qp2scale():0.85 * pow(2.0, ( qp - 12.0 ) / 6.0); */
-  CHECKED_MALLOC (rc->pred, 5 * sizeof (predictor_t));
+  /*int*/
+  num_pred = h->param.b_sliced_threads * h->param.i_threads + 1;
+  CHECKED_MALLOC (rc->pred, 5 * sizeof (predictor_t) * num_pred);
   CHECKED_MALLOC (rc->pred_b_from_p, sizeof (predictor_t));
 
   for (i = 0; i < 3; i++)
@@ -305,14 +308,20 @@ xavs_ratecontrol_new (xavs_t * h)
     rc->last_qscale_for[i] = qp2qscale (ABR_INIT_QP);
     rc->lmin[i] = qp2qscale (h->param.rc.i_qp_min);
     rc->lmax[i] = qp2qscale (h->param.rc.i_qp_max);
-    rc->pred[i].coeff = 2.0;
-    rc->pred[i].count = 1.0;
-    rc->pred[i].decay = 0.5;
-    rc->pred[i].offset = 0.0;   /*  predictor_t *pred: predict frame size from satd */
-    rc->row_preds[i].coeff = .25;
-    rc->row_preds[i].count = 1.0;
-    rc->row_preds[i].decay = 0.5;
-    rc->row_preds[i].offset = 0.0;
+    for (j = 0; j < num_pred; j++) 
+    {
+      rc->pred[i + j*5].coeff = 2.0;
+      rc->pred[i + j*5].count = 1.0;
+      rc->pred[i + j*5].decay = 0.5;
+      rc->pred[i + j*5].offset = 0.0;   /*  predictor_t *pred: predict frame size from satd */
+    }
+    for (j = 0; j < 2; j++) 
+    {
+      rc->row_preds[i + j].coeff = .25;
+      rc->row_preds[i + j].count = 1.0;
+      rc->row_preds[i + j].decay = 0.5;
+      rc->row_preds[i + j].offset = 0.0;
+    }
   }
   *rc->pred_b_from_p = rc->pred[0];     /* predictor_t *pred_b_from_p; predict B-frame size from P-frame satd */
 
@@ -985,7 +994,7 @@ xavs_ratecontrol_end (xavs_t * h, int bits)
     if (h->sh.i_type == SLICE_TYPE_B)
     {
       rc->bframe_bits += bits;
-      if (!h->frames.current[0] || !IS_XAVS_TYPE_B (h->frames.current[0]->i_type))
+      if (h->fenc->b_last_minigop_bframe)
       {
         update_predictor (rc->pred_b_from_p, qp2qscale (rc->qpa_rc), h->fref1[h->i_ref1 - 1]->i_satd, rc->bframe_bits / rc->bframes);
         rc->bframe_bits = 0;
@@ -1167,8 +1176,8 @@ update_vbv_plan (xavs_t * h)
     {
       xavs_t *t = h->thread[(j + i) % h->param.i_threads];
       double bits = t->rc->frame_size_planned;
-      //if( !t->b_thread_active )
-      //      continue;
+      if( t->fenc == NULL)
+          continue;
       bits = XAVS_MAX (bits, xavs_ratecontrol_get_estimated_size (t));
       rcc->buffer_fill += rcc->buffer_rate - bits;
       rcc->buffer_fill = xavs_clip3 (rcc->buffer_fill, 0, rcc->buffer_size);
@@ -1319,8 +1328,8 @@ rate_estimate_qscale (xavs_t * h, int slice_type)
           {
             xavs_t *t = h->thread[(j + i) % h->param.i_threads];
             double bits = t->rc->frame_size_planned;
-            //if( !t->b_thread_active )
-            //      continue;
+            if( !t->b_thread_active )
+                  continue;
             bits = XAVS_MAX (bits, xavs_ratecontrol_get_estimated_size (t));
             predicted_bits += (int64_t) bits;
           }

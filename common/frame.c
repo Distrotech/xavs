@@ -116,6 +116,7 @@ xavs_frame_new (xavs_t * h)
     for (j = 0; j < h->param.i_bframe + 2; j++)
       frame->i_row_satds[i][j] = xavs_malloc (i_lines / 16 * sizeof (int));
 
+  xavs_pthread_mutex_init(&frame->mutex, NULL);
   return frame;
 }
 
@@ -123,6 +124,9 @@ void
 xavs_frame_delete (xavs_frame_t * frame)
 {
   int i, j;
+  if (frame == NULL)
+    return;
+
   for (i = 0; i < frame->i_plane; i++)
     xavs_free (frame->buffer[i]);
   for (i = 4; i < 12; i++)      /* filtered planes */
@@ -180,7 +184,59 @@ xavs_frame_copy_picture (xavs_t * h, xavs_frame_t * dst, xavs_picture_t * src)
   }
 }
 
+void
+xavs_frame_put (xavs_frame_t ** list, xavs_frame_t * frame)
+{
+  int i = 0;
+  while (list[i])
+    i++;
+  list[i] = frame;
+}
 
+void
+xavs_frame_push (xavs_frame_t ** list, xavs_frame_t * frame)
+{
+  int i = 0;
+  while (list[i])
+    i++;
+  while (i--)
+    list[i + 1] = list[i];
+  list[0] = frame;
+}
+
+xavs_frame_t * xavs_frame_get (xavs_frame_t ** list)
+{
+  xavs_frame_t *frame = list[0];
+  int i;
+  for (i = 0; list[i]; i++)
+    list[i] = list[i + 1];
+  return frame;
+}
+
+xavs_frame_t * xavs_frame_get_unused (xavs_t *h)
+{
+  xavs_frame_t *frame;
+  if (h->frames.unused[0])
+    frame = xavs_frame_get(h->frames.unused);
+  else 
+    frame = xavs_frame_new(h);
+
+  if (frame)
+  {
+    frame->b_kept_as_ref = 0;
+    frame->b_last_minigop_bframe = 0;
+    frame->i_reference_count = 1;
+  }
+
+  return frame;
+}
+
+void xavs_frame_put_unused (xavs_t *h, xavs_frame_t *frame)
+{
+  assert (frame->i_reference_count > 0);
+  if (--frame->i_reference_count == 0)
+    xavs_frame_put(h->frames.unused, frame);
+}
 
 static void
 plane_expand_border (uint8_t * pix, int i_stride, int i_height, int i_pad)
@@ -690,3 +746,48 @@ xavs_deblock_init (int cpu, xavs_deblock_function_t * pf)
   }
 #endif
 }
+
+int xavs_synch_frame_list_init( xavs_synch_frame_list_t *slist, int max_size )
+{
+    if( max_size < 0 )
+        return -1;
+    slist->i_max_size = max_size;
+    slist->i_size = 0;
+    CHECKED_MALLOCZERO( slist->list, (max_size+1) * sizeof(xavs_frame_t*) );
+    if( xavs_pthread_mutex_init( &slist->mutex, NULL ) ||
+        xavs_pthread_cond_init( &slist->cv_fill, NULL ) ||
+        xavs_pthread_cond_init( &slist->cv_empty, NULL ) )
+        return -1;
+    return 0;
+fail:
+    return -1;
+}
+
+void xavs_synch_frame_list_delete( xavs_synch_frame_list_t *slist )
+{
+    int i;
+    if (!slist)
+        return;
+
+    xavs_pthread_mutex_destroy( &slist->mutex );
+    xavs_pthread_cond_destroy( &slist->cv_fill );
+    xavs_pthread_cond_destroy( &slist->cv_empty );
+
+    for (i = 0; i < slist->i_max_size; i++) 
+    {
+        if (slist->list[i])
+            xavs_frame_delete(slist->list[i]);
+    }
+    xavs_free(slist->list);
+}
+
+void xavs_synch_frame_list_push( xavs_synch_frame_list_t *slist, xavs_frame_t *frame )
+{
+    xavs_pthread_mutex_lock( &slist->mutex );
+    while( slist->i_size == slist->i_max_size )
+        xavs_pthread_cond_wait( &slist->cv_empty, &slist->mutex );
+    slist->list[ slist->i_size++ ] = frame;
+    xavs_pthread_mutex_unlock( &slist->mutex );
+    xavs_pthread_cond_broadcast( &slist->cv_fill );
+}
+

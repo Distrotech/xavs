@@ -93,7 +93,7 @@ xavs_param_default (xavs_param_t * param)
   param->rc.f_pb_factor = (float) 1.3;
   param->rc.i_aq_mode = XAVS_AQ_VARIANCE;
   param->rc.f_aq_strength = 1.0;
-  param->rc.i_lookahead = 40;
+  param->rc.i_lookahead = 0;
 
   param->rc.b_stat_write = 0;
   param->rc.psz_stat_out = "xavs_2pass.log";

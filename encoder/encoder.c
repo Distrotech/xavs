@@ -59,6 +59,10 @@ static int64_t i_mtime_filter = 0;
 
 #define NALU_OVERHEAD 5         // startcode + NAL type costs 5 bytes per frame
 
+static void xavs_thread_sync_context( xavs_t *dst, xavs_t *src );
+static void xavs_thread_sync_stat( xavs_t *dst, xavs_t *src );
+static int xavs_encoder_get_frame_size( xavs_t *h, int start );
+
 /****************************************************************************
  *
  ******************************* xavs libs **********************************
@@ -167,15 +171,25 @@ xavs_validate_parameters (xavs_t * h)
     return -1;
   }
 
-  h->param.i_threads = xavs_clip3 (h->param.i_threads, 1, XAVS_SLICE_MAX);
+  h->param.i_threads = xavs_clip3 (h->param.i_threads, 1, XAVS_THREAD_MAX);
   h->param.i_threads = XAVS_MIN (h->param.i_threads, (h->param.i_height + 15) / 16);
+
 #ifndef HAVE_PTHREAD
   if (h->param.i_threads > 1)
   {
     xavs_log (h, XAVS_LOG_WARNING, "not compiled with pthread support!\n");
     xavs_log (h, XAVS_LOG_WARNING, "multislicing anyway, but you won't see any speed gain.\n");
   }
+  else
+    h->param.b_sliced_threads = 0;
 #endif
+
+  h->i_thread_frames = h->param.b_sliced_threads ? 1 : h->param.i_threads;
+  if(h->i_thread_frames > 1) 
+     xavs_log (h, XAVS_LOG_INFO, "frame-level multithread encoding\n");
+  else if (h->param.b_sliced_threads!=0 && h->param.i_threads>1 )
+     xavs_log (h, XAVS_LOG_INFO, "slice-level multithread encoding\n");
+
   if (h->param.rc.i_rc_method < 0 || h->param.rc.i_rc_method > 2)
   {
     xavs_log (h, XAVS_LOG_ERROR, "no ratecontrol method specified\n");
@@ -229,6 +243,25 @@ xavs_validate_parameters (xavs_t * h)
   if (h->param.i_keyint_max <= 0)
     h->param.i_keyint_max = 1;
   h->param.i_keyint_min = xavs_clip3 (h->param.i_keyint_min, 1, h->param.i_keyint_max / 2 + 1);
+  h->param.rc.i_lookahead = xavs_clip3 (h->param.rc.i_lookahead, 0, XAVS_LOOKAHEAD_MAX);
+  {
+      int maxrate = XAVS_MAX( h->param.rc.i_vbv_max_bitrate, h->param.rc.i_bitrate );
+      float bufsize = maxrate ? (float)h->param.rc.i_vbv_buffer_size / maxrate : 0;
+      float fps = h->param.i_fps_num > 0 && h->param.i_fps_den > 0 ? (float) h->param.i_fps_num / h->param.i_fps_den : 25.0;
+      h->param.rc.i_lookahead = XAVS_MIN( h->param.rc.i_lookahead, XAVS_MAX( h->param.i_keyint_max, bufsize*fps ) );
+  }
+
+  if( h->param.rc.b_stat_read )
+      h->param.rc.i_lookahead = 0;
+#ifdef HAVE_PTHREAD
+  if( h->param.i_sync_lookahead < 0 )
+      h->param.i_sync_lookahead = h->param.i_bframe + 1;
+  h->param.i_sync_lookahead = XAVS_MIN( h->param.i_sync_lookahead, XAVS_LOOKAHEAD_MAX );
+  if( h->param.rc.b_stat_read )
+      h->param.i_sync_lookahead = 0;
+#else
+  h->param.i_sync_lookahead = 0;
+#endif
 
   h->param.i_bframe = xavs_clip3 (h->param.i_bframe, 0, XAVS_BFRAME_MAX);
   h->param.i_bframe_bias = xavs_clip3 (h->param.i_bframe_bias, -90, 100);
@@ -316,6 +349,7 @@ xavs_validate_parameters (xavs_t * h)
 xavs_t *
 xavs_encoder_open (xavs_param_t * param)
 {
+  int i_slicetype_length;
   xavs_t *h = xavs_malloc (sizeof (xavs_t));
   int i;
 
@@ -401,28 +435,38 @@ xavs_encoder_open (xavs_param_t * param)
   h->mb.i_mb_count = h->sps->i_mb_width * h->sps->i_mb_height;
 
   /* Init frames. */
-  h->frames.i_delay = h->param.i_bframe;
+  if( h->param.i_bframe_adaptive == XAVS_B_ADAPT_TRELLIS && !h->param.rc.b_stat_read )
+      h->frames.i_delay = XAVS_MAX(h->param.i_bframe,3)*4;
+  else
+      h->frames.i_delay = h->param.i_bframe;
+  if( h->param.rc.i_vbv_buffer_size )
+      h->frames.i_delay = XAVS_MAX( h->frames.i_delay, h->param.rc.i_lookahead );
+  i_slicetype_length = h->frames.i_delay;
+  h->frames.i_delay += h->i_thread_frames - 1;
+  h->frames.i_delay += h->param.i_sync_lookahead;
+
   h->frames.i_max_ref0 = h->param.i_frame_reference;
   h->frames.i_max_ref1 = h->sps->vui.i_num_reorder_frames;
-  h->frames.i_max_dpb = h->sps->vui.i_max_dec_frame_buffering + 1;
+  h->frames.i_max_dpb = h->sps->vui.i_max_dec_frame_buffering;
   h->frames.b_have_lowres = !h->param.rc.b_stat_read && (h->param.rc.i_rc_method == XAVS_RC_ABR || h->param.rc.i_rc_method == XAVS_RC_CRF || h->param.i_bframe_adaptive || h->param.i_scenecut_threshold);
   h->frames.b_have_lowres |= (h->param.rc.b_stat_read && h->param.rc.i_vbv_buffer_size > 0);
 
-  for (i = 0; i < XAVS_BFRAME_MAX + 3; i++)
+  for (i = 0; i < sizeof(h->frames.current)/sizeof(xavs_frame_t *); i++)
   {
     h->frames.current[i] = NULL;
     h->frames.next[i] = NULL;
     h->frames.unused[i] = NULL;
   }
-  for (i = 0; i < 1 + h->frames.i_delay; i++)
+/*
+  for (i = 0; i < 1 + h->frames.i_delay + h->frames.i_max_dpb; i++)
   {
     h->frames.unused[i] = xavs_frame_new (h);
   }
-  for (i = 0; i < h->frames.i_max_dpb; i++)
+  for (i = 0; i <= h->frames.i_max_dpb; i++)
   {
-    h->frames.reference[i] = xavs_frame_new (h);
+    h->frames.reference[i] = NULL;
   }
-  h->frames.reference[h->frames.i_max_dpb] = NULL;
+*/
   h->frames.i_last_idr = -h->param.i_keyint_max;
   h->frames.i_input = 0;
   h->frames.last_nonb = NULL;
@@ -430,9 +474,8 @@ xavs_encoder_open (xavs_param_t * param)
   h->i_ref0 = 0;
   h->i_ref1 = 0;
 
-  h->fdec = h->frames.reference[0];
-
-  xavs_macroblock_cache_init (h);
+  h->fdec = xavs_frame_get_unused(h);
+  xavs_macroblock_cache_init(h);
 
   /* init CPU functions */
   xavs_predict_8x8c_init (h->param.cpu, h->predict_8x8c);
@@ -449,10 +492,28 @@ xavs_encoder_open (xavs_param_t * param)
 
   /* allocate the memory for each thread in the rate_control */
   h->i_thread_num = 0;
-  for (i = 1; i < param->i_threads; i++)
-  h->thread[i] = xavs_malloc (sizeof (xavs_t));
-
   h->thread[0] = h;
+  for (i = 1; i < param->i_threads + !!h->param.i_sync_lookahead; i++)
+  {
+      h->thread[i] = xavs_malloc (sizeof (xavs_t));
+  }
+
+  for (i = 1; i < param->i_threads + !!h->param.i_sync_lookahead; i++)
+  {
+    *h->thread[i] = *h;
+    if (!h->param.b_sliced_threads) {
+      h->thread[i]->fdec = xavs_frame_get_unused(h);
+      xavs_macroblock_cache_init(h->thread[i]);
+      h->thread[i]->out.p_bitstream = xavs_malloc (h->out.i_bitstream);
+    } 
+    else
+      h->thread[i]->fdec = h->thread[0]->fdec;
+
+  }
+
+  if (xavs_lookahead_init(h, i_slicetype_length))
+    goto fail;
+
   /* rate control */
   if (xavs_ratecontrol_new (h) < 0)
     return NULL;
@@ -473,6 +534,11 @@ xavs_encoder_open (xavs_param_t * param)
   xavs_log (h, XAVS_LOG_INFO, "using cpu capabilities %s%s%s%s%s%s\n",
             param->cpu & XAVS_CPU_MMX ? "MMX " : "", param->cpu & XAVS_CPU_MMXEXT ? "MMXEXT " : "", param->cpu & XAVS_CPU_SSE ? "SSE " : "", param->cpu & XAVS_CPU_SSE2 ? "SSE2 " : "", param->cpu & XAVS_CPU_3DNOW ? "3DNow! " : "", param->cpu & XAVS_CPU_ALTIVEC ? "Altivec " : "");
 
+  xavs_log( h, XAVS_LOG_INFO, "profile %s, level %d.%d\n",
+            h->sps->i_profile_idc == PROFILE_JIZHUN ? "JiZhun" :
+	    h->sps->i_profile_idc == PROFILE_YIDONG ? "Mobile" :
+	    h->sps->i_profile_idc == PROFILE_SHENZHAN? "ShenZhan": "JiaQiang", 
+	    h->sps->i_level_idc/10, h->sps->i_level_idc%10 );
 
   return h;
 
@@ -563,38 +629,7 @@ xavs_encoder_headers (xavs_t * h, xavs_nal_t ** pp_nal, int *pi_nal)
   return 0;
 }
 
-
-static void
-xavs_frame_put (xavs_frame_t * list[XAVS_BFRAME_MAX], xavs_frame_t * frame)
-{
-  int i = 0;
-  while (list[i])
-    i++;
-  list[i] = frame;
-}
-
-static void
-xavs_frame_push (xavs_frame_t * list[XAVS_BFRAME_MAX], xavs_frame_t * frame)
-{
-  int i = 0;
-  while (list[i])
-    i++;
-  while (i--)
-    list[i + 1] = list[i];
-  list[0] = frame;
-}
-
-static xavs_frame_t *
-xavs_frame_get (xavs_frame_t * list[XAVS_BFRAME_MAX + 1])
-{
-  xavs_frame_t *frame = list[0];
-  int i;
-  for (i = 0; list[i]; i++)
-    list[i] = list[i + 1];
-  return frame;
-}
-
-static void
+static inline void
 xavs_frame_sort (xavs_frame_t * list[XAVS_BFRAME_MAX + 1], int b_dts)
 {
   int i, b_ok;
@@ -628,7 +663,8 @@ xavs_reference_build_list (xavs_t * h, int i_poc, int i_slice_type)
   /* build ref list 0/1 */
   h->i_ref0 = 0;
   h->i_ref1 = 0;
-  for (i = 1; i < h->frames.i_max_dpb; i++)
+
+  for (i = 0; h->frames.reference[i]; i++)
   {
     if (h->frames.reference[i]->i_poc >= 0)
     {
@@ -692,6 +728,33 @@ xavs_reference_build_list (xavs_t * h, int i_poc, int i_slice_type)
   h->i_ref0 = (i_slice_type == SLICE_TYPE_B) ? 1 : XAVS_MIN (h->i_ref0, 16 - h->i_ref1);
 }
 
+static inline int 
+xavs_update_reference_list (xavs_t *h)
+{
+  if( !h->fdec->b_kept_as_ref )
+  {
+      if( h->i_thread_frames > 1 )
+      {
+          xavs_frame_put_unused(h, h->fdec);
+          h->fdec = xavs_frame_get_unused(h);
+          if( !h->fdec )
+              return -1;
+      }
+      return 0;
+  }
+
+  /* move frame in the buffer */
+  assert(h->frames.reference[h->sps->i_num_ref_frames] == NULL);
+  xavs_frame_put( h->frames.reference, h->fdec );
+  if( h->frames.reference[h->sps->i_num_ref_frames] )
+      xavs_frame_put_unused(h, xavs_frame_get(h->frames.reference));
+  assert(h->frames.reference[h->sps->i_num_ref_frames] == NULL);
+  h->fdec = xavs_frame_get_unused(h);
+  if( !h->fdec )
+      return -1;
+  return 0;
+}
+
 static inline void
 xavs_reference_update (xavs_t * h)
 {
@@ -709,31 +772,15 @@ xavs_reference_update (xavs_t * h)
   /* move lowres copy of the image to the ref frame */
   for (i = 0; i < 4; i++)
     XCHG (uint8_t *, h->fdec->lowres[i], h->fenc->lowres[i]);
-
-  /* adaptive B decision needs a pointer, since it can't use the ref lists */
-  if (h->sh.i_type != SLICE_TYPE_B)
-    h->frames.last_nonb = h->fdec;
-
-  /* move frame in the buffer */
-  h->fdec = h->frames.reference[h->frames.i_max_dpb - 1];
-  for (i = h->frames.i_max_dpb - 1; i > 0; i--)
-  {
-    h->frames.reference[i] = h->frames.reference[i - 1];
-  }
-  h->frames.reference[0] = h->fdec;
 }
 
 static inline void
 xavs_reference_reset (xavs_t * h)
 {
-  int i;
+  while (h->frames.reference[0])
+    xavs_frame_put_unused(h, xavs_frame_get(h->frames.reference));
 
-  /* reset ref pictures */
-  for (i = 1; i < h->frames.i_max_dpb; i++)
-  {
-    h->frames.reference[i]->i_poc = -1;
-  }
-  h->frames.reference[0]->i_poc = 0;
+  h->fdec->i_poc = h->fenc->i_poc = 0;
 }
 
 static void
@@ -771,7 +818,7 @@ xavs_i_pic_header_init (xavs_t * h, xavs_i_pic_header_t * ih, int i_qp)
   }
 }
 
-static void
+static inline void
 xavs_pb_pic_header_init (xavs_t * h, xavs_pb_pic_header_t * pbh, int i_qp, int i_slice_type)
 {
   pbh->i_pb_picture_start_code = 0xB6;
@@ -799,7 +846,7 @@ xavs_pb_pic_header_init (xavs_t * h, xavs_pb_pic_header_t * pbh, int i_qp, int i
   }
 }
 
-static inline void
+static void
 xavs_slice_init (xavs_t * h, int i_slice_type, int i_qp)
 {
   xavs_slice_header_init (h, &h->sh, i_qp);
@@ -937,18 +984,25 @@ xavs_slice_write (xavs_t * h)
 static inline int
 xavs_slices_write (xavs_t * h)
 {
-  int i_frame_size;
+  int i_frame_size = 0;
 
 #if VISUALIZE
   if (h->param.b_visualize)
     xavs_visualize_init (h);
 #endif
 
-  if (h->param.i_threads == 1)
+  if (!h->param.b_sliced_threads)
   {
     //xavs_ratecontrol_threads_start( h );
-    xavs_slice_write (h);
-    i_frame_size = h->out.nal[h->out.i_nal - 1].i_payload;
+    if (h->i_thread_frames > 1) {
+      if (xavs_pthread_create(&h->thread_handle, NULL, (void *)xavs_slice_write, (void *)h))
+        return -1;
+      h->b_thread_active = 1;
+    }
+    else {
+      xavs_slice_write (h);
+      i_frame_size = h->out.nal[h->out.i_nal - 1].i_payload;
+    }
   }
   else
   {
@@ -975,7 +1029,7 @@ xavs_slices_write (xavs_t * h)
     /* dispatch */
 #ifdef HAVE_PTHREAD
     {
-      pthread_t handles[XAVS_SLICE_MAX];
+      pthread_t handles[XAVS_THREAD_MAX];
       for (i = 0; i < h->param.i_threads; i++)
         pthread_create (&handles[i], NULL, (void *) xavs_slice_write, (void *) h->thread[i]);
       for (i = 0; i < h->param.i_threads; i++)
@@ -1025,9 +1079,11 @@ xavs_slices_write (xavs_t * h)
  *       B      6   2*5
  ****************************************************************************/
 int
-xavs_encoder_encode (xavs_t * h, xavs_nal_t ** pp_nal, int *pi_nal, xavs_picture_t * pic_in, xavs_picture_t * pic_out)
+xavs_encoder_encode (xavs_t * h, xavs_nal_t ** pp_nal, int *pi_nal, 
+                     xavs_picture_t * pic_in, xavs_picture_t * pic_out)
 {
-  xavs_frame_t *frame_psnr = h->fdec;   /* just to keep the current decoded frame for psnr calculation */
+  xavs_t *thread_current, *thread_prev, *thread_oldest;
+  xavs_frame_t *frame_psnr;   /* just to keep the current decoded frame for psnr calculation */
   int i_nal_type;
   int i_nal_ref_idc;
   int i_slice_type;
@@ -1039,63 +1095,81 @@ xavs_encoder_encode (xavs_t * h, xavs_nal_t ** pp_nal, int *pi_nal, xavs_picture
 
   char psz_message[80];
 
+  if (h->i_thread_frames > 1 && !h->param.b_sliced_threads)
+  {
+    thread_prev     = h->thread[h->i_thread_phase];
+    h->i_thread_phase = (h->i_thread_phase + 1) % h->i_thread_frames;
+    thread_current  = h->thread[h->i_thread_phase];
+    thread_oldest   = h->thread[(h->i_thread_phase + 1) % h->i_thread_frames];
+    xavs_thread_sync_context(thread_current, thread_prev);
+    xavs_thread_sync_ratecontrol(thread_current, thread_prev, thread_oldest);
+
+    h = thread_current;
+  } 
+  else 
+  {
+    thread_current = thread_oldest = h;
+  }
+
+  if (xavs_update_reference_list(h)) {
+    xavs_log (h, XAVS_LOG_DEBUG, "xavs_update_reference_list failed\n");
+    return -1;
+  }
+
+  h->fdec->i_lines_completed = -1;
+
   /* no data out */
   *pi_nal = 0;
   *pp_nal = NULL;
-
 
   /* ------------------- Setup new frame from picture -------------------- */
   TIMER_START (i_mtime_encode_frame);
   if (pic_in != NULL)
   {
     /* 1: Copy the picture to a frame and move it to a buffer */
-    xavs_frame_t *fenc = xavs_frame_get (h->frames.unused);
+    xavs_frame_t *fenc = xavs_frame_get_unused(h);
+    if (fenc == NULL)
+        return -1;
 
+    fenc->b_last_minigop_bframe = 0;
     xavs_frame_copy_picture (h, fenc, pic_in);
 
     if (h->param.i_width % 16 || h->param.i_height % 16)
-      xavs_frame_expand_border_mod16 (h, fenc);
+      xavs_frame_expand_border_mod16( h, fenc );
 
     fenc->i_frame = h->frames.i_input++;
 
-    xavs_frame_put (h->frames.next, fenc);
+    if( h->frames.b_have_lowres )
+       xavs_frame_init_lowres(h->param.cpu, fenc);
 
-    if (h->frames.b_have_lowres)
-      xavs_frame_init_lowres (h->param.cpu, fenc);
+    /* 2: Place the frame into the queue for its slice type decision */
+    xavs_lookahead_put_frame( h, fenc );
 
-    if (h->frames.i_input <= h->frames.i_delay)
+    if( h->frames.i_input <= h->frames.i_delay - h->i_thread_frames )
     {
-      /* Nothing yet to encode */
-      /* waiting for filling bframe buffer */
+      /* Nothing yet to encode, waiting for filling of buffers */
       pic_out->i_type = XAVS_TYPE_AUTO;
       return 0;
     }
   }
+  else
+  {
+    /* signal kills for lookahead thread */
+    xavs_pthread_mutex_lock( &h->lookahead->ifbuf.mutex );
+    h->lookahead->b_exit_thread = 1;
+    xavs_pthread_cond_broadcast( &h->lookahead->ifbuf.cv_fill );
+    xavs_pthread_mutex_unlock( &h->lookahead->ifbuf.mutex );
+  }
 
+  /* 3: The picture is analyzed in the lookahead */
   if (h->frames.current[0] == NULL)
   {
-    int bframes = 0;
-    /* 2: Select frame types */
-    if (h->frames.next[0] == NULL)
-      return 0;
+      xavs_lookahead_get_frames( h );
+  }
 
-    xavs_slicetype_decide (h);
-
-    /* 3: move some B-frames and 1 non-B to encode queue */
-    while (IS_XAVS_TYPE_B (h->frames.next[bframes]->i_type))
-      bframes++;
-    xavs_frame_put (h->frames.current, xavs_frame_get (&h->frames.next[bframes]));
-/*
-        if( h->param.b_bframe_pyramid && bframes > 1 )
-        {
-            xavs_frame_t *mid = xavs_frame_get( &h->frames.next[bframes/2] );
-            mid->i_type = XAVS_TYPE_BREF;
-            xavs_frame_put( h->frames.current, mid );
-            bframes--;
-        }
-*/
-    while (bframes--)
-      xavs_frame_put (h->frames.current, xavs_frame_get (h->frames.next));
+  if (h->frames.current[0] == NULL && xavs_lookahead_is_empty( h ) ) 
+  {
+      goto encoder_frame_end;
   }
   TIMER_STOP (i_mtime_encode_frame);
 
@@ -1107,7 +1181,8 @@ xavs_encoder_encode (xavs_t * h, xavs_nal_t ** pp_nal, int *pi_nal, xavs_picture
     /* Nothing yet to encode (ex: waiting for I/P with B frames) */
     /* waiting for filling bframe buffer */
     pic_out->i_type = XAVS_TYPE_AUTO;
-    return 0;
+    xavs_log (h, XAVS_LOG_DEBUG, "xavs_frame_get failed\n");
+    return -1;
   }
 
 do_encode:
@@ -1115,6 +1190,7 @@ do_encode:
   if (h->fenc->i_type == XAVS_TYPE_IDR)
   {
     h->frames.i_last_idr = h->fenc->i_frame;
+    h->i_frame_num = 0;
   }
 
   /* ------------------- Setup frame context ----------------------------- */
@@ -1219,11 +1295,36 @@ do_encode:
   xavs_nal_end (h);
 
   /* Write frame */
-  i_frame_size = xavs_slices_write (h);
+  xavs_slices_write (h);
+
+encoder_frame_end:
+  h = thread_oldest;
+  if( h->b_thread_active )
+  {
+      int ret = 0;
+      xavs_pthread_join( h->thread_handle, (void *)&ret );
+      h->b_thread_active = 0;
+      if (ret)
+          return ret;
+  }
+  if( !h->out.i_nal )
+  {
+      pic_out->i_type = XAVS_TYPE_AUTO;
+      if (h->i_thread_frames > 1 && !h->param.b_sliced_threads)
+         return 0;
+      else {
+         xavs_log (h, XAVS_LOG_DEBUG, "xavs encoding, no data avail failed\n");
+         return -1;
+      }
+  }
 
   /* restore CPU state (before using float again) */
   xavs_cpu_restore (h->param.cpu);
 
+  i_frame_size = xavs_encoder_get_frame_size(h, 0);
+  i_slice_type = h->sh.i_type;
+  i_nal_type = h->i_nal_type;
+  i_nal_ref_idc = h->i_nal_ref_idc;
   if (i_slice_type == SLICE_TYPE_P && !h->param.rc.b_stat_read && h->param.i_scenecut_threshold >= 0)
   {
     const int *mbs = h->stat.frame.i_mb_count;
@@ -1258,11 +1359,12 @@ do_encode:
     f_bias = (float) XAVS_MIN (f_bias, 1.0);
 
     /* Bad P will be reencoded as I */
-    if (i_mb_s < i_mb && i_inter_cost >= (1.0 - f_bias) * i_intra_cost)
+    if (i_mb_s < i_mb && i_inter_cost >= (1.0 - f_bias) * i_intra_cost
+        && !h->param.i_sync_lookahead)
     {
       int b;
 
-      xavs_log (h, XAVS_LOG_DEBUG, "scene cut at %d Icost:%.0f Pcost:%.0f ratio:%.3f bias=%.3f lastIDR:%d (I:%d P:%d S:%d)\n", h->fenc->i_frame, (double) i_intra_cost, (double) i_inter_cost, (double) i_inter_cost / i_intra_cost, f_bias, i_gop_size, i_mb_i, i_mb_p, i_mb_s);
+      xavs_log(h, XAVS_LOG_DEBUG, "scene cut at %d Icost:%.0f Pcost:%.0f ratio:%.3f bias=%.3f lastIDR:%d (I:%d P:%d S:%d)\n", h->fenc->i_frame, (double) i_intra_cost, (double) i_inter_cost, (double) i_inter_cost / i_intra_cost, f_bias, i_gop_size, i_mb_i, i_mb_p, i_mb_s);
 
       /* Restore frame num */
       h->i_frame_num--;
@@ -1281,7 +1383,7 @@ do_encode:
         if (h->param.i_bframe_adaptive || b > 1)
           h->fenc->i_type = XAVS_TYPE_AUTO;
         xavs_frame_sort_pts (h->frames.current);
-        xavs_frame_push (h->frames.next, h->fenc);
+        xavs_lookahead_put_frame(h, h->fenc);
         h->fenc = h->frames.current[b - 1];
         h->frames.current[b - 1] = NULL;
         h->fenc->i_type = XAVS_TYPE_P;
@@ -1301,7 +1403,7 @@ do_encode:
 
         /* Put enqueued frames back in the pool */
         while ((tmp = xavs_frame_get (h->frames.current)) != NULL)
-          xavs_frame_put (h->frames.next, tmp);
+          xavs_lookahead_put_frame(h, tmp);
         xavs_frame_sort_pts (h->frames.next);
       }
       else
@@ -1315,6 +1417,7 @@ do_encode:
   /* End bitstream, set output  */
   *pi_nal = h->out.i_nal;
   *pp_nal = h->out.nal;
+  h->out.i_nal = 0;
 
   /* Set output picture properties */
   if (i_slice_type == SLICE_TYPE_I)
@@ -1353,7 +1456,6 @@ do_encode:
   /* handle references */
   if (i_nal_ref_idc != NAL_PRIORITY_DISPOSABLE)
     xavs_reference_update (h);
-  xavs_frame_put (h->frames.unused, h->fenc);
 
   /* increase frame count */
   h->i_frame++;
@@ -1366,10 +1468,12 @@ do_encode:
   TIMER_STOP (i_mtime_encode_frame);
 
   /* ---------------------- Compute/Print statistics --------------------- */
+  xavs_thread_sync_stat(h, h->thread[0]);
+
   /* Slice stat */
   h->stat.i_slice_count[i_slice_type]++;
   h->stat.i_slice_size[i_slice_type] += i_frame_size + NALU_OVERHEAD;
-  h->stat.i_slice_qp[i_slice_type] += i_global_qp;
+  h->stat.i_slice_qp[i_slice_type] += h->fdec->f_qp_avg_aq;
 
   for (i = 0; i < 19; i++)
     h->stat.i_mb_count[h->sh.i_type][i] += h->stat.frame.i_mb_count[i];
@@ -1397,9 +1501,11 @@ do_encode:
     }
   }
 
+
   if (h->param.analyse.b_psnr)
   {
     int64_t i_sqe_y, i_sqe_u, i_sqe_v;
+    frame_psnr = h->fdec;
 
     /* PSNR */
     i_sqe_y = xavs_pixel_ssd_wxh (&h->pixf, frame_psnr->plane[0], frame_psnr->i_stride[0], h->fenc->plane[0], h->fenc->i_stride[0], h->param.i_width, h->param.i_height);
@@ -1421,10 +1527,14 @@ do_encode:
     psz_message[0] = '\0';
   }
 
+  xavs_thread_sync_stat(h->thread[0], h);
+  xavs_thread_sync_stat(thread_current, h);
+
   xavs_log (h, XAVS_LOG_DEBUG,
             "frame=%4d QP=%i NAL=%d Slice:%c Poc:%-3d I:%-4d P:%-4d SKIP:%-4d size=%d bytes%s\n",
-            h->i_frame - 1, i_global_qp, i_nal_ref_idc, i_slice_type == SLICE_TYPE_I ? 'I' : (i_slice_type == SLICE_TYPE_P ? 'P' : 'B'), frame_psnr->i_poc, h->stat.frame.i_mb_count_i, h->stat.frame.i_mb_count_p, h->stat.frame.i_mb_count_skip, i_frame_size, psz_message);
+            h->i_frame - 1, h->fdec->f_qp_avg_aq, i_nal_ref_idc, i_slice_type == SLICE_TYPE_I ? 'I' : (i_slice_type == SLICE_TYPE_P ? 'P' : 'B'), frame_psnr->i_poc, h->stat.frame.i_mb_count_i, h->stat.frame.i_mb_count_p, h->stat.frame.i_mb_count_skip, i_frame_size, psz_message);
 
+  xavs_frame_put_unused(h, h->fenc);
 
 #ifdef DEBUG_MB_TYPE
   {
@@ -1459,6 +1569,8 @@ xavs_encoder_close (xavs_t * h)
 #endif
   int64_t i_yuv_size = 3 * h->param.i_width * h->param.i_height / 2;
   int i;
+
+  xavs_lookahead_delete(h);
 
 #ifdef DEBUG_BENCHMARK
   xavs_log (h, XAVS_LOG_INFO,
@@ -1603,10 +1715,16 @@ xavs_encoder_close (xavs_t * h)
   if (h->param.rc.psz_stat_in)
     free (h->param.rc.psz_stat_in);
 
-  xavs_macroblock_cache_end (h);
   xavs_free (h->out.p_bitstream);
   for (i = 1; i < h->param.i_threads; i++)
+  { 
+    if (!h->param.b_sliced_threads)
+    {
+      xavs_macroblock_cache_end (h->thread[i]);
+      xavs_free (h->thread[i]->out.p_bitstream);
+    }
     xavs_free (h->thread[i]);
+  }
   xavs_free (h);
 }
 
@@ -1632,3 +1750,48 @@ xavs_encoder_delayed_frames (xavs_t * h)
   xavs_pthread_mutex_unlock (&h->lookahead->ofbuf.mutex);
   return delayed_frames;
 }
+
+
+static void xavs_thread_sync_context( xavs_t *dst, xavs_t *src )
+{
+    xavs_frame_t **f;
+    if( dst == src )
+        return;
+
+    // reference counting
+    for( f = src->frames.reference; *f; f++ )
+        (*f)->i_reference_count++;
+    for( f = dst->frames.reference; *f; f++ )
+        xavs_frame_put_unused(src, *f);
+    src->fdec->i_reference_count++;
+    xavs_frame_put_unused(src, dst->fdec);
+    dst->fdec = NULL;
+        
+    // copy everything except the per-thread pointers and the constants.
+    memcpy(&dst->i_frame, 
+           &src->i_frame, 
+           offsetof(xavs_t, mb.type) - offsetof(xavs_t, i_frame));
+    dst->param = src->param;
+    dst->stat = src->stat;
+}
+
+static void xavs_thread_sync_stat( xavs_t *dst, xavs_t *src )
+{
+    if( dst == src )
+        return;
+
+    memcpy(&dst->stat.i_slice_count, 
+           &src->stat.i_slice_count, 
+           sizeof(dst->stat) - sizeof(dst->stat.frame));
+}
+
+static int xavs_encoder_get_frame_size( xavs_t *h, int start )
+{
+    int sz = 0;
+    for (; start < h->out.i_nal; ++start)
+        sz += h->out.nal[start].i_payload;
+
+    return sz;
+}
+
+

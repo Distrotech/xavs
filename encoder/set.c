@@ -244,6 +244,7 @@ xavs_sps_init (xavs_sps_t * sps, int i_id, xavs_param_t * param)
     sps->i_profile_idc = PROFILE_MAIN;
   else
     sps->i_profile_idc = PROFILE_BASELINE;
+
   sps->i_level_idc = param->i_level_idc;
 
   sps->b_constraint_set0 = 0;
@@ -347,7 +348,9 @@ xavs_sps_init (xavs_sps_t * sps, int i_id, xavs_param_t * param)
   sps->vui.i_num_reorder_frames = param->b_bframe_pyramid ? 2 : param->i_bframe ? 1 : 0;
   /* extra slot with pyramid so that we don't have to override the
    * order of forgetting old pictures */
-  sps->vui.i_max_dec_frame_buffering = sps->i_num_ref_frames = XAVS_MIN (16, param->i_frame_reference + sps->vui.i_num_reorder_frames + param->b_bframe_pyramid);
+  sps->vui.i_max_dec_frame_buffering = 
+  sps->i_num_ref_frames = XAVS_MIN (16, param->i_frame_reference 
+                                        + sps->vui.i_num_reorder_frames + param->b_bframe_pyramid);
 
   sps->vui.b_bitstream_restriction = 1;
   if (sps->vui.b_bitstream_restriction)
