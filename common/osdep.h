@@ -1,9 +1,10 @@
 /*****************************************************************************
- * osdep.h: xavs encoder
+ * osdep.h: h264 encoder
  *****************************************************************************
- * Copyright (C) 2009 xavs project
+ * Copyright (C) 2007-2008 x264 project
  *
- * Authors: 
+ * Authors: Loren Merritt <lorenm@u.washington.edu>
+ *          Laurent Aimar <fenrir@via.ecp.fr>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

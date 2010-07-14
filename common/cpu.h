@@ -1,9 +1,7 @@
 /*****************************************************************************
- * cpu.h: xavs encoder library
+ * cpu.h: h264 encoder library
  *****************************************************************************
- * Copyright (C) 2009 xavs project
- *
- * Authors:
+ * Copyright (C) 2004-2008 Loren Merritt <lorenm@u.washington.edu>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

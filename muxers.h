@@ -1,9 +1,10 @@
 /*****************************************************************************
- * muxer.h: xavs file i/o plugins
+ * muxers.h: h264 file i/o modules
  *****************************************************************************
- * Copyright (C) 2009 xavs project
+ * Copyright (C) 2003-2009 x264 project
  *
- * Authors: 
+ * Authors: Laurent Aimar <fenrir@via.ecp.fr>
+ *          Loren Merritt <lorenm@u.washington.edu>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,8 +18,9 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02111, USA.
  *****************************************************************************/
+
 #ifndef _XAVS_MUXERS_H_
 #define _XAVS_MUXERS_H_
 

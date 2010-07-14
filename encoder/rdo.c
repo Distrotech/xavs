@@ -1,9 +1,10 @@
 /*****************************************************************************
- * rdo.c: xavs encoder library (rate-distortion optimization)
+ * rdo.c: h264 encoder library (rate-distortion optimization)
  *****************************************************************************
- * Copyright (C) 2005 xavs project
+ * Copyright (C) 2005-2008 x264 project
  *
- * Authors: 
+ * Authors: Loren Merritt <lorenm@u.washington.edu>
+ *          Jason Garrett-Glaser <darkshikari@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,12 +18,16 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02111, USA.
  *****************************************************************************/
 
-/* duplicate all the writer functions, just calculating bit cost
- * instead of writing the bitstream.
- * TODO: use these for fast 1st pass too. */
+/*****************************************************************************
+ * rdo.c: xavs encoder library (rate-distortion optimization)
+ *****************************************************************************
+ * Copyright (C) 2009~2010 xavs project
+ * Authors: Jianwen Chen <jianwen.chen.video@gmail.com>
+ * This code is modified on x264 project and will follow the license of x264
+ *****************************************************************************/
 
 #define RDO_SKIP_BS
 

@@ -20,6 +20,14 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111, USA.
  *****************************************************************************/
 
+/*****************************************************************************
+ * csp.h: xavs encoder library
+ *****************************************************************************
+ * Copyright (C) 2009~2010 xavs project
+ * Authors: Jianwen Chen <jianwen.chen.video@gmail.com>
+ * This code is modified on x264 project and will follow the license of x264
+ *****************************************************************************/
+
 #ifndef _XAVS_CSP_H_
 #define _XAVS_CSP_H_
 

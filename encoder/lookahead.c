@@ -1,4 +1,39 @@
+/*****************************************************************************
+ * lookahead.c: Lookahead slicetype decisions for x264
+ *****************************************************************************
+ * Lookahead.c and associated modifications:
+ *     Copyright (C) 2008 Avail Media
+ *
+ * Authors: Michael Kazmier <mkazmier@availmedia.com>
+ *          Alex Giladi <agiladi@availmedia.com>
+ *          Steven Walters <kemuri9@gmail.com>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111, USA.
+ *****************************************************************************/
 
+/* LOOKAHEAD (threaded and non-threaded mode)
+ *
+ * Lookahead types:
+ *     [1] Slice type / scene cut;
+ *
+ * In non-threaded mode, we run the existing slicetype decision code as it was.
+ * In threaded mode, we run in a separate thread, that lives between the calls
+ * to x264_encoder_open() and x264_encoder_close(), and performs lookahead for
+ * the number of frames specified in rc_lookahead.  Recommended setting is
+ * # of bframes + # of threads.
+ */
 #include "common/common.h"
 #include "analyse.h"
 

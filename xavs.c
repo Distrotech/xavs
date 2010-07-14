@@ -1,23 +1,34 @@
 /*****************************************************************************
- * xavs: xavs encoder/decoder testing program.
- *****************************************************************************
- * Copyright (C) 2009 xavs project
- *
- * Authors: 
- *
+ * x264: h264 encoder testing program.
+ * ***************************************************************************
+ * Copyright (C) 2003-2008 x264 project
+ * 
+ * Authors: Loren Merritt <lorenm@u.washington.edu>
+ *          Laurent Aimar <fenrir@via.ecp.fr>
+ *          Steven Walters <kemuri9@gmail.com>
+ *          Kieran Kunhya <kieran@kunhya.com>
+ * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- *
+ * 
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *
+ * 
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02111, USA.
+ * ***************************************************************************/
+
+/*****************************************************************************
+ * xavs: xavs encoder/decoder testing program.
+ *****************************************************************************
+ * Copyright (C) 2009~2010 xavs project
+ * Authors: Jianwen Chen <jianwen.chen.video@gmail.com>
+ * This code is modified on x264 project and will follow the license of x264
  *****************************************************************************/
 
 #include <stdlib.h>
