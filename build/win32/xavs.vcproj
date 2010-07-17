@@ -48,7 +48,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../common,../../encoder,../../extras,../.."
-				PreprocessorDefinitions="_DEBUG;_CONSOLE;WIN32;HAVE_STDINT_H;AVIS_INPUT;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;"
+				PreprocessorDefinitions="_DEBUG;_CONSOLE;WIN32;HAVE_STDINT_H;HAVE_PTHREAD;AVIS_INPUT;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
 				UsePrecompiledHeader="0"

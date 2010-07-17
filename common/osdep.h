@@ -138,6 +138,7 @@ xavs_pthread_create (xavs_pthread_t * t, void *a, LPVOID f, void *d)
 #endif //SYS_*
 
 #ifdef USE_REAL_PTHREAD
+#pragma comment(lib, "pthreadVC2.lib")
 #define xavs_pthread_t               pthread_t
 #define xavs_pthread_create          pthread_create
 #define xavs_pthread_join            pthread_join
