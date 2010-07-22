@@ -348,6 +348,9 @@ extern const xavs_level_t xavs_levels[];
 
 /* xavs_param_default:
  *      fill xavs_param_t with default values and do CPU detection */
+void xavs_param_default (xavs_param_t * param);
+
+
 #define XAVS_PARAM_BAD_NAME  (-1)
 #define XAVS_PARAM_BAD_VALUE (-2)
 int xavs_param_parse (xavs_param_t *, const char *name, const char *value);
