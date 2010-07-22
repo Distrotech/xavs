@@ -1541,8 +1541,17 @@ encoder_frame_end:
   xavs_thread_sync_stat(thread_current, h);
 
   xavs_log (h, XAVS_LOG_DEBUG,
-            "frame=%4d QP=%i NAL=%d Slice:%c Poc:%-3d I:%-4d P:%-4d SKIP:%-4d size=%d bytes%s\n",
-            h->i_frame - 1, h->fdec->f_qp_avg_aq, i_nal_ref_idc, i_slice_type == SLICE_TYPE_I ? 'I' : (i_slice_type == SLICE_TYPE_P ? 'P' : 'B'), frame_psnr->i_poc, h->stat.frame.i_mb_count_i, h->stat.frame.i_mb_count_p, h->stat.frame.i_mb_count_skip, i_frame_size, psz_message);
+                "frame=%4d QP=%i NAL=%d Slice:%c Poc:%-3d I:%-4d P:%-4d SKIP:%-4d size=%d bytes%s\n",
+            h->i_frame - 1, 
+	    h->fdec->f_qp_avg_aq, 
+	    i_nal_ref_idc, 
+	    i_slice_type == SLICE_TYPE_I ? 'I' : (i_slice_type == SLICE_TYPE_P ? 'P' : 'B'), 
+	    h->fdec->i_poc, 
+	    h->stat.frame.i_mb_count_i, 
+	    h->stat.frame.i_mb_count_p, 
+	    h->stat.frame.i_mb_count_skip, 
+	    i_frame_size, 
+	    psz_message);
 
   xavs_frame_put_unused(h, h->fenc);
 
