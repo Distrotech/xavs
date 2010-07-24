@@ -1320,12 +1320,7 @@ encoder_frame_end:
   if( !h->out.i_nal )
   {
       pic_out->i_type = XAVS_TYPE_AUTO;
-      if (h->i_thread_frames > 1 && !h->param.b_sliced_threads)
-         return 0;
-      else {
-         xavs_log (h, XAVS_LOG_DEBUG, "xavs encoding, no data avail failed\n");
-         return -1;
-      }
+      return 0;
   }
 
   /* restore CPU state (before using float again) */
