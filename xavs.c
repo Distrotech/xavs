@@ -648,7 +648,7 @@ xavs_param_parse (xavs_param_t * p, const char *name, const char *value)
 #define OPT_RATETOL 262
 #define OPT_RCSTATS 264
 #define OPT_QCOMP 266
-#define OPT_NOPSNR 267
+#define OPT_PSNR 267
 #define OPT_QUIET 268
 #define OPT_SCENECUT 270
 #define OPT_QBLUR 271
@@ -712,6 +712,7 @@ xavs_param_parse (xavs_param_t * p, const char *name, const char *value)
 #define OPT_SYNC_LOOKAHEAD 328
 #define OPT_RC_LOOKAHEAD 329
 #define OPT_SLICED_THREAD 330
+#define OPT_SSIM 331
 
 
 static char short_options[] = "8A:B:b:f:hI:i:m:o:p:q:r:t:Vvw";
@@ -799,8 +800,8 @@ static struct option long_options[] = {
   {"thread-input", no_argument, NULL, OPT_THREAD_INPUT},
   {"sync-lookahead", required_argument, NULL, OPT_SYNC_LOOKAHEAD},
   {"non-deterministic", no_argument, NULL, 0},
-  {"psnr", no_argument, NULL, 0},
-  {"ssim", no_argument, NULL, 0},
+  {"psnr", no_argument, NULL, OPT_PSNR},
+  {"ssim", no_argument, NULL, OPT_SSIM},
   {"quiet", no_argument, NULL, OPT_QUIET},
   {"verbose", no_argument, NULL, 'v'},
   {"no-progress", no_argument, NULL, OPT_NOPROGRESS},
@@ -1333,8 +1334,11 @@ Parse (int argc, char **argv, xavs_param_t * param, cli_opt_t * opt)
     case OPT_RC_LOOKAHEAD:
       param->rc.i_lookahead = atoi(optarg); 
       break;
-    case OPT_NOPSNR:
-      param->analyse.b_psnr = 0;
+    case OPT_PSNR:
+      param->analyse.b_psnr = 1;
+      break;
+    case OPT_SSIM:
+      param->analyse.b_ssim = 1;
       break;
     case OPT_QUIET:
       param->i_log_level = XAVS_LOG_NONE;

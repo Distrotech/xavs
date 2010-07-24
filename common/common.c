@@ -133,7 +133,8 @@ xavs_param_default (xavs_param_t * param)
   param->analyse.i_trellis = 1;
   param->analyse.i_luma_deadzone[0] = 21;       /*intra */
   param->analyse.i_luma_deadzone[1] = 11;       /*inter */
-  param->analyse.b_psnr = 1;
+  param->analyse.b_psnr = 0;
+  param->analyse.b_ssim = 0;
   param->analyse.b_skip_mode = 1;       //run
 
   param->i_chroma_format = 1;   /* 1: 4:2:0, 2: 4:2:2 */

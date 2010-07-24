@@ -1513,9 +1513,15 @@ encoder_frame_end:
     frame_psnr = h->fdec;
 
     /* PSNR */
-    i_sqe_y = xavs_pixel_ssd_wxh (&h->pixf, frame_psnr->plane[0], frame_psnr->i_stride[0], h->fenc->plane[0], h->fenc->i_stride[0], h->param.i_width, h->param.i_height);
-    i_sqe_u = xavs_pixel_ssd_wxh (&h->pixf, frame_psnr->plane[1], frame_psnr->i_stride[1], h->fenc->plane[1], h->fenc->i_stride[1], h->param.i_width / 2, h->param.i_height / 2);
-    i_sqe_v = xavs_pixel_ssd_wxh (&h->pixf, frame_psnr->plane[2], frame_psnr->i_stride[2], h->fenc->plane[2], h->fenc->i_stride[2], h->param.i_width / 2, h->param.i_height / 2);
+    i_sqe_y = xavs_pixel_ssd_wxh (&h->pixf, frame_psnr->plane[0],frame_psnr->i_stride[0],
+		                            h->fenc->plane[0], h->fenc->i_stride[0],
+					    h->param.i_width, h->param.i_height);
+    i_sqe_u = xavs_pixel_ssd_wxh (&h->pixf, frame_psnr->plane[1], frame_psnr->i_stride[1],
+		                            h->fenc->plane[1], h->fenc->i_stride[1],
+					    h->param.i_width / 2, h->param.i_height / 2);
+    i_sqe_v = xavs_pixel_ssd_wxh (&h->pixf, frame_psnr->plane[2], frame_psnr->i_stride[2],
+		                            h->fenc->plane[2], h->fenc->i_stride[2],
+					    h->param.i_width / 2, h->param.i_height / 2);
     xavs_cpu_restore (h->param.cpu);
 
     h->stat.i_sqe_global[i_slice_type] += i_sqe_y + i_sqe_u + i_sqe_v;
@@ -1524,7 +1530,10 @@ encoder_frame_end:
     h->stat.f_psnr_mean_u[i_slice_type] += xavs_psnr (i_sqe_u, h->param.i_width * h->param.i_height / 4);
     h->stat.f_psnr_mean_v[i_slice_type] += xavs_psnr (i_sqe_v, h->param.i_width * h->param.i_height / 4);
 
-    snprintf (psz_message, 80, " PSNR Y:%2.2f U:%2.2f V:%2.2f", xavs_psnr (i_sqe_y, h->param.i_width * h->param.i_height), xavs_psnr (i_sqe_u, h->param.i_width * h->param.i_height / 4), xavs_psnr (i_sqe_v, h->param.i_width * h->param.i_height / 4));
+    snprintf (psz_message, 80, " PSNR Y:%2.2f U:%2.2f V:%2.2f",
+              xavs_psnr (i_sqe_y, h->param.i_width * h->param.i_height),
+	      xavs_psnr (i_sqe_u, h->param.i_width * h->param.i_height / 4),
+	      xavs_psnr (i_sqe_v, h->param.i_width * h->param.i_height / 4));
     psz_message[79] = '\0';
   }
   else
@@ -1611,11 +1620,21 @@ xavs_encoder_close (xavs_t * h)
                   i_count,
                   (double) h->stat.i_slice_qp[i_slice] / i_count,
                   (double) h->stat.i_slice_size[i_slice] / i_count,
-                  h->stat.f_psnr_mean_y[i_slice] / i_count, h->stat.f_psnr_mean_u[i_slice] / i_count, h->stat.f_psnr_mean_v[i_slice] / i_count, h->stat.f_psnr_average[i_slice] / i_count, xavs_psnr (h->stat.i_sqe_global[i_slice], i_count * i_yuv_size));
+                  h->stat.f_psnr_mean_y[i_slice] / i_count,
+		  h->stat.f_psnr_mean_u[i_slice] / i_count,
+		  h->stat.f_psnr_mean_v[i_slice] / i_count,
+		  h->stat.f_psnr_average[i_slice] / i_count,
+		  xavs_psnr (h->stat.i_sqe_global[i_slice],
+                  i_count * i_yuv_size));
       }
       else
       {
-        xavs_log (h, XAVS_LOG_INFO, "slice %s:%-5d Avg QP:%5.2f  size:%6.0f\n", slice_name[i_slice], i_count, (double) h->stat.i_slice_qp[i_slice] / i_count, (double) h->stat.i_slice_size[i_slice] / i_count);
+        xavs_log (h, XAVS_LOG_INFO, 
+                  "slice %s:%-5d Avg QP:%5.2f  size:%6.0f\n",
+                  slice_name[i_slice],
+		  i_count,
+		  (double) h->stat.i_slice_qp[i_slice] / i_count,
+		  (double) h->stat.i_slice_size[i_slice] / i_count);
       }
     }
   }
@@ -1697,9 +1716,16 @@ xavs_encoder_close (xavs_t * h)
     }
 
     if (h->param.analyse.b_psnr)
+    {
       xavs_log (h, XAVS_LOG_INFO,
                 "PSNR Mean Y:%6.3f U:%6.3f V:%6.3f Avg:%6.3f Global:%6.3f kb/s:%.2f\n",
-                SUM3 (h->stat.f_psnr_mean_y) / i_count, SUM3 (h->stat.f_psnr_mean_u) / i_count, SUM3 (h->stat.f_psnr_mean_v) / i_count, SUM3 (h->stat.f_psnr_average) / i_count, xavs_psnr (SUM3 (h->stat.i_sqe_global), i_count * i_yuv_size), f_bitrate);
+                SUM3 (h->stat.f_psnr_mean_y) / i_count,
+                SUM3 (h->stat.f_psnr_mean_u) / i_count,
+                SUM3 (h->stat.f_psnr_mean_v) / i_count,
+                SUM3 (h->stat.f_psnr_average) / i_count,
+		xavs_psnr (SUM3 (h->stat.i_sqe_global), i_count * i_yuv_size),
+		f_bitrate);
+    }      
     else
       xavs_log (h, XAVS_LOG_INFO, "kb/s:%.1f\n", f_bitrate);
   }
