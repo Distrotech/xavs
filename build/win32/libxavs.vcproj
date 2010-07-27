@@ -45,7 +45,7 @@
 				Optimization="2"
 				InlineFunctionExpansion="2"
 				AdditionalIncludeDirectories="../../common,../../encoder,../../extras,../.."
-				PreprocessorDefinitions="NDEBUG;_LIB;WIN32;__XAVS__;ARCH_X86;HAVE_STDINT_H;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;"
+				PreprocessorDefinitions="NDEBUG;_LIB;WIN32;__XAVS__;ARCH_X86;HAVE_STDINT_H;HAVE_PTHREAD;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;"
 				StringPooling="true"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
@@ -117,7 +117,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../common;../../encoder;../../extras;../.."
+				AdditionalIncludeDirectories="../../common,../../encoder,../../extras,../.."
 				PreprocessorDefinitions="_DEBUG;_LIB;WIN32;__XAVS__;ARCH_X86;HAVE_STDINT_H;HAVE_PTHREAD;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
