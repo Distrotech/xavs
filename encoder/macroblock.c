@@ -121,8 +121,6 @@ xavs_mb_encode_8x8_chroma (xavs_t * h, int b_inter, int i_qscale)
   {
     uint8_t *p_src = h->mb.pic.p_fenc[1 + ch];
     uint8_t *p_dst = h->mb.pic.p_fdec[1 + ch];
-    int i_decimate_score = 0;
-
     int16_t dct8x8[2][8][8];
 
     if (h->mb.b_lossless)
@@ -188,7 +186,6 @@ xavs_macroblock_encode_pskip (xavs_t * h)
 void
 xavs_macroblock_encode (xavs_t * h)
 {
-  int i_cbp_dc = 0;
   int i_qp = h->mb.i_qp;
   int i;
 
@@ -221,8 +218,6 @@ xavs_macroblock_encode (xavs_t * h)
   else                          /* Inter MB */
   {
     int idx;
-    int i_decimate_mb = 0;
-
     /* Motion compensation */
     xavs_mb_mc (h);
 
@@ -233,7 +228,6 @@ xavs_macroblock_encode (xavs_t * h)
     else
     {
       int16_t dct8x8[4][8][8];
-      int nnz8x8[4] = { 1, 1, 1, 1 };
       h->dctf.sub16x16_dct8 (dct8x8, h->mb.pic.p_fenc[0], h->mb.pic.p_fdec[0]);
 
       for (idx = 0; idx < 4; idx++)

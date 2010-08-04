@@ -2186,7 +2186,6 @@ xavs_macroblock_analyse (xavs_t * h)
         refine_bidir (h, &analysis);
       if (h->mb.i_subpel_refine >= 7 && i_type > B_DIRECT && i_type < B_SKIP)
       {
-        const int i_biweight = h->mb.bipred_weight[analysis.l0.i_ref][analysis.l1.i_ref];
         xavs_analyse_update_cache (h, &analysis);
 
         if (i_partition == D_16x16)

@@ -14,8 +14,29 @@ SRCS = common/mc.c common/predict.c common/pixel.c common/macroblock.c \
 SRCCLI = xavs.c matroska.c muxers.c
 
 # MMX/SSE optims
+ifneq ($(AS),)
+X86SRC0 = quant.c 
+X86SRC = $(X86SRC0:%=common/x86/%)
 
-# MMX/SSE optims
+ifeq ($(ARCH),X86)
+ARCH_X86 = yes
+ASMSRC   = $(X86SRC) common/x86/
+endif
+
+ifeq ($(ARCH),X86_64)
+ARCH_X86 = yes
+ASMSRC   = $(X86SRC:-32.asm=-64.asm)
+ASFLAGS += -DARCH_X86_64
+endif
+
+ifdef ARCH_X86
+ASFLAGS += -Icommon/x86/
+SRCS   += common/x86/quant.c
+OBJASM  = $(ASMSRC:%.asm=%.o)
+$(OBJASM): common/x86/x86inc.asm common/x86/x86util.asm
+checkasm: tools/checkasm-a.o
+endif
+endif
 
 # AltiVec optims
 
@@ -124,10 +145,8 @@ uninstall:
 	rm -f $(DESTDIR)$(bindir)/xavs $(DESTDIR)$(libdir)/pkgconfig/xavs.pc
 	$(if $(SONAME), rm -f $(DESTDIR)$(libdir)/$(SONAME) $(DESTDIR)$(libdir)/libxavs.$(SOSUFFIX))
 
-etags: TAGS
-
-TAGS:
-	etags $(SRCS)
+tags:
+	ctags -R ./*
 
 test:
 	perl tools/regression-test.pl --version=head,current --options='$(OPT0)' --options='$(OPT1)' --options='$(OPT2)' $(VIDS:%=--input=%)

@@ -198,9 +198,6 @@ Help (xavs_param_t * defaults, int longhelp)
   H0 ("\n");
   H0 ("Presets:\n");
   H0 ("\n");
-  H0 ("      --profile               Force H.264 profile [high]\n");
-  H0 ("                                  Overrides all settings\n");
-  H0 ("                                  - baseline,main,high\n");
   H0 ("      --preset                Use a preset to select encoding settings [medium]\n");
   H0 ("                                  Overridden by user settings\n");
   H0 ("                                  - ultrafast,veryfast,faster,fast,medium\n" "                                  - slow,slower,veryslow,placebo\n");
@@ -842,7 +839,6 @@ Parse (int argc, char **argv, xavs_param_t * param, cli_opt_t * opt)
   char *psz_filename = NULL;
   xavs_param_t defaults = *param;
   char *psz;
-  char *profile = NULL;
   int b_avis = 0;
   int b_y4m = 0;
   int b_thread_input = 0;

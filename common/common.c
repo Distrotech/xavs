@@ -298,7 +298,6 @@ xavs_nal_encode (void *p_data, int *pi_data, int b_annexeb, xavs_nal_t * nal)
   uint8_t *src = nal->p_payload;
   uint8_t *end = &nal->p_payload[nal->i_payload];
 
-  int i_count = 0;
   if (b_annexeb)
   {
     *dst++ = 0x00;
@@ -515,7 +514,7 @@ xavs_param2string (xavs_param_t * p, int b_res)
   if (p->rc.i_rc_method || p->rc.f_rf_constant)
   {
     if (p->rc.f_rf_constant)
-      s += sprintf (s, " crf=%d", p->rc.f_rf_constant);
+      s += sprintf (s, " crf=%.1f", p->rc.f_rf_constant);
     else
       s += sprintf (s, " bitrate=%d ratetol=%.1f", p->rc.i_bitrate, p->rc.f_rate_tolerance);
     s += sprintf (s, "qcomp=%.2f qpmin=%d qpmax=%d qpstep=%d", p->rc.f_qcompress, p->rc.i_qp_min, p->rc.i_qp_max, p->rc.i_qp_step);

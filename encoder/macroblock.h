@@ -56,6 +56,7 @@ void xavs_quant_8x8_trellis (xavs_t * h, int16_t dct[8][8], int i_quant_cat, int
 
 void xavs_noise_reduction_update (xavs_t * h);
 void xavs_denoise_dct (xavs_t * h, int16_t * dct);
+void xavs_mb_encode_8x8_chroma (xavs_t * h, int b_inter, int i_qscale);
 
 static inline int
 array_non_zero (int *v, int i_count)

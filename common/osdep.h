@@ -138,7 +138,9 @@ xavs_pthread_create (xavs_pthread_t * t, void *a, LPVOID f, void *d)
 #endif //SYS_*
 
 #ifdef USE_REAL_PTHREAD
+#if defined(__WIN32__)
 #pragma comment(lib, "pthreadVC2.lib")
+#endif
 #define xavs_pthread_t               pthread_t
 #define xavs_pthread_create          pthread_create
 #define xavs_pthread_join            pthread_join
@@ -175,51 +177,57 @@ xavs_pthread_create (xavs_pthread_t * t, void *a, LPVOID f, void *d)
 
 #define WORD_SIZE sizeof(void*)
 
+#define asm __asm__
+
 #if !defined(_WIN64) && !defined(__LP64__)
 #if defined(_MSC_VER) || defined(__INTEL_COMPILER)
 #define BROKEN_STACK_ALIGNMENT  /* define it if stack is not mod16 */
 #endif
 #endif
 
-//#define WORDS_BIGENDIAN //yangping 
-
-#ifdef WORDS_BIGENDIAN
+#if WORDS_BIGENDIAN
 #define endian_fix(x) (x)
+#define endian_fix64(x) (x)
 #define endian_fix32(x) (x)
 #define endian_fix16(x) (x)
 #else
-#if defined(__GNUC__) && defined(HAVE_MMX)
-static ALWAYS_INLINE uint32_t
-endian_fix32 (uint32_t x)
+#if defined(__GNUC__) && HAVE_MMX
+static ALWAYS_INLINE uint32_t endian_fix32( uint32_t x )
 {
-asm ("bswap %0":"+r" (x));
-  return x;
+    asm("bswap %0":"+r"(x));
+    return x;
 }
-static ALWAYS_INLINE intptr_t
-endian_fix (intptr_t x)
+#elif defined(__GNUC__) && HAVE_ARMV6
+static ALWAYS_INLINE uint32_t endian_fix32( uint32_t x )
 {
-asm ("bswap %0":"+r" (x));
-  return x;
+    asm("rev %0, %0":"+r"(x));
+    return x;
 }
 #else
-static ALWAYS_INLINE uint32_t
-endian_fix32 (uint32_t x)
+static ALWAYS_INLINE uint32_t endian_fix32( uint32_t x )
 {
-  return (x << 24) + ((x << 8) & 0xff0000) + ((x >> 8) & 0xff00) + (x >> 24);
-}
-static ALWAYS_INLINE intptr_t
-endian_fix (intptr_t x)
-{
-  if (WORD_SIZE == 8)
-    return endian_fix32 (x >> 32) + ((uint64_t) endian_fix32 (x) << 32);
-  else
-    return endian_fix32 (x);
+    return (x<<24) + ((x<<8)&0xff0000) + ((x>>8)&0xff00) + (x>>24);
 }
 #endif
-static ALWAYS_INLINE uint16_t
-endian_fix16 (uint16_t x)
+#if defined(__GNUC__) && ARCH_X86_64
+static ALWAYS_INLINE uint64_t endian_fix64( uint64_t x )
 {
-  return (x << 8) | (x >> 8);
+    asm("bswap %0":"+r"(x));
+    return x;
+}
+#else
+static ALWAYS_INLINE uint64_t endian_fix64( uint64_t x )
+{
+    return endian_fix32(x>>32) + ((uint64_t)endian_fix32(x)<<32);
+}
+#endif
+static ALWAYS_INLINE intptr_t endian_fix( intptr_t x )
+{
+    return WORD_SIZE == 8 ? endian_fix64(x) : endian_fix32(x);
+}
+static ALWAYS_INLINE uint16_t endian_fix16( uint16_t x )
+{
+    return (x<<8)|(x>>8);
 }
 #endif
 

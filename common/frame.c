@@ -501,12 +501,10 @@ deblock_chroma_c (uint8_t * pix, int xstride, int ystride, int alpha, int beta, 
     }
     for (d = 0; d < 4; d++)
     {
-      const int p2 = pix[-3 * xstride];
       const int p1 = pix[-2 * xstride];
       const int p0 = pix[-1 * xstride];
       const int q0 = pix[0 * xstride];
       const int q1 = pix[1 * xstride];
-      const int q2 = pix[2 * xstride];
 
       if (abs (p0 - q0) < alpha && abs (p1 - p0) < beta && abs (q1 - q0) < beta)
       {

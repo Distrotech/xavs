@@ -1,11 +1,12 @@
 /*****************************************************************************
  * checkasm.c: assembly check tool
  *****************************************************************************
- * Copyright (C) 2009 xavs project
+ * Copyright (C) 2003-2008 x264 project
+ *  
+ * Authors: Loren Merritt <lorenm@u.washington.edu>
+ *          Laurent Aimar <fenrir@via.ecp.fr>
+ *          Jason Garrett-Glaser <darkshikari@gmail.com>
  *
- * Authors: 
- *          
- *          
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,6 +21,14 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02111, USA.
+ *****************************************************************************/
+
+/*****************************************************************************
+ * checkasm.c: assembly check tool
+ *****************************************************************************
+ * Copyright (C) 2009~2010 xavs project
+ * Authors: Jianwen Chen <jianwen.chen.video@gmail.com>
+ * This code is modified on x264 project and will follow the license of x264
  *****************************************************************************/
 
 #include <ctype.h>

@@ -128,6 +128,7 @@ static int pthread_num_processors_np()
 #include "dct.h"
 #include "csp.h"
 #include "quant.h"
+#include "cpu.h"
 
 /****************************************************************************
  * Generals functions

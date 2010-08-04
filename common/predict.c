@@ -153,8 +153,8 @@ static void
 predict_8x8c_dc (uint8_t * src, int i_neighbor)
 {
   PREDICT_8x8_LOAD_LEFT (0) PREDICT_8x8_LOAD_TOP (0)
-    //for(  i = 0 ; i < 8 ; i++)
-    src[0] = xavs_clip_uint8 ((t0 + l0) >> 1);
+
+  src[0] = xavs_clip_uint8 ((t0 + l0) >> 1);
   src[1] = xavs_clip_uint8 ((t1 + l0) >> 1);
   src[2] = xavs_clip_uint8 ((t2 + l0) >> 1);
   src[3] = xavs_clip_uint8 ((t3 + l0) >> 1);
@@ -325,6 +325,7 @@ if(i_neighbor&MB_DOWNLEFT) { \
 
 #define PT(x) \
     const int t##x = (SRC(x-1,-1) + 2*SRC(x,-1) + SRC(x+1,-1) + 2) >> 2;
+
 #define PREDICT_8x8_LOAD_TOP(have_tl) \
     const int t0 = ((have_tl || (i_neighbor&MB_TOPLEFT) ? SRC(-1,-1) : SRC(0,-1)) \
                      + 2*SRC(0,-1) + SRC(1,-1) + 2) >> 2; \

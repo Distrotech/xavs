@@ -282,15 +282,21 @@ case $host_cpu in
     ;;
 esac
 
+
 # check requirements
 
 cc_check || die "No working C compiler found."
+if cc_check '' -std=gnu99 ; then
+    CFLAGS="$CFLAGS -std=gnu99"
+elif cc_check '' -std=c99 ; then
+    CFLAGS="$CFLAGS -std=c99 -D_POSIX_C_SOURCE=200112L -D_BSD_SOURCE"
+fi
 
 if [ $shared = yes -a \( $ARCH = "X86_64" -o $ARCH = "PPC" -o $ARCH = "ALPHA" \) ] ; then
     pic="yes"
 fi
 
-if [ $asm = yes -a \( $ARCH = X86 -o $ARCH = X86_64 \) ] ; then
+if [ $asm = auto -a \( $ARCH = X86 -o $ARCH = X86_64 \) ] ; then
     if ! as_check "pinsrd xmm0, [esp], 0" ; then
         VER=`($AS --version || echo no assembler) 2>$DEVNULL | head -n 1`
         echo "Found $VER"
@@ -306,12 +312,13 @@ if [ $asm = yes -a \( $ARCH = X86 -o $ARCH = X86_64 \) ] ; then
         echo "If you really want to compile without asm, configure with --disable-asm."
         exit 1
     fi
-    CFLAGS="$CFLAGS -DHAVE_MMX"
+    echo "#define HAVE_MMX" >> config.h
 fi
 [ $asm = no ] && AS=""
 [ "x$AS" = x ] && asm="no"
 
-CFLAGS="$CFLAGS -DARCH_$ARCH -DSYS_$SYS"
+echo "#define ARCH_$ARCH" >> config.h
+echo "#define SYS_$SYS" >> config.h
 
 echo "unsigned int endian = 'B' << 24 | 'I' << 16 | 'G' << 8 | 'E';" > conftest.c
 $CC $CFLAGS conftest.c -c -o conftest.o 2>$DEVNULL || die "endian test failed"

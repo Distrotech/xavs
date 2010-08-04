@@ -108,7 +108,6 @@ quant_8x8 (int16_t dct[8][8], int mf[64], uint16_t bias[64], int qp)
 */
 #define DEQUANT_SHR( x ) \
     dct[y][x] = ( dct[y][x] * dequant_mf[i_qp][y][x] + f ) >> (shift_bits);\
-    dct[y][x] = ( dct[y][x] < (-32768))?(-32768):(dct[y][x]>32767)?32767:(dct[y][x]);
 
 void
 dequant_8x8 (int16_t dct[8][8], int dequant_mf[64][8][8], int i_qp)
@@ -118,7 +117,15 @@ dequant_8x8 (int16_t dct[8][8], int dequant_mf[64][8][8], int i_qp)
   const int f = 1 << (shift_bits - 1);
   for (y = 0; y < 8; y++)
   {
-  DEQUANT_SHR (0) DEQUANT_SHR (1) DEQUANT_SHR (2) DEQUANT_SHR (3) DEQUANT_SHR (4) DEQUANT_SHR (5) DEQUANT_SHR (6) DEQUANT_SHR (7)}
+    DEQUANT_SHR (0)
+    DEQUANT_SHR (1) 
+    DEQUANT_SHR (2) 
+    DEQUANT_SHR (3) 
+    DEQUANT_SHR (4) 
+    DEQUANT_SHR (5) 
+    DEQUANT_SHR (6) 
+    DEQUANT_SHR (7)
+  }
 }
 
 void
