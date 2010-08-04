@@ -936,41 +936,6 @@ xavs_mb_analyse_inter_p8x16 (xavs_t * h, xavs_mb_analysis_t * a)
   }
 }
 
-static int
-xavs_mb_analyse_inter_p4x4_chroma (xavs_t * h, xavs_mb_analysis_t * a, uint8_t ** p_fref, int i8x8, int pixel)
-{
-  DECLARE_ALIGNED (uint8_t, pix1[8 * 8], 8);
-  DECLARE_ALIGNED (uint8_t, pix2[8 * 8], 8);
-  const int i_stride = h->mb.pic.i_stride[1];
-  const int or = 4 * (i8x8 & 1) + 2 * (i8x8 & 2) * i_stride;
-  const int oe = 4 * (i8x8 & 1) + 2 * (i8x8 & 2) * FENC_STRIDE;
-
-#define CHROMA4x4MC( width, height, me, x, y ) \
-    h->mc.mc_chroma( &p_fref[4][or+x+y*i_stride], i_stride, &pix1[x+y*8], 8, (me).mv[0], (me).mv[1], width, height ); \
-    h->mc.mc_chroma( &p_fref[5][or+x+y*i_stride], i_stride, &pix2[x+y*8], 8, (me).mv[0], (me).mv[1], width, height );
-
-  if (pixel == PIXEL_4x4)
-  {
-    CHROMA4x4MC (2, 2, a->l0.me4x4[i8x8][0], 0, 0);
-    CHROMA4x4MC (2, 2, a->l0.me4x4[i8x8][1], 0, 2);
-    CHROMA4x4MC (2, 2, a->l0.me4x4[i8x8][2], 2, 0);
-    CHROMA4x4MC (2, 2, a->l0.me4x4[i8x8][3], 2, 2);
-  }
-  else if (pixel == PIXEL_8x4)
-  {
-    CHROMA4x4MC (4, 2, a->l0.me8x4[i8x8][0], 0, 0);
-    CHROMA4x4MC (4, 2, a->l0.me8x4[i8x8][1], 0, 2);
-  }
-  else
-  {
-    CHROMA4x4MC (2, 4, a->l0.me4x8[i8x8][0], 0, 0);
-    CHROMA4x4MC (2, 4, a->l0.me4x8[i8x8][1], 2, 0);
-  }
-
-  return h->pixf.mbcmp[PIXEL_4x4] (&h->mb.pic.p_fenc[1][oe], FENC_STRIDE, pix1, 8) + h->pixf.mbcmp[PIXEL_4x4] (&h->mb.pic.p_fenc[2][oe], FENC_STRIDE, pix2, 8);
-}
-
-
 static void
 xavs_mb_analyse_inter_direct (xavs_t * h, xavs_mb_analysis_t * a)
 {

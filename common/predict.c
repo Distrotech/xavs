@@ -77,6 +77,7 @@ if(i_neighbor&MB_DOWNLEFT) { \
 
 #define PT(x) \
     const int t##x = (SRC(x-1,-1) + 2*SRC(x,-1) + SRC(x+1,-1) + 2) >> 2;
+
 #define PREDICT_8x8_LOAD_TOP(have_tl) \
     const int t0 = ((have_tl || (i_neighbor&MB_TOPLEFT) ? SRC(-1,-1) : SRC(0,-1)) \
                      + 2*SRC(0,-1) + SRC(1,-1) + 2) >> 2; \
@@ -86,6 +87,7 @@ if(i_neighbor&MB_DOWNLEFT) { \
 
 #define PTR(x) \
     t##x = (SRC(x-1,-1) + 2*SRC(x,-1) + SRC(x+1,-1) + 2) >> 2;
+
 #define PREDICT_8x8_LOAD_TOPRIGHT \
     int t8, t9, t10, t11, t12, t13, t14, t15; \
     if(i_neighbor&MB_TOPRIGHT) { \
@@ -302,10 +304,11 @@ predict_8x8c_p (uint8_t * src, int i_neighbor)
 /****************************************************************************
  * 8x8 prediction for intra luma block
  ****************************************************************************/
-
 #define SRC(x,y) src[(x)+(y)*FDEC_STRIDE]
+
 #define PL(y) \
     const int l##y = (SRC(-1,y-1) + 2*SRC(-1,y) + SRC(-1,y+1) + 2) >> 2;
+
 #define PREDICT_8x8_LOAD_LEFT(have_tl) \
     const int l0 = ((have_tl || (i_neighbor&MB_TOPLEFT) ? SRC(-1,-1) : SRC(-1,0)) \
                      + 2*SRC(-1,0) + SRC(-1,1) + 2) >> 2; \
@@ -335,6 +338,7 @@ if(i_neighbor&MB_DOWNLEFT) { \
 
 #define PTR(x) \
     t##x = (SRC(x-1,-1) + 2*SRC(x,-1) + SRC(x+1,-1) + 2) >> 2;
+
 #define PREDICT_8x8_LOAD_TOPRIGHT \
     int t8, t9, t10, t11, t12, t13, t14, t15; \
     if(i_neighbor&MB_TOPRIGHT) { \
@@ -362,12 +366,11 @@ predict_8x8_dc_128 (uint8_t * src, int i_neighbor)
 
 static void
 predict_8x8_dc_left (uint8_t * src, int i_neighbor)
-{                               //int i;
+{
   PREDICT_8x8_LOAD_LEFT (0)
-    //PREDICT_8x8_LOAD_LEFT(0)
 #define ROW(y) ((uint32_t*)(src+y*FDEC_STRIDE))[0] =\
                ((uint32_t*)(src+y*FDEC_STRIDE))[1] = 0x01010101U * l##y
-    ROW (0);
+  ROW (0);
   ROW (1);
   ROW (2);
   ROW (3);
@@ -517,7 +520,8 @@ predict_8x8_ddl (uint8_t * src, int i_neighbor)
 {
   int l8, l9, l10, l11, l12, l13, l14, l15;
 
-  PREDICT_8x8_LOAD_TOP (1) PREDICT_8x8_LOAD_LEFT (1) PREDICT_8x8_LOAD_TOPRIGHT if (i_neighbor & MB_DOWNLEFT)
+  PREDICT_8x8_LOAD_TOP (1) PREDICT_8x8_LOAD_LEFT (1) PREDICT_8x8_LOAD_TOPRIGHT
+  if (i_neighbor & MB_DOWNLEFT)
   {
     PDL (8) PDL (9) PDL (10) PDL (11) PDL (12) PDL (13) PDL (14) l15 = (SRC (-1, 14) + 3 * SRC (-1, 15) + 2) >> 2;
   }

@@ -158,9 +158,9 @@ xavs_block_luma_write_cavlc (xavs_t * h, bs_t * s, int i_block_idx, int *l, int 
   if (h->mb.i_type == I_8x8)
   {
     tablenum = 0;
-    for (idx; idx >= 0; idx--)
+    for (; idx >= 0; idx--)
     {
-      if (idx == 0)             //EOB
+      if (!idx) //EOB
       {
         level = 0;
         run = 0;
@@ -171,7 +171,7 @@ xavs_block_luma_write_cavlc (xavs_t * h, bs_t * s, int i_block_idx, int *l, int 
         run = run_arr[idx - 1];
       }
 
-      symbol2D = CODE2D_ESCAPE_SYMBOL_T;        //symbol for out-of-table
+      symbol2D = CODE2D_ESCAPE_SYMBOL_T; //symbol for out-of-table
       if (level > -27 && level < 27 && run < 26)
       {
         if (tablenum == 0)
@@ -191,7 +191,7 @@ xavs_block_luma_write_cavlc (xavs_t * h, bs_t * s, int i_block_idx, int *l, int 
       bs_write_ue_k (s, symbol2D, VLC_Golomb_Order_T[0][tablenum][0], VLC_Golomb_Order_T[0][tablenum][1]);
 
 
-      if (idx == 0)
+      if (!idx)
         break;
 
       if (symbol2D >= CODE2D_ESCAPE_SYMBOL_T)
@@ -214,13 +214,11 @@ xavs_block_luma_write_cavlc (xavs_t * h, bs_t * s, int i_block_idx, int *l, int 
           tablenum = 6;
       }
     }
-  }
-  else                          //!intra
-  {
+  }else {   //!intra
     tablenum = 0;
-    for (idx; idx >= 0; idx--)
+    for (; idx >= 0; idx--)
     {
-      if (idx == 0)             //EOB
+      if (!idx)//EOB
       {
         level = 0;
         run = 0;
@@ -235,23 +233,23 @@ xavs_block_luma_write_cavlc (xavs_t * h, bs_t * s, int i_block_idx, int *l, int 
       if (level > -27 && level < 27 && run < 26)
       {
         if (tablenum == 0)
-          symbol2D = AVS_2DVLC_table_inter[tablenum][run][abs (level) - 1];     //qwang 11.29
+          symbol2D = AVS_2DVLC_table_inter[tablenum][run][abs (level) - 1];
         else
-          symbol2D = AVS_2DVLC_table_inter[tablenum][run][abs (level)]; //qwang 11.29
+          symbol2D = AVS_2DVLC_table_inter[tablenum][run][abs (level)];
         if (symbol2D >= 0 && level < 0)
           symbol2D++;
         if (symbol2D < 0)
-          symbol2D = (CODE2D_ESCAPE_SYMBOL_T + (run << 1) + ((level > 0) ? 1 : 0));     //jlzheng 7.20
+          symbol2D = (CODE2D_ESCAPE_SYMBOL_T + (run << 1) + ((level > 0) ? 1 : 0));
       }
       else
       {
-        symbol2D = (CODE2D_ESCAPE_SYMBOL_T + (run << 1) + ((level > 0) ? 1 : 0));       //jlzheng 7.20
+        symbol2D = (CODE2D_ESCAPE_SYMBOL_T + (run << 1) + ((level > 0) ? 1 : 0));
       }
 
 
       bs_write_ue_k (s, symbol2D, VLC_Golomb_Order_T[1][tablenum][0], VLC_Golomb_Order_T[1][tablenum][1]);
 
-      if (idx == 0)
+      if (!idx)
         break;
 
       if (symbol2D >= CODE2D_ESCAPE_SYMBOL_T)
@@ -273,8 +271,7 @@ xavs_block_luma_write_cavlc (xavs_t * h, bs_t * s, int i_block_idx, int *l, int 
           tablenum = 6;
       }
     }
-
-  }                             // inter
+  }// inter
 }
 
 static void
@@ -312,9 +309,9 @@ xavs_block_chroma_write_cavlc (xavs_t * h, bs_t * s, int i_block_idx, int *l, in
   idx = ipos;
 
   tablenum = 0;
-  for (idx; idx >= 0; idx--)
+  for (; idx >= 0; idx--)
   {
-    if (idx == 0)               //EOB
+    if (!idx)//EOB
     {
       level = 0;
       run = 0;
@@ -345,7 +342,7 @@ xavs_block_chroma_write_cavlc (xavs_t * h, bs_t * s, int i_block_idx, int *l, in
     bs_write_ue_k (s, symbol2D, VLC_Golomb_Order_T[2][tablenum][0], VLC_Golomb_Order_T[2][tablenum][1]);
 
 
-    if (idx == 0)
+    if (!idx)
       break;
 
     if (symbol2D >= CODE2D_ESCAPE_SYMBOL_T)
@@ -355,7 +352,7 @@ xavs_block_chroma_write_cavlc (xavs_t * h, bs_t * s, int i_block_idx, int *l, in
       bs_write_ue_k (s, escape_level_diff, 0, 11);
     }
 
-    if (abs (level) > incVlc_chroma[tablenum])  //qwang 11.29
+    if (abs (level) > incVlc_chroma[tablenum])
     {
       if (abs (level) <= 2)
         tablenum = abs (level);
@@ -670,9 +667,9 @@ xavs_macroblock_write_cavlc (xavs_t * h, bs_t * s)
       bs_write_ue (s, 23 + intra8x8_cbp_to_golomb[(h->mb.i_cbp_chroma << 4) | h->mb.i_cbp_luma]);
       // i_mb_i_offset = 23;
       break;
-      //default:
-      //xavs_log(h, XAVS_LOG_ERROR, "internal error or slice unsupported\n" );
-      // return;
+    default:
+      xavs_log(h, XAVS_LOG_ERROR, "internal error or slice unsupported\n" );
+      return;
     }
 
     /* Prediction: Luma */
@@ -866,12 +863,10 @@ xavs_macroblock_write_cavlc (xavs_t * h, bs_t * s)
 #endif
 
   /* Coded block patern */
-  if ( /* i_mb_type == I_4x4 || */ (i_mb_type == I_8x8) && (h->sh.i_type == SLICE_TYPE_I))
+  if ((i_mb_type == I_8x8) && (h->sh.i_type == SLICE_TYPE_I))
   {
     bs_write_ue (s, intra8x8_cbp_to_golomb[(h->mb.i_cbp_chroma << 4) | h->mb.i_cbp_luma]);
-  }
-  else if (!IS_INTRA (i_mb_type))       //i_mb_type == I_16x16 )
-  {
+  }else if (!IS_INTRA (i_mb_type)){
     bs_write_ue (s, inter_cbp_to_golomb[(h->mb.i_cbp_chroma << 4) | h->mb.i_cbp_luma]);
   }
 
@@ -884,7 +879,6 @@ xavs_macroblock_write_cavlc (xavs_t * h, bs_t * s)
   {
     if (h->mb.i_cbp_luma & (1 << i))
       xavs_block_luma_write_cavlc (h, s, i, h->dct.luma8x8[i], 64);
-    //xavs_block_luma_write_cavlc(h,s,h->dct.luma8x8[i]);
   }
 
   for (i = 0; i < 2; i++)

@@ -9,7 +9,7 @@ SRCS = common/mc.c common/predict.c common/pixel.c common/macroblock.c \
        encoder/analyse.c encoder/me.c encoder/ratecontrol.c \
        encoder/set.c encoder/macroblock.c\
        encoder/cavlc.c encoder/encoder.c encoder/eval.c \
-       encoder/lookahead.o
+       encoder/lookahead.c
 
 SRCCLI = xavs.c matroska.c muxers.c
 
