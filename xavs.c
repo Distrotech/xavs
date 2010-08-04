@@ -1745,7 +1745,7 @@ Encode (xavs_param_t * param, cli_opt_t * opt)
   }
 
   i_start = xavs_mdate ();
-  remove("test.dat"); //delete timestamp file
+  remove("timestamp.dat"); //delete timestamp file
 
   /* Encode frames */
   for (i_frame = 0, i_file = 0, i_frame_output = 0; b_ctrl_c == 0 && (i_frame < i_frame_total || i_frame_total == 0);)
@@ -1772,32 +1772,20 @@ Encode (xavs_param_t * param, cli_opt_t * opt)
       i_frame_output++;
 
     i_frame++;
-	//timestamp output
-	fp = fopen("test.dat", "ab+");
-	f_timestamp += ((double)param->i_fps_den / (double) param->i_fps_num * 1000);
-	i_timestamp = (int)f_timestamp;
-	fwrite(&i_timestamp,sizeof(int),1,fp);		
-	fclose(fp);	
+
+    //timestamp output
+    fp = fopen("timestamp.dat", "ab+");
+    f_timestamp += ((double)param->i_fps_den / (double) param->i_fps_num * 1000);
+    i_timestamp = (int)f_timestamp;
+    fwrite(&i_timestamp,sizeof(int),1,fp);		
+    fclose(fp);	
 
     /* update status line (up to 1000 times per input file) */
     if (opt->b_progress && i_frame_output % i_update_interval == 0 && i_frame_output)
       Print_status (i_start, i_frame_output, i_frame_total, i_file, param);
   }
 
-  ///* Flush delayed frames */
-  //while( !b_ctrl_c && xavs_encoder_delayed_frames( h ) )
-  //{
-  //    i_frame_size = Encode_frame( h, opt->hout, NULL );
-  //    if( i_frame_size < 0 )
-  //        return -1;
-  //    i_file += i_frame_size;
-  //    if( i_frame_size )
-  //        i_frame_output++;
-  //    if( opt->b_progress && i_frame_output % i_update_interval == 0 && i_frame_output )
-  //        Print_status( i_start, i_frame_output, i_frame_total, i_file, param );
-  //}
-
-  ///* Flush delayed frames */
+  /* Flush delayed frames */
   do
   {
     i_frame_size = Encode_frame (h, opt->hout, NULL);
