@@ -131,8 +131,7 @@ xavs_rd_cost_i8x8_chroma (xavs_t * h, int i_lambda2, int i_mode, int b_dct)
   int i_ssd, i_bits;
 
   if (b_dct)
-    //xavs_mb_encode_8x8_chroma (h, 0, h->mb.i_chroma_qp);
-    xavs_mb_encode_8x8_chroma (h, !IS_INTRA (h->mb.i_type), h->mb.i_chroma_qp);
+    xavs_mb_encode_8x8_chroma (h, 0, h->mb.i_chroma_qp);
 
   i_ssd = ssd_plane (h, PIXEL_8x8, 1, 0, 0) + ssd_plane (h, PIXEL_8x8, 2, 0, 0);
 
