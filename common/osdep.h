@@ -209,7 +209,7 @@ static ALWAYS_INLINE uint32_t endian_fix32( uint32_t x )
     return (x<<24) + ((x<<8)&0xff0000) + ((x>>8)&0xff00) + (x>>24);
 }
 #endif
-#if defined(__GNUC__) && ARCH_X86_64
+#if defined(__GNUC__) && defined(ARCH_X86_64)
 static ALWAYS_INLINE uint64_t endian_fix64( uint64_t x )
 {
     asm("bswap %0":"+r"(x));
