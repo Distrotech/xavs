@@ -298,8 +298,8 @@ static void xavs_pixel_sad_x4_##size( uint8_t *fenc, uint8_t *pix0, uint8_t *pix
 /****************************************************************************
  * xavs_pixel_init:
  ****************************************************************************/
-  void xavs_pixel_init (int cpu, xavs_pixel_function_t * pixf)
-  {
+void xavs_pixel_init (int cpu, xavs_pixel_function_t * pixf)
+{
     memset (pixf, 0, sizeof (*pixf));
 
 #define INIT( name, cpu ) \
@@ -323,12 +323,12 @@ static void xavs_pixel_sad_x4_##size( uint8_t *fenc, uint8_t *pix0, uint8_t *pix
     pixf->sa8d[PIXEL_8x8] = xavs_pixel_sa8d_8x8;
 
 #ifdef HAVE_MMXEXT
-    if (cpu & xavs_CPU_MMX)
+    if (cpu & XAVS_CPU_MMX)
     {
       INIT (ssd, _mmx);
     }
 
-    if (cpu & xavs_CPU_MMXEXT)
+    if (cpu & XAVS_CPU_MMXEXT)
     {
       INIT (sad, _mmxext);
       INIT (sad_x3, _mmxext);
@@ -343,7 +343,7 @@ static void xavs_pixel_sad_x4_##size( uint8_t *fenc, uint8_t *pix0, uint8_t *pix
 
 #ifdef HAVE_SSE2
     // disable on AMD processors since it is slower
-    if ((cpu & xavs_CPU_SSE2) && !(cpu & xavs_CPU_3DNOW))
+    if ((cpu & XAVS_CPU_SSE2) && !(cpu & XAVS_CPU_3DNOW))
     {
       pixf->sad[PIXEL_16x16] = xavs_pixel_sad_16x16_sse2;
       pixf->sad[PIXEL_16x8] = xavs_pixel_sad_16x8_sse2;
@@ -363,7 +363,7 @@ static void xavs_pixel_sad_x4_##size( uint8_t *fenc, uint8_t *pix0, uint8_t *pix
 #endif
     }
     // these are faster on both Intel and AMD
-    if (cpu & xavs_CPU_SSE2)
+    if (cpu & XAVS_CPU_SSE2)
     {
       pixf->ssd[PIXEL_16x16] = xavs_pixel_ssd_16x16_sse2;
       pixf->ssd[PIXEL_16x8] = xavs_pixel_ssd_16x8_sse2;
@@ -371,7 +371,7 @@ static void xavs_pixel_sad_x4_##size( uint8_t *fenc, uint8_t *pix0, uint8_t *pix
 #endif
 
 #ifdef ARCH_PPC
-    if (cpu & xavs_CPU_ALTIVEC)
+    if (cpu & XAVS_CPU_ALTIVEC)
     {
       xavs_pixel_altivec_init (pixf);
     }
@@ -392,4 +392,5 @@ static void xavs_pixel_sad_x4_##size( uint8_t *fenc, uint8_t *pix0, uint8_t *pix
     pixf->sad_x4[PIXEL_16x8] = xavs_pixel_sad_x4_16x8_vis;
     pixf->sad_x4[PIXEL_16x16] = xavs_pixel_sad_x4_16x16_vis;
 #endif
-  }
+}
+

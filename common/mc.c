@@ -34,12 +34,14 @@
 
 #include "common.h"
 
+/*
 #ifdef HAVE_MMXEXT
 #include "i386/mc.h"
 #endif
 #ifdef ARCH_PPC
 #include "ppc/mc.h"
 #endif
+*/
 
 static inline int
 xavs_tapfilter (uint8_t * pix, int i_pix_next)
@@ -422,18 +424,18 @@ MC_COPY (16) MC_COPY (8) MC_COPY (4)
   pf->copy[PIXEL_4x4] = mc_copy_w4;
 
 #ifdef HAVE_MMXEXT
-  if (cpu & xavs_CPU_MMXEXT)
+  if (cpu & XAVS_CPU_MMXEXT)
   {
     xavs_mc_mmxext_init (pf);
     pf->mc_chroma = motion_compensation_chroma_mmxext;
   }
 #endif
 #ifdef HAVE_SSE2
-  if (cpu & xavs_CPU_SSE2)
+  if (cpu & XAVS_CPU_SSE2)
     xavs_mc_sse2_init (pf);
 #endif
 #ifdef ARCH_PPC
-  if (cpu & xavs_CPU_ALTIVEC)
+  if (cpu & XAVS_CPU_ALTIVEC)
     xavs_mc_altivec_init (pf);
 #endif
 }
@@ -453,7 +455,7 @@ xavs_frame_filter (int cpu, xavs_frame_t * frame)
   pf_mc_t int_hv = mc_hc;
 
 #ifdef HAVE_MMXEXT
-  if (cpu & xavs_CPU_MMXEXT)
+  if (cpu & XAVS_CPU_MMXEXT)
   {
     xavs_horizontal_filter_mmxext (frame->filtered[1] - 8 * stride - 8, stride, frame->plane[0] - 8 * stride - 8, stride, stride - 48, frame->i_lines[0] + 16);
     xavs_center_filter_mmxext (frame->filtered[2] - 8 * stride - 8, stride, frame->filtered[3] - 8 * stride - 8, stride, frame->plane[0] - 8 * stride - 8, stride, stride - 48, frame->i_lines[0] + 16);

@@ -50,7 +50,7 @@ includedir='${prefix}/include'
 DEVNULL='/dev/null'
 
 pthread="auto"
-asm="no"
+asm="auto"
 debug="no"
 gprof="no"
 pic="no"

@@ -704,6 +704,8 @@ void xavs_deblock_v_chroma_mmxext (uint8_t * pix, int stride, int alpha, int bet
 void xavs_deblock_h_chroma_mmxext (uint8_t * pix, int stride, int alpha, int beta, int8_t * tc0);
 void xavs_deblock_v_chroma_intra_mmxext (uint8_t * pix, int stride, int alpha, int beta);
 void xavs_deblock_h_chroma_intra_mmxext (uint8_t * pix, int stride, int alpha, int beta);
+void xavs_deblock_v_luma_intra_sse2 (uint8_t * pix, int stride, int alpha, int beta);
+void xavs_deblock_h_luma_intra_sse2 (uint8_t * pix, int stride, int alpha, int beta); 
 #endif
 
 #ifdef ARCH_X86_64
@@ -734,7 +736,13 @@ xavs_deblock_init (int cpu, xavs_deblock_function_t * pf)
   pf->deblock_h_chroma_intra = deblock_h_chroma_intra_c;
 
 #ifdef HAVE_MMXEXT
-  if (cpu & xavs_CPU_MMXEXT)
+  if (cpu & XAVS_CPU_SSE)
+  {
+     pf->deblock_v_chroma = xavs_deblock_v_chroma_mmxext;
+     pf->deblock_h_chroma = xavs_deblock_h_chroma_mmxext;
+  }
+
+  if (cpu & XAVS_CPU_MMXEXT)
   {
     pf->deblock_v_chroma = xavs_deblock_v_chroma_mmxext;
     pf->deblock_h_chroma = xavs_deblock_h_chroma_mmxext;
@@ -742,7 +750,7 @@ xavs_deblock_init (int cpu, xavs_deblock_function_t * pf)
     pf->deblock_h_chroma_intra = xavs_deblock_h_chroma_intra_mmxext;
 
 #ifdef ARCH_X86_64
-    if (cpu & xavs_CPU_SSE2)
+    if (cpu & XAVS_CPU_SSE2)
     {
       pf->deblock_v_luma = xavs_deblock_v_luma_sse2;
       pf->deblock_h_luma = xavs_deblock_h_luma_sse2;

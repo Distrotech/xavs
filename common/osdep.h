@@ -191,7 +191,7 @@ xavs_pthread_create (xavs_pthread_t * t, void *a, LPVOID f, void *d)
 #define endian_fix32(x) (x)
 #define endian_fix16(x) (x)
 #else
-#if defined(__GNUC__) && HAVE_MMX
+#if defined(__GNUC__) && defined(HAVE_MMX)
 static ALWAYS_INLINE uint32_t endian_fix32( uint32_t x )
 {
     asm("bswap %0":"+r"(x));

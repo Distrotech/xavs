@@ -32,9 +32,11 @@
 
 #include "common.h"
 
+/*
 #ifdef HAVE_MMXEXT
 #   include "i386/predict.h"
 #endif
+*/
 
 /****************************************************************************
  * 16x16 prediction for intra luma block
@@ -581,7 +583,7 @@ xavs_predict_8x8c_init (int cpu, xavs_predict_t pf[7])
   pf[I_PRED_CHROMA_DC_128] = predict_8x8c_dc_128;
 
 #ifdef HAVE_MMXEXT
-  if (cpu & xavs_CPU_MMXEXT)
+  if (cpu & XAVS_CPU_MMXEXT)
   {
     xavs_predict_8x8c_init_mmxext (pf);
   }
@@ -601,13 +603,13 @@ xavs_predict_8x8_init (int cpu, xavs_predict_t pf[12])
   pf[I_PRED_8x8_DC_128] = predict_8x8_dc_128;
 
 #ifdef HAVE_MMXEXT
-  if (cpu & xavs_CPU_MMXEXT)
+  if (cpu & XAVS_CPU_MMXEXT)
   {
     xavs_predict_8x8_init_mmxext (pf);
   }
 #endif
 #ifdef HAVE_SSE2
-  if (cpu & xavs_CPU_SSE2)
+  if (cpu & XAVS_CPU_SSE2)
   {
     xavs_predict_8x8_init_sse2 (pf);
   }

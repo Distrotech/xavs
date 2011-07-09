@@ -15,12 +15,25 @@ SRCCLI = xavs.c matroska.c muxers.c
 
 # MMX/SSE optims
 ifneq ($(AS),)
-X86SRC0 = quant.c 
-X86SRC = $(X86SRC0:%=common/x86/%)
+X86SRC = common/i386/cpu-a.asm \
+         common/i386/dct-sse2.asm \
+         common/i386/deblock.asm \
+         common/i386/deblock_inter.asm \
+         common/i386/deblock_intra.asm \
+         common/i386/mc-a01.asm \
+         common/i386/mc-a.asm \
+         common/i386/pixel-a.asm \
+         common/i386/pixel-sse2.asm \
+         common/i386/predict-a.asm \
+         common/i386/qpel.asm \
+         common/i386/quant_sse2.asm 
+
+#         common/i386/qpel.asm \
+         common/i386/deblock_intra.asm \
 
 ifeq ($(ARCH),X86)
 ARCH_X86 = yes
-ASMSRC   = $(X86SRC) common/x86/
+ASMSRC   = $(X86SRC) 
 endif
 
 ifeq ($(ARCH),X86_64)
@@ -30,11 +43,8 @@ ASFLAGS += -DARCH_X86_64
 endif
 
 ifdef ARCH_X86
-ASFLAGS += -Icommon/x86/
-SRCS   += common/x86/quant.c
+ASFLAGS += -Icommon/i386/
 OBJASM  = $(ASMSRC:%.asm=%.o)
-$(OBJASM): common/x86/x86inc.asm common/x86/x86util.asm
-checkasm: tools/checkasm-a.o
 endif
 endif
 
@@ -68,7 +78,7 @@ xavsvfw.dll: libxavs.a $(wildcard vfw/*.c vfw/*.h)
 checkasm: tools/checkasm.o libxavs.a
 	$(CC) -o $@ $+ $(LDFLAGS)
 
-%.o: %.asm
+%.o: %.asm common/i386/i386inc.asm 
 	$(AS) $(ASFLAGS) -o $@ $<
 #delete local/anonymous symbols, so they don't show up in oprofile
 	-@ $(STRIP) -x $@

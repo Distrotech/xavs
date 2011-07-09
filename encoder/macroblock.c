@@ -34,6 +34,7 @@
 #include <string.h>
 
 #include "common/common.h"
+#include "common/quant.h"
 #include "macroblock.h"
 
 /* (ref: JVT-B118)
@@ -44,6 +45,18 @@
  *        for the complete mb: if score < 6 -> null
  *  chroma: for the complete mb: if score < 7 -> null
  */
+
+uint16_t dequant_shifttable[64] = {
+    14, 14, 14, 14, 14, 14, 14, 14,
+    13, 13, 13, 13, 13, 13, 13, 13,
+    13, 12, 12, 12, 12, 12, 12, 12,
+    11, 11, 11, 11, 11, 11, 11, 11,
+    11, 10, 10, 10, 10, 10, 10, 10,
+    10, 9, 9, 9, 9, 9, 9, 9,
+    9, 8, 8, 8, 8, 8, 8, 8,
+    7, 7, 7, 7, 7, 7, 7, 7
+};
+
 static int
 xavs_mb_decimate_score (int *dct, int i_max)
 {
@@ -104,11 +117,13 @@ xavs_mb_encode_i8x8 (xavs_t * h, int idx, int i_qscale)
   if (h->mb.b_trellis)
     xavs_quant_8x8_trellis (h, dct8x8, CQM_8IY, i_qscale, 1);
   else
-    h->quantf.quant_8x8 (dct8x8, h->quant8_mf[CQM_8IY][i_qscale], h->quant8_bias[CQM_8IY][i_qscale], i_qscale);
+    //h->quantf.quant_8x8 (dct8x8, h->quant8_mf[CQM_8IY][i_qscale], h->quant8_bias[CQM_8IY][i_qscale], i_qscale);
+    quant_8x8 (h,dct8x8, h->quant8_mf[CQM_8IY][i_qscale], h->quant8_bias[CQM_8IY][i_qscale], i_qscale);  
 
   scan_zigzag_8x8full (h->dct.luma8x8[idx], dct8x8);
 
-  h->quantf.dequant_8x8 (dct8x8, h->dequant8_mf[CQM_8IY], i_qscale);
+  //h->quantf.dequant_8x8 (dct8x8, h->dequant8_mf[CQM_8IY], i_qscale);
+  h->quantf.dequant_8x8 (dct8x8, h->dequant8_mf[CQM_8IY], i_qscale,dequant_shifttable); 
   h->dctf.add8x8_idct8 (p_dst, dct8x8);
 }
 
@@ -132,11 +147,13 @@ xavs_mb_encode_8x8_chroma (xavs_t * h, int b_inter, int i_qscale)
 
     h->dctf.sub8x8_dct8 (dct8x8[ch], p_src, p_dst);
 
-    h->quantf.quant_8x8 (dct8x8[ch], h->quant8_mf[CQM_8IC + b_inter][i_qscale], h->quant8_bias[CQM_8IC + b_inter][i_qscale], i_qscale);
+    //h->quantf.quant_8x8 (dct8x8[ch], h->quant8_mf[CQM_8IC + b_inter][i_qscale], h->quant8_bias[CQM_8IC + b_inter][i_qscale], i_qscale);
+    quant_8x8 ( h,dct8x8[ch], h->quant8_mf[CQM_8IC + b_inter][i_qscale], h->quant8_bias[CQM_8IC + b_inter][i_qscale], i_qscale);
 
     scan_zigzag_8x8full (h->dct.chroma8x8[ch], dct8x8[ch]);
 
-    h->quantf.dequant_8x8 (dct8x8[ch], h->dequant8_mf[CQM_8IC + b_inter], i_qscale);
+    //h->quantf.dequant_8x8 (dct8x8[ch], h->dequant8_mf[CQM_8IC + b_inter], i_qscale);
+    h->quantf.dequant_8x8 (dct8x8[ch], h->dequant8_mf[CQM_8IC + b_inter], i_qscale,dequant_shifttable);
     h->dctf.add8x8_idct8 (p_dst, dct8x8[ch]);
   }
 }
@@ -238,14 +255,16 @@ xavs_macroblock_encode (xavs_t * h)
         if (h->mb.b_trellis)
           xavs_quant_8x8_trellis (h, dct8x8[idx], CQM_8PY, i_qp, 0);
         else
-          h->quantf.quant_8x8 (dct8x8[idx], h->quant8_mf[CQM_8PY][i_qp], h->quant8_bias[CQM_8PY][i_qp], i_qp);
+          //h->quantf.quant_8x8 (dct8x8[idx], h->quant8_mf[CQM_8PY][i_qp], h->quant8_bias[CQM_8PY][i_qp], i_qp);
+          quant_8x8 ( h,dct8x8[idx], h->quant8_mf[CQM_8PY][i_qp], h->quant8_bias[CQM_8PY][i_qp], i_qp);
 
         scan_zigzag_8x8full (h->dct.luma8x8[idx], dct8x8[idx]);
       }
 
       for (idx = 0; idx < 4; idx++)
       {
-        h->quantf.dequant_8x8 (dct8x8[idx], h->dequant8_mf[CQM_8PY], i_qp);
+        //h->quantf.dequant_8x8 (dct8x8[idx], h->dequant8_mf[CQM_8PY], i_qp);
+        h->quantf.dequant_8x8 (dct8x8[idx], h->dequant8_mf[CQM_8PY], i_qp,dequant_shifttable);
         h->dctf.add8x8_idct8 (&h->mb.pic.p_fdec[0][(idx & 1) * 8 + (idx >> 1) * 8 * FDEC_STRIDE], dct8x8[idx]);
       }
     }
@@ -349,8 +368,8 @@ xavs_macroblock_probe_skip (xavs_t * h, int b_bidir)
   /* encode each 8x8 block */
   for (i8x8 = 0, i_decimate_mb = 0; i8x8 < 4; i8x8++)
   {
-
-    h->quantf.quant_8x8 (dct8x8[i8x8], h->quant8_mf[CQM_8PY][i_qp], h->quant8_bias[CQM_8PY][i_qp], i_qp);
+    //h->quantf.quant_8x8 (dct8x8[i8x8], h->quant8_mf[CQM_8PY][i_qp], h->quant8_bias[CQM_8PY][i_qp], i_qp);
+    quant_8x8 ( h,dct8x8[i8x8], h->quant8_mf[CQM_8PY][i_qp], h->quant8_bias[CQM_8PY][i_qp], i_qp);
 
     scan_zigzag_8x8full (dctscan, dct8x8[i8x8]);
 
@@ -381,7 +400,8 @@ xavs_macroblock_probe_skip (xavs_t * h, int b_bidir)
     h->dctf.sub8x8_dct8 (dct8x8[0], p_src, p_dst);
 
     /* calculate dct coeffs */
-    h->quantf.quant_8x8 (dct8x8[0], h->quant8_mf[CQM_8PC][i_qp], h->quant8_bias[CQM_8PC][i_qp], i_qp);
+    //h->quantf.quant_8x8 (dct8x8[0], h->quant8_mf[CQM_8PC][i_qp], h->quant8_bias[CQM_8PC][i_qp], i_qp);
+    quant_8x8 (h,dct8x8[0], h->quant8_mf[CQM_8PC][i_qp], h->quant8_bias[CQM_8PC][i_qp], i_qp);
 
     scan_zigzag_8x8full (dctscan, dct8x8[0]);
 
@@ -471,7 +491,8 @@ xavs_macroblock_encode_p8x8 (xavs_t * h, int i8)
   xavs_mb_mc_8x8 (h, i8);
 
   h->dctf.sub8x8_dct8 (dct8x8, p_fenc, p_fdec);
-  h->quantf.quant_8x8 (dct8x8, h->quant8_mf[CQM_8PY][i_qp], h->quant8_bias[CQM_8PY][i_qp], i_qp);
+  //h->quantf.quant_8x8 (dct8x8, h->quant8_mf[CQM_8PY][i_qp], h->quant8_bias[CQM_8PY][i_qp], i_qp);
+  quant_8x8 (h,dct8x8, h->quant8_mf[CQM_8PY][i_qp], h->quant8_bias[CQM_8PY][i_qp], i_qp);
   scan_zigzag_8x8full (h->dct.luma8x8[i8], dct8x8);
   i_decimate_8x8 = xavs_mb_decimate_score (h->dct.luma8x8[i8], 64);
 
@@ -482,7 +503,8 @@ xavs_macroblock_encode_p8x8 (xavs_t * h, int i8)
   }
   if (nnz8x8)
   {
-    h->quantf.dequant_8x8 (dct8x8, h->dequant8_mf[CQM_8PY], i_qp);
+   //h->quantf.dequant_8x8 (dct8x8, h->dequant8_mf[CQM_8PY], i_qp);
+    h->quantf.dequant_8x8 (dct8x8, h->dequant8_mf[CQM_8PY], i_qp,dequant_shifttable);
     h->dctf.add8x8_idct8 (p_fdec, dct8x8);
   }
 
@@ -496,11 +518,12 @@ xavs_macroblock_encode_p8x8 (xavs_t * h, int i8)
 
     h->dctf.sub8x8_dct8 (dct8x8, p_fenc, p_fdec);
 
-    h->quantf.quant_8x8 (dct8x8, h->quant8_mf[CQM_8PC][i_qp], h->quant8_bias[CQM_8PC][i_qp], i_qp);
+    //h->quantf.quant_8x8 (dct8x8, h->quant8_mf[CQM_8PC][i_qp], h->quant8_bias[CQM_8PC][i_qp], i_qp);
+    quant_8x8 ( h,dct8x8, h->quant8_mf[CQM_8PC][i_qp], h->quant8_bias[CQM_8PC][i_qp], i_qp);
     scan_zigzag_8x8full (h->dct.chroma8x8[ch], dct8x8);
-    h->quantf.dequant_8x8 (dct8x8, h->dequant8_mf[CQM_8PC], i_qp);
+    //h->quantf.dequant_8x8 (dct8x8, h->dequant8_mf[CQM_8PC], i_qp);
+    h->quantf.dequant_8x8 (dct8x8, h->dequant8_mf[CQM_8PC], i_qp,dequant_shifttable);
     h->dctf.add8x8_idct8 (p_fdec, dct8x8);
-
   }
 
   if (nnz8x8)
