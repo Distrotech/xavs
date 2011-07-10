@@ -87,6 +87,7 @@ for opt do
             ;;
         --enable-asm)
             asm="yes"
+            CFLAGS="$CFLAGS -DHAVE_MMXEXT -DHAVE_SSE -DHAVE_SSE2"
             ;;
         --disable-asm)
             asm="no"
