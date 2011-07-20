@@ -32,11 +32,10 @@
 
 #include "common.h"
 
-/*
+
 #ifdef HAVE_MMXEXT
 #   include "i386/predict.h"
 #endif
-*/
 
 /****************************************************************************
  * 16x16 prediction for intra luma block

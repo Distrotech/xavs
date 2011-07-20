@@ -712,6 +712,7 @@ void xavs_deblock_h_luma_intra_sse2 (uint8_t * pix, int stride, int alpha, int b
 void xavs_deblock_v_luma_sse2 (uint8_t * pix, int stride, int alpha, int beta, int8_t * tc0);
 void xavs_deblock_h_luma_sse2 (uint8_t * pix, int stride, int alpha, int beta, int8_t * tc0);
 #elif defined( HAVE_MMXEXT )
+/*
 void xavs_deblock_h_luma_mmxext (uint8_t * pix, int stride, int alpha, int beta, int8_t * tc0);
 void xavs_deblock_v8_luma_mmxext (uint8_t * pix, int stride, int alpha, int beta, int8_t * tc0);
 
@@ -721,6 +722,7 @@ xavs_deblock_v_luma_mmxext (uint8_t * pix, int stride, int alpha, int beta, int8
   xavs_deblock_v8_luma_mmxext (pix, stride, alpha, beta, tc0);
   xavs_deblock_v8_luma_mmxext (pix + 8, stride, alpha, beta, tc0 + 2);
 }
+*/
 #endif
 
 void
@@ -756,8 +758,10 @@ xavs_deblock_init (int cpu, xavs_deblock_function_t * pf)
       pf->deblock_h_luma = xavs_deblock_h_luma_sse2;
     }
 #else
+/*    
     pf->deblock_v_luma = xavs_deblock_v_luma_mmxext;
     pf->deblock_h_luma = xavs_deblock_h_luma_mmxext;
+*/
 #endif
   }
 #endif

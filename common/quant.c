@@ -171,12 +171,16 @@ xavs_quant_init (xavs_t * h, int cpu, xavs_quant_function_t * pf)
 
   if (cpu & XAVS_CPU_SSSE3)
   {
+#ifdef HAVE_SSE3      
     pf->quant_8x8 = xavs_quant_8x8_ssse3;
+#endif  
   }
 
   if (cpu & XAVS_CPU_SSE4)
   {
+#ifdef HAVE_SSE4      
     pf->quant_8x8 = xavs_quant_8x8_sse4;
+#endif    
   }
 #endif // HAVE_MMX
 

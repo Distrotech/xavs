@@ -27,9 +27,9 @@ X86SRC = common/i386/cpu-a.asm \
          common/i386/predict-a.asm \
          common/i386/qpel.asm \
          common/i386/quant_sse2.asm 
-
-#         common/i386/qpel.asm \
-         common/i386/deblock_intra.asm \
+SRCS += common/i386/dct-c.c \
+        common/i386/mc-c.c \
+        common/i386/predict-c.c
 
 ifeq ($(ARCH),X86)
 ARCH_X86 = yes
