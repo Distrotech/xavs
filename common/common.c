@@ -54,6 +54,7 @@ xavs_param_default (xavs_param_t * param)
   /* CPU autodetect */
   param->cpu = xavs_cpu_detect ();
   param->i_threads = 1;
+  param->b_sliced_threads = 0;//1 slice parallel, 0 frame parallel
 
   /* Video properties */
   param->i_csp = XAVS_CSP_I420;

@@ -184,15 +184,15 @@ xavs_validate_parameters (xavs_t * h)
   h->param.i_threads = xavs_clip3 (h->param.i_threads, 1, XAVS_THREAD_MAX);
   h->param.i_threads = XAVS_MIN (h->param.i_threads, (h->param.i_height + 15) / 16);
 
-#ifndef HAVE_PTHREAD
-  if (h->param.i_threads > 1)
-  {
-    xavs_log (h, XAVS_LOG_WARNING, "not compiled with pthread support!\n");
-    xavs_log (h, XAVS_LOG_WARNING, "multislicing anyway, but you won't see any speed gain.\n");
-  }
-  else
-    h->param.b_sliced_threads = 0;
-#endif
+//#ifndef HAVE_PTHREAD
+//  if (h->param.i_threads > 1)
+//  {
+//    xavs_log (h, XAVS_LOG_WARNING, "not compiled with pthread support!\n");
+//    xavs_log (h, XAVS_LOG_WARNING, "multislicing anyway, but you won't see any speed gain.\n");
+//  }
+//  else
+//    h->param.b_sliced_threads = 0;
+//#endif
 
   h->i_thread_frames = h->param.b_sliced_threads ? 1 : h->param.i_threads;
   if(h->i_thread_frames > 1) 
@@ -1032,6 +1032,7 @@ xavs_slices_write (xavs_t * h)
       }
       t->sh.i_first_mb = (i * h->sps->i_mb_height / h->param.i_threads) * h->sps->i_mb_width;
       t->sh.i_last_mb = ((i + 1) * h->sps->i_mb_height / h->param.i_threads) * h->sps->i_mb_width;
+      t->sh.i_slice_vertical_position=i * h->sps->i_mb_height / h->param.i_threads;
       t->out.i_nal = i_nal + i;
     }
     //xavs_ratecontrol_threads_start( h );

@@ -345,6 +345,7 @@ Help (xavs_param_t * defaults, int longhelp)
   H1 ("      --psnr                  Enable PSNR computation\n");
   H1 ("      --ssim                  Enable SSIM computation\n");
   H1 ("      --threads <integer>     Force a specific number of threads\n");
+  H1 ("      --sliced-thread <integer>     Force a specific number of threads for slices\n");
   H2 ("      --thread-input          Run Avisynth in its own thread\n");
   H2 ("      --sync-lookahead <integer> Number of buffer frames for threaded lookahead\n");
   H2 ("      --non-deterministic     Slightly improve quality of SMP, at the cost of repeatability\n");
