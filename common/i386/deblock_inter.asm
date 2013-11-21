@@ -9,8 +9,6 @@ dw_4:  times 8 dw 4
 
 
 SECTION .text
-cglobal xavs_deblock_v_chroma_mmxext
-cglobal xavs_deblock_h_chroma_mmxext
 
 
 ; out: %4 = |%1-%2|>%3

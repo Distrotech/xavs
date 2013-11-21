@@ -37,7 +37,6 @@ SECTION .text
 
 cglobal xavs_cpu_cpuid_test
 cglobal xavs_cpu_cpuid
-cglobal xavs_emms
 
 ALIGN 16
 ;-----------------------------------------------------------------------------
