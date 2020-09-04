@@ -3,7 +3,7 @@
  *****************************************************************************
  * Copyright (C) 2009 xavs project
  *
- * Authors: 
+ * Authors:
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,7 +31,7 @@ extern void predict_8x8c_dc_left_mmxext( uint8_t *src,int i_neighbor );
 extern void predict_8x8c_dc_mmxext( uint8_t *src,int i_neighbor );
 extern void predict_8x8c_v_mmxext( uint8_t *src, int i_neighbor );
 extern void predict_8x8c_dc_top_mmxext( uint8_t *src,int i_neighbor );
-extern void predict_8x8c_p_core_mmxext( src, i00, b, c );
+extern void predict_8x8c_p_core_mmxext( uint8_t *src, int i00, int b, int c );
 extern void predict_8x8_h_mmxext( uint8_t *src, int i_neighbor );
 extern void predict_8x8_v_mmxext( uint8_t *src, int i_neighbor );
 extern void predict_8x8_dc_128_mmxext( uint8_t *src, int i_neighbor );
