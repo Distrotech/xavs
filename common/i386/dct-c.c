@@ -69,7 +69,7 @@ void x264_add16x16_idct_mmx( uint8_t *p_dst, int16_t dct[16][4][4] )
     x264_add8x8_idct_mmx( &p_dst[0],               &dct[0] );
     x264_add8x8_idct_mmx( &p_dst[8],               &dct[4] );
     x264_add8x8_idct_mmx( &p_dst[8*FDEC_STRIDE],   &dct[8] );
-    x264_add8x8_idct_mmx( &p_dst[8*FDEC_STRIDE+8], &dct[12] );                      idctµƒmmx≤ø∑÷
+    x264_add8x8_idct_mmx( &p_dst[8*FDEC_STRIDE+8], &dct[12] );                      idctùùmmxùùùù
 }
 */
 /***********************
@@ -115,10 +115,10 @@ extern void xavs_add16x16_idct8_sse2(uint8_t *dst, int16_t dct[4][8][8],int16_t 
 
 void xavs_add16x16_idct8_sse2( uint8_t *p_dst, int16_t dct[4][8][8],int16_t *tmp )
 {
-    xavs_add8x8_idct8_sse2( p_dst,                 dct[0] , tmp[0]);
-    xavs_add8x8_idct8_sse2( p_dst+8,               dct[1] , tmp[1]);
-    xavs_add8x8_idct8_sse2( p_dst+8*FDEC_STRIDE,   dct[2] , tmp[2]);
-    xavs_add8x8_idct8_sse2( p_dst+8*FDEC_STRIDE+8, dct[3] , tmp[3]);                 
+    xavs_add8x8_idct8_sse2( p_dst,                 dct[0] , &tmp[0]);
+    xavs_add8x8_idct8_sse2( p_dst+8,               dct[1] , &tmp[1]);
+    xavs_add8x8_idct8_sse2( p_dst+8*FDEC_STRIDE,   dct[2] , &tmp[2]);
+    xavs_add8x8_idct8_sse2( p_dst+8*FDEC_STRIDE+8, dct[3] , &tmp[3]);
 }
 
 //#else // ARCH_X86
